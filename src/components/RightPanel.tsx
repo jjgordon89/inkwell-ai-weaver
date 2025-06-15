@@ -12,6 +12,10 @@ import StoryStructure from './sections/StoryStructure';
 import ExportPublishing from './sections/ExportPublishing';
 import AITextProcessor from './sections/story/AITextProcessor';
 import ChapterManagement from './sections/story/ChapterManagement';
+import SmartWritingFeatures from './sections/story/SmartWritingFeatures';
+import EnhancedAIPanel from './sections/story/EnhancedAIPanel';
+import CollaborativeWriting from './sections/story/CollaborativeWriting';
+import StoryTabs from './sections/story/StoryTabs';
 
 const RightPanel = () => {
   const { state } = useWriting();
@@ -42,6 +46,43 @@ const RightPanel = () => {
 
   if (state.activeSection === 'ai-assistance') {
     return <AIAssistance />;
+  }
+
+  // Show story-specific features when in story section
+  if (state.activeSection === 'story') {
+    return (
+      <div className="h-full bg-muted/30 p-4 flex flex-col space-y-6 border-l overflow-y-auto">
+        {/* Overview Section */}
+        <div className="space-y-4">
+          <StoryTabs />
+        </div>
+
+        {/* AI Text Processing */}
+        <div className="border-t pt-6">
+          <AITextProcessor />
+        </div>
+
+        {/* Enhanced AI Panel */}
+        <div className="border-t pt-6">
+          <EnhancedAIPanel />
+        </div>
+
+        {/* Smart Writing Features */}
+        <div className="border-t pt-6">
+          <SmartWritingFeatures />
+        </div>
+
+        {/* Collaborative Writing */}
+        <div className="border-t pt-6">
+          <CollaborativeWriting />
+        </div>
+
+        {/* Chapter Management */}
+        <div className="border-t pt-6">
+          <ChapterManagement />
+        </div>
+      </div>
+    );
   }
 
   const selectedCharacter = state.characters.find(char => 
