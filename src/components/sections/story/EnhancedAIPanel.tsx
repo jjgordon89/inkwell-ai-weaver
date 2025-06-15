@@ -128,7 +128,7 @@ const EnhancedAIPanel = () => {
 
   const handleWritingPrompt = async () => {
     try {
-      const prompt = await generateWritingPrompt('fiction', 'intermediate', 'general');
+      const prompt = await generateWritingPrompt('fiction', 'intermediate', 'theme');
       setWritingPrompts(prev => [prompt, ...prev].slice(0, 5));
       toast({
         title: "Writing Prompt Generated",
