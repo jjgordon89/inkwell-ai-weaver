@@ -20,6 +20,20 @@ export const getPromptForAction = (action: AIAction, text: string): string => {
       return `Create an engaging and creative writing prompt based on the following theme or context:\n\n${text}`;
     case 'context-suggestion':
       return `Provide contextual writing suggestions and improvements based on the following text:\n\n${text}`;
+    case 'analyze-writing-quality':
+      return `Analyze the following text for writing quality. Provide the analysis in the following key-value format.
+ReadabilityScore: [a score from 0 to 100]
+ReadabilityLevel: [a level like 'Excellent', 'Good', 'Fair', 'Needs Improvement']
+ReadabilitySuggestions: [a bulleted list of 2-3 suggestions for readability, separated by newlines]
+SentenceVariety: [a score from 0 to 100]
+VocabularyRichness: [a score from 0 to 100]
+Pacing: [a string like 'Slow', 'Moderate', 'Fast']
+Engagement: [a score from 0 to 100]
+
+Text to analyze:
+${text}`;
+    case 'predict-next-words':
+      return `Based on the following text, predict the next 5 most likely words. Return them as a comma-separated list, without any other text:\n\n${text}`;
     default:
       return text;
   }
@@ -54,6 +68,18 @@ export const performMockTextProcessing = async (text: string, action: AIAction, 
       return `Title: The Memory Thief\nPrompt: In a world where memories can be extracted and traded like currency, your character discovers they have been stealing memories without knowing it. Write about their first conscious theft and the moral dilemma that follows.\nGenre: science fiction\nDifficulty: intermediate`;
     case 'context-suggestion':
       return `- Consider developing the emotional stakes in this scene\n- Add more specific sensory details to enhance immersion\n- The pacing could benefit from shorter sentences during tense moments\n- Character motivations could be clearer\n- Consider the setting's impact on the mood`;
+    case 'analyze-writing-quality':
+      return `ReadabilityScore: 85
+ReadabilityLevel: Good
+ReadabilitySuggestions:
+- Consider varying sentence length for better flow.
+- Use more active voice constructions.
+SentenceVariety: 78
+VocabularyRichness: 65
+Pacing: Moderate
+Engagement: 82`;
+    case 'predict-next-words':
+      return `suddenly, then, however, because, with`;
     default:
       return text;
   }

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,113 +14,117 @@ import {
   CheckCircle,
   Clock,
   TrendingUp,
-  Eye
+  Eye,
+  Loader2
 } from 'lucide-react';
 import { useWriting } from '@/contexts/WritingContext';
 import { useToast } from "@/hooks/use-toast";
-
-interface ReadabilityScore {
-  score: number;
-  level: string;
-  suggestions: string[];
-}
-
-interface WritingMetrics {
-  readability: ReadabilityScore;
-  sentenceVariety: number;
-  vocabularyRichness: number;
-  pacing: string;
-  engagement: number;
-}
+import { useEnhancedAI } from '@/hooks/useEnhancedAI';
+import { useAI } from '@/hooks/useAI';
+import { WritingMetrics } from '@/hooks/ai/types';
 
 const SmartWritingFeatures = () => {
-  const { state } = useWriting();
+  const { state, dispatch } = useWriting();
   const { toast } = useToast();
+  const { 
+    analyzeWritingQuality, 
+    generateContextualSuggestions,
+    predictNextWords,
+    isAnalyzing, 
+    isGenerating 
+  } = useEnhancedAI();
+  const { processText, isProcessing: isAIToolProcessing } = useAI();
+  
   const [metrics, setMetrics] = useState<WritingMetrics | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [autoSuggestions, setAutoSuggestions] = useState<string[]>([]);
   const [nextWordPredictions, setNextWordPredictions] = useState<string[]>([]);
 
   const analyzeText = async () => {
     if (!state.currentDocument?.content) return;
     
-    setIsAnalyzing(true);
-    
-    // Simulate analysis delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const content = state.currentDocument.content;
-    const words = content.split(/\s+/).filter(Boolean);
-    const sentences = content.split(/[.!?]+/).filter(Boolean);
-    
-    // Calculate basic metrics
-    const avgWordsPerSentence = words.length / sentences.length || 0;
-    const uniqueWords = new Set(words.map(w => w.toLowerCase()));
-    const vocabularyRatio = uniqueWords.size / words.length || 0;
-    
-    // Mock readability calculation
-    const readabilityScore = Math.max(0, Math.min(100, 
-      100 - (avgWordsPerSentence * 2) + (vocabularyRatio * 20)
-    ));
-    
-    const readabilityLevel = readabilityScore > 80 ? 'Excellent' :
-                           readabilityScore > 60 ? 'Good' :
-                           readabilityScore > 40 ? 'Fair' : 'Needs Improvement';
-    
-    const mockMetrics: WritingMetrics = {
-      readability: {
-        score: Math.round(readabilityScore),
-        level: readabilityLevel,
-        suggestions: [
-          'Consider varying sentence length for better flow',
-          'Use more active voice constructions',
-          'Replace some complex words with simpler alternatives'
-        ]
-      },
-      sentenceVariety: Math.round(Math.random() * 40 + 60),
-      vocabularyRichness: Math.round(vocabularyRatio * 100),
-      pacing: avgWordsPerSentence > 20 ? 'Slow' : 
-              avgWordsPerSentence > 15 ? 'Moderate' : 'Fast',
-      engagement: Math.round(Math.random() * 30 + 70)
-    };
-    
-    setMetrics(mockMetrics);
-    setIsAnalyzing(false);
-    
-    toast({
-      title: "Analysis Complete",
-      description: `Text analyzed with ${readabilityLevel.toLowerCase()} readability`,
-    });
-  };
-
-  const generateAutoSuggestions = () => {
-    const suggestions = [
-      'Add sensory details to enhance immersion',
-      'Consider showing instead of telling',
-      'Vary sentence structure for rhythm',
-      'Strengthen dialogue with subtext',
-      'Clarify character motivations',
-      'Enhance setting description'
-    ];
-    
-    setAutoSuggestions(suggestions.slice(0, 3));
-  };
-
-  const predictNextWords = () => {
-    const predictions = [
-      'carefully', 'suddenly', 'quietly', 'through', 'towards', 
-      'beneath', 'however', 'meanwhile', 'nevertheless', 'therefore'
-    ];
-    
-    setNextWordPredictions(predictions.slice(0, 5));
-  };
-
-  useEffect(() => {
-    if (state.currentDocument?.content) {
-      generateAutoSuggestions();
-      predictNextWords();
+    try {
+      const result = await analyzeWritingQuality(state.currentDocument.content);
+      setMetrics(result);
+      toast({
+        title: "Analysis Complete",
+        description: `Text analyzed with ${result.readability.level.toLowerCase()} readability.`,
+      });
+    } catch (error) {
+      console.error("Failed to analyze text:", error);
+      toast({
+        title: "Error",
+        description: "Failed to analyze writing quality.",
+        variant: "destructive",
+      });
     }
-  }, [state.currentDocument?.content]);
+  };
+
+  const handleGenerateAutoSuggestions = async () => {
+    if (!state.currentDocument?.content) return;
+    try {
+      const suggestions = await generateContextualSuggestions(state.currentDocument.content);
+      setAutoSuggestions(suggestions);
+      if (suggestions.length > 0) {
+        toast({ title: "Suggestions refreshed!" });
+      }
+    } catch (error) {
+      console.error("Failed to generate suggestions:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate suggestions.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePredictNextWords = async () => {
+    if (!state.currentDocument?.content) return;
+    try {
+      const words = await predictNextWords(state.currentDocument.content);
+      setNextWordPredictions(words);
+      if (words.length > 0) {
+        toast({ title: "Next word predictions updated." });
+      }
+    } catch(error) {
+      console.error("Failed to predict next words:", error);
+      toast({
+        title: "Error",
+        description: "Failed to predict next words.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleGrammarCheck = async () => {
+    if (!state.currentDocument || !state.currentDocument.content) return;
+    const originalContent = state.currentDocument.content;
+    toast({ title: "Checking grammar..." });
+    try {
+      const fixedContent = await processText(originalContent, 'fix-grammar');
+      if (fixedContent !== originalContent) {
+        dispatch({ 
+            type: 'UPDATE_DOCUMENT_CONTENT', 
+            payload: { id: state.currentDocument.id, content: fixedContent }
+        });
+        toast({
+            title: "Grammar Check Complete",
+            description: "Grammar and spelling have been corrected.",
+        });
+      } else {
+        toast({
+            title: "Grammar Check Complete",
+            description: "No errors found.",
+        });
+      }
+    } catch(error) {
+      console.error("Grammar check failed:", error);
+      toast({
+        title: "Error",
+        description: "Failed to perform grammar check.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600';
@@ -127,7 +132,7 @@ const SmartWritingFeatures = () => {
     return 'text-red-600';
   };
 
-  const getScoreBadgeVariant = (score: number) => {
+  const getScoreBadgeVariant = (score: number): "default" | "secondary" | "destructive" => {
     if (score >= 80) return 'default';
     if (score >= 60) return 'secondary';
     return 'destructive';
@@ -160,7 +165,7 @@ const SmartWritingFeatures = () => {
                 className="w-full"
               >
                 {isAnalyzing ? (
-                  <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
                   <Target className="h-4 w-4 mr-2" />
                 )}
@@ -231,14 +236,15 @@ const SmartWritingFeatures = () => {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={generateAutoSuggestions}
+                  onClick={handleGenerateAutoSuggestions}
+                  disabled={isGenerating || isAnalyzing}
                 >
-                  <Zap className="h-3 w-3 mr-1" />
+                  {isGenerating ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Zap className="h-3 w-3 mr-1" />}
                   Refresh
                 </Button>
               </div>
               
-              {autoSuggestions.length > 0 && (
+              {autoSuggestions.length > 0 ? (
                 <div className="space-y-2">
                   {autoSuggestions.map((suggestion, index) => (
                     <div 
@@ -252,14 +258,13 @@ const SmartWritingFeatures = () => {
                     </div>
                   ))}
                 </div>
+              ) : (
+                <Alert>
+                  <AlertDescription>
+                    Click "Refresh" to get AI-powered suggestions for your text.
+                  </AlertDescription>
+                </Alert>
               )}
-
-              <Alert>
-                <TrendingUp className="h-4 w-4" />
-                <AlertDescription>
-                  Suggestions are generated based on your writing patterns and current context.
-                </AlertDescription>
-              </Alert>
             </div>
           </TabsContent>
 
@@ -267,12 +272,24 @@ const SmartWritingFeatures = () => {
             <div className="space-y-4">
               {/* Word Predictions */}
               <div className="space-y-2">
-                <h4 className="text-sm font-medium flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Next Word Predictions
-                </h4>
+                <div className="flex items-center justify-between">
+                   <h4 className="text-sm font-medium flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Next Word Predictions
+                  </h4>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handlePredictNextWords}
+                    disabled={isGenerating || isAnalyzing}
+                  >
+                    {isGenerating ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Zap className="h-3 w-3 mr-1" />}
+                    Predict
+                  </Button>
+                </div>
+
                 <div className="flex flex-wrap gap-2">
-                  {nextWordPredictions.map((word, index) => (
+                  {nextWordPredictions.length > 0 ? nextWordPredictions.map((word, index) => (
                     <Badge 
                       key={index}
                       variant="outline" 
@@ -280,13 +297,15 @@ const SmartWritingFeatures = () => {
                       onClick={() => {
                         toast({
                           title: "Word Suggestion",
-                          description: `"${word}" would be added to your text`,
+                          description: `You can add logic to insert "${word}" into your text.`,
                         });
                       }}
                     >
                       {word}
                     </Badge>
-                  ))}
+                  )) : (
+                    <p className="text-sm text-muted-foreground">Click "Predict" to see next word suggestions.</p>
+                  )}
                 </div>
               </div>
 
@@ -294,19 +313,19 @@ const SmartWritingFeatures = () => {
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">Quick Writing Tools</h4>
                 <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" size="sm" className="justify-start">
-                    <CheckCircle className="h-3 w-3 mr-2" />
+                  <Button variant="outline" size="sm" className="justify-start" onClick={handleGrammarCheck} disabled={isAIToolProcessing || !state.currentDocument?.content}>
+                     {isAIToolProcessing ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <CheckCircle className="h-3 w-3 mr-2" />}
                     Grammar Check
                   </Button>
-                  <Button variant="outline" size="sm" className="justify-start">
+                  <Button variant="outline" size="sm" className="justify-start" disabled>
                     <BookOpen className="h-3 w-3 mr-2" />
                     Style Guide
                   </Button>
-                  <Button variant="outline" size="sm" className="justify-start">
+                  <Button variant="outline" size="sm" className="justify-start" disabled>
                     <Target className="h-3 w-3 mr-2" />
                     Clarity Score
                   </Button>
-                  <Button variant="outline" size="sm" className="justify-start">
+                  <Button variant="outline" size="sm" className="justify-start" disabled>
                     <Brain className="h-3 w-3 mr-2" />
                     Tone Detector
                   </Button>

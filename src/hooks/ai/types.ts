@@ -15,7 +15,9 @@ export type AIAction =
   | 'generate-plot'
   | 'continue-story'
   | 'writing-prompt'
-  | 'context-suggestion';
+  | 'context-suggestion'
+  | 'analyze-writing-quality'
+  | 'predict-next-words';
 
 export interface AIHookReturn {
   isProcessing: boolean;
@@ -39,6 +41,20 @@ export interface ToneAnalysis {
   tone: string;
   confidence: number;
   suggestions: string[];
+}
+
+export interface ReadabilityScore {
+  score: number;
+  level: string;
+  suggestions: string[];
+}
+
+export interface WritingMetrics {
+  readability: ReadabilityScore;
+  sentenceVariety: number;
+  vocabularyRichness: number;
+  pacing: string;
+  engagement: number;
 }
 
 export interface PlotElement {

@@ -1,7 +1,6 @@
-
 import { useState } from 'react';
 import { useAI } from './useAI';
-import { ToneAnalysis, PlotElement, WritingPrompt } from './ai/types';
+import { ToneAnalysis, PlotElement, WritingPrompt, WritingMetrics } from './ai/types';
 import { parseAIResponse, handleAIError, validateAIInput, createSuggestionsList } from './ai/aiUtils';
 
 export const useEnhancedAI = () => {
@@ -84,6 +83,36 @@ Focus on emotional resonance, voice consistency, and narrative tone.`;
       };
     } catch (error) {
       throw handleAIError(error, 'analyze tone and style');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const analyzeWritingQuality = async (text: string): Promise<WritingMetrics> => {
+    setIsAnalyzing(true);
+    try {
+      validateAIInput(text, 'writing quality analysis');
+      const result = await processText(text, 'analyze-writing-quality');
+      const parsed = parseAIResponse(result);
+
+      const readabilitySuggestions = (parsed.readabilitysuggestions as string || '')
+        .split('\n')
+        .map(s => s.trim().replace(/^- /, ''))
+        .filter(Boolean);
+
+      return {
+        readability: {
+          score: parseInt(parsed.readabilityscore as string, 10) || 0,
+          level: parsed.readabilitylevel as string || 'N/A',
+          suggestions: readabilitySuggestions,
+        },
+        sentenceVariety: parseInt(parsed.sentencevariety as string, 10) || 0,
+        vocabularyRichness: parseInt(parsed.vocabularyrichness as string, 10) || 0,
+        pacing: parsed.pacing as string || 'N/A',
+        engagement: parseInt(parsed.engagement as string, 10) || 0,
+      };
+    } catch (error) {
+      throw handleAIError(error, 'analyze writing quality');
     } finally {
       setIsAnalyzing(false);
     }
@@ -216,12 +245,27 @@ Make it inspiring and specific enough to spark creativity.`;
     }
   };
 
+  const predictNextWords = async (currentText: string): Promise<string[]> => {
+    setIsGenerating(true);
+    try {
+      validateAIInput(currentText, 'predict next words');
+      // Use last 500 chars for context
+      const result = await processText(currentText.slice(-500), 'predict-next-words');
+      return result.split(',').map(w => w.trim()).filter(Boolean);
+    } catch (error) {
+      throw handleAIError(error, 'predict next words');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return {
     // Context-aware suggestions
     generateContextualSuggestions,
     
     // Analysis tools
     analyzeToneAndStyle,
+    analyzeWritingQuality,
     
     // Plot development
     generatePlotElements,
@@ -229,6 +273,7 @@ Make it inspiring and specific enough to spark creativity.`;
     
     // Writing exercises
     generateWritingPrompt,
+    predictNextWords,
     
     // State
     isAnalyzing: isAnalyzing || isProcessing,
