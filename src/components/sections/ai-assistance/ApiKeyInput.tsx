@@ -83,6 +83,12 @@ const ApiKeyInput = ({
         </p>
       )}
       
+      {provider.name === 'OpenAI' && (
+        <p className="text-xs text-muted-foreground">
+          💡 OpenAI offers industry-leading models including GPT-4.1 and advanced reasoning models like o3
+        </p>
+      )}
+      
       {provider.name === 'Groq' && (
         <p className="text-xs text-muted-foreground">
           💡 Groq offers fast inference with open-source models like Llama and Mixtral

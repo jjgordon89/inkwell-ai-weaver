@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -42,11 +41,20 @@ const AIModelSettings = () => {
   };
 
   const getModelIcon = (modelName: string) => {
+    // OpenAI models
+    if (modelName.includes('gpt-4.1')) return <Brain className="h-4 w-4 text-green-600" />;
+    if (modelName.includes('o3-2025')) return <Brain className="h-4 w-4 text-purple-600" />;
+    if (modelName.includes('o4-mini')) return <Zap className="h-4 w-4 text-purple-500" />;
+    if (modelName.includes('gpt-4o')) return <Brain className="h-4 w-4 text-blue-600" />;
     if (modelName.includes('gpt-4')) return <Brain className="h-4 w-4 text-purple-500" />;
     if (modelName.includes('gpt-3.5')) return <Cpu className="h-4 w-4 text-blue-500" />;
+    
+    // Google Gemini models
     if (modelName.includes('gemini-1.5-pro')) return <Brain className="h-4 w-4 text-blue-600" />;
     if (modelName.includes('gemini-1.5-flash')) return <Zap className="h-4 w-4 text-blue-500" />;
     if (modelName.includes('gemini-1.0-pro')) return <Brain className="h-4 w-4 text-blue-400" />;
+    
+    // Other models
     if (modelName.includes('llama')) return <Zap className="h-4 w-4 text-green-500" />;
     if (modelName.includes('mixtral')) return <Brain className="h-4 w-4 text-orange-500" />;
     if (modelName.includes('gemma')) return <Brain className="h-4 w-4 text-red-500" />;
@@ -58,11 +66,21 @@ const AIModelSettings = () => {
   };
 
   const getModelDescription = (modelName: string) => {
+    // OpenAI models
+    if (modelName === 'gpt-4.1-2025-04-14') return 'OpenAI\'s flagship model with superior performance across all tasks';
+    if (modelName === 'o3-2025-04-16') return 'Advanced reasoning model for complex multi-step problems';
+    if (modelName === 'o4-mini-2025-04-16') return 'Fast reasoning model optimized for coding and visual tasks';
+    if (modelName === 'gpt-4.1-mini-2025-04-14') return 'Efficient model with vision capabilities';
+    if (modelName === 'gpt-4o') return 'Multimodal model with vision and advanced reasoning';
     if (modelName.includes('gpt-4')) return 'Advanced reasoning and complex tasks';
     if (modelName.includes('gpt-3.5')) return 'Fast and efficient for most tasks';
+    
+    // Google Gemini models
     if (modelName.includes('gemini-1.5-pro')) return 'Google\'s most capable multimodal model';
     if (modelName.includes('gemini-1.5-flash')) return 'Fast and efficient multimodal model';
     if (modelName.includes('gemini-1.0-pro')) return 'Google\'s foundational language model';
+    
+    // Other models
     if (modelName.includes('llama-3.3-70b')) return 'Latest Llama model with enhanced capabilities';
     if (modelName.includes('llama-3.1-70b')) return 'Large Llama model with strong performance';
     if (modelName.includes('llama-3.1-8b')) return 'Fast and efficient Llama model';

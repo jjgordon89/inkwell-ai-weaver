@@ -4,7 +4,15 @@ import { AIProvider } from './types';
 export const AI_PROVIDERS: AIProvider[] = [
   {
     name: 'OpenAI',
-    models: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+    models: [
+      'gpt-4.1-2025-04-14',
+      'o3-2025-04-16',
+      'o4-mini-2025-04-16',
+      'gpt-4.1-mini-2025-04-14',
+      'gpt-4o',
+      'gpt-4-turbo',
+      'gpt-3.5-turbo'
+    ],
     requiresApiKey: true,
     apiEndpoint: 'https://api.openai.com/v1/chat/completions'
   },

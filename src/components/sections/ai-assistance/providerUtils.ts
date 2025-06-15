@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { Globe, Server, Brain, Zap } from 'lucide-react';
+import { Globe, Server, Brain, Zap, Bot } from 'lucide-react';
 
 export const getProviderIcon = (providerName: string) => {
   switch (providerName) {
     case 'OpenAI':
-      return React.createElement(Globe, { className: "h-4 w-4" });
+      return React.createElement(Bot, { className: "h-4 w-4 text-green-600" });
     case 'Google Gemini':
       return React.createElement(Brain, { className: "h-4 w-4 text-blue-500" });
     case 'Groq':
@@ -22,7 +22,7 @@ export const getProviderIcon = (providerName: string) => {
 export const getProviderDescription = (providerName: string) => {
   switch (providerName) {
     case 'OpenAI':
-      return 'OpenAI\'s GPT models for high-quality text processing';
+      return 'Industry-leading GPT models including GPT-4.1 and advanced reasoning models like o3';
     case 'Google Gemini':
       return 'Google\'s advanced Gemini models with multimodal capabilities';
     case 'Groq':
