@@ -45,6 +45,7 @@ type WritingAction =
   | { type: 'UPDATE_DOCUMENT_CONTENT'; payload: { id: string; content: string } }
   | { type: 'ADD_CHARACTER'; payload: Character }
   | { type: 'UPDATE_CHARACTER'; payload: Character }
+  | { type: 'DELETE_CHARACTER'; payload: string }
   | { type: 'ADD_STORY_ARC'; payload: StoryArc }
   | { type: 'UPDATE_STORY_ARC'; payload: StoryArc }
   | { type: 'ADD_WORLD_ELEMENT'; payload: WorldElement }
@@ -89,6 +90,11 @@ function writingReducer(state: WritingState, action: WritingAction): WritingStat
         characters: state.characters.map(char =>
           char.id === action.payload.id ? action.payload : char
         )
+      };
+    case 'DELETE_CHARACTER':
+      return {
+        ...state,
+        characters: state.characters.filter(char => char.id !== action.payload)
       };
     case 'ADD_STORY_ARC':
       return { ...state, storyArcs: [...state.storyArcs, action.payload] };

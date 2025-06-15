@@ -1,14 +1,19 @@
-
 import { Lightbulb, User } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useWriting } from '@/contexts/WritingContext';
 import { useAI } from '@/hooks/useAI';
 import { useState } from 'react';
+import Characters from './sections/Characters';
 
 const RightPanel = () => {
   const { state, dispatch } = useWriting();
   const { processText, isProcessing } = useAI();
   const [suggestions, setSuggestions] = useState<string[]>([]);
+
+  // Show Characters component when characters section is active
+  if (state.activeSection === 'characters') {
+    return <Characters />;
+  }
 
   const handleTextImprovement = async (action: 'improve' | 'shorten' | 'expand' | 'fix-grammar') => {
     if (!state.selectedText || !state.currentDocument) return;
