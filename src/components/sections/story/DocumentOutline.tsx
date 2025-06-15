@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, Layout, Grid3X3, Timeline, Plus, Filter } from 'lucide-react';
+import { BookOpen, Layout, Grid3X3, Clock, Plus, Filter } from 'lucide-react';
 import { useDocumentOutline } from '@/hooks/outline/useDocumentOutline';
 import HierarchyView from './outline/HierarchyView';
 import CorkboardView from './outline/CorkboardView';
@@ -40,7 +40,7 @@ const DocumentOutline = () => {
     switch (mode) {
       case 'hierarchy': return <Layout className="h-4 w-4" />;
       case 'corkboard': return <Grid3X3 className="h-4 w-4" />;
-      case 'timeline': return <Timeline className="h-4 w-4" />;
+      case 'timeline': return <Clock className="h-4 w-4" />;
       default: return <Layout className="h-4 w-4" />;
     }
   };
@@ -106,7 +106,7 @@ const DocumentOutline = () => {
               size="sm"
               onClick={() => setViewMode('timeline')}
             >
-              <Timeline className="h-4 w-4" />
+              <Clock className="h-4 w-4" />
             </Button>
           </div>
         </div>
