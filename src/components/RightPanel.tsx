@@ -11,13 +11,18 @@ import Outline from './sections/Outline';
 import StoryStructure from './sections/StoryStructure';
 import ExportPublishing from './sections/ExportPublishing';
 import AITextProcessor from './sections/story/AITextProcessor';
+import ChapterManagement from './sections/story/ChapterManagement';
 
 const RightPanel = () => {
   const { state } = useWriting();
 
   // Show specific components based on active section
   if (state.activeSection === 'story') {
-    return <Story />;
+    return (
+      <div className="h-full bg-muted/30 p-4 flex flex-col space-y-6 border-l">
+        <ChapterManagement />
+      </div>
+    );
   }
 
   if (state.activeSection === 'outline') {

@@ -18,6 +18,17 @@ export interface OutlineItem {
   updatedAt: Date;
 }
 
+export interface Chapter {
+  id: string;
+  title: string;
+  description?: string;
+  wordCount: number;
+  status: 'not-started' | 'in-progress' | 'completed' | 'needs-revision';
+  position: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface OutlineStructure {
   items: OutlineItem[];
   totalWordCount: number;
