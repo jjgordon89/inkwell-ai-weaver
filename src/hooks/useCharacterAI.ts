@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useAI } from './useAI';
 import { Character } from '@/contexts/WritingContext';
+import { parseAIResponse, handleAIError, validateAIInput } from './ai/aiUtils';
 
 export const useCharacterAI = () => {
   const { processText, isProcessing } = useAI();
@@ -11,6 +12,8 @@ export const useCharacterAI = () => {
     setIsGenerating(true);
     
     try {
+      validateAIInput(prompt, 'character generation');
+
       const enhancedPrompt = `Create a detailed character based on this description: "${prompt}". 
       Please provide the character details in the following format:
       Name: [character name]
@@ -25,63 +28,27 @@ export const useCharacterAI = () => {
       Make the character realistic and well-developed for a story.`;
 
       const result = await processText(enhancedPrompt, 'improve');
-      
-      // Parse the AI response to extract character data
-      const characterData = parseCharacterResponse(result);
+      const parsedData = parseAIResponse(result);
       
       return {
-        ...characterData,
         id: Date.now().toString(),
+        name: parsedData.name as string,
+        age: parsedData.age as number,
+        occupation: parsedData.occupation as string,
+        appearance: parsedData.appearance as string,
+        personality: parsedData.personality as string,
+        backstory: parsedData.backstory as string,
+        description: parsedData.description as string,
+        tags: parsedData.tags as string[] || [],
         notes: '',
-        tags: characterData.tags || [],
         relationships: [],
         createdWith: 'ai' as const
       };
     } catch (error) {
-      console.error('Failed to generate character:', error);
-      throw error;
+      throw handleAIError(error, 'generate character');
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  const parseCharacterResponse = (response: string): Partial<Character> => {
-    const lines = response.split('\n');
-    const character: Partial<Character> = {};
-
-    lines.forEach(line => {
-      const [key, ...valueParts] = line.split(':');
-      const value = valueParts.join(':').trim();
-      
-      switch (key.toLowerCase().trim()) {
-        case 'name':
-          character.name = value;
-          break;
-        case 'age':
-          character.age = parseInt(value) || undefined;
-          break;
-        case 'occupation':
-          character.occupation = value;
-          break;
-        case 'appearance':
-          character.appearance = value;
-          break;
-        case 'personality':
-          character.personality = value;
-          break;
-        case 'backstory':
-          character.backstory = value;
-          break;
-        case 'description':
-          character.description = value;
-          break;
-        case 'tags':
-          character.tags = value.split(',').map(tag => tag.trim()).filter(Boolean);
-          break;
-      }
-    });
-
-    return character;
   };
 
   return {

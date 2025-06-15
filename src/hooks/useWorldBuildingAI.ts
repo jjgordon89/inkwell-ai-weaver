@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useAI } from './useAI';
 import { WorldElement } from '@/contexts/WritingContext';
+import { parseAIResponse, handleAIError, validateAIInput, createSuggestionsList } from './ai/aiUtils';
 
 export const useWorldBuildingAI = () => {
   const { processText, isProcessing } = useAI();
@@ -11,6 +12,8 @@ export const useWorldBuildingAI = () => {
     setIsGenerating(true);
     
     try {
+      validateAIInput(prompt, 'world element generation');
+
       const enhancedPrompt = `Create a detailed world building element of type "${type}" based on this description: "${prompt}". 
       Please provide the world element details in the following format:
       Name: [element name]
@@ -19,42 +22,19 @@ export const useWorldBuildingAI = () => {
       Make the ${type} engaging and well-developed for a compelling fictional world.`;
 
       const result = await processText(enhancedPrompt, 'improve');
-      
-      // Parse the AI response to extract world element data
-      const worldElementData = parseWorldElementResponse(result);
+      const parsedData = parseAIResponse(result);
       
       return {
-        ...worldElementData,
         type,
-        id: Date.now().toString()
+        id: Date.now().toString(),
+        name: parsedData.name as string,
+        description: parsedData.description as string
       };
     } catch (error) {
-      console.error('Failed to generate world element:', error);
-      throw error;
+      throw handleAIError(error, 'generate world element');
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  const parseWorldElementResponse = (response: string): Partial<WorldElement> => {
-    const lines = response.split('\n');
-    const worldElement: Partial<WorldElement> = {};
-
-    lines.forEach(line => {
-      const [key, ...valueParts] = line.split(':');
-      const value = valueParts.join(':').trim();
-      
-      switch (key.toLowerCase().trim()) {
-        case 'name':
-          worldElement.name = value;
-          break;
-        case 'description':
-          worldElement.description = value;
-          break;
-      }
-    });
-
-    return worldElement;
   };
 
   const improveSuggestions = async (currentElements: WorldElement[]): Promise<string[]> => {
@@ -75,18 +55,9 @@ Suggest 3-5 potential improvements or new world building ideas that would enhanc
 Provide each suggestion as a brief, actionable recommendation.`;
 
       const result = await processText(prompt, 'improve');
-      
-      // Split the response into individual suggestions
-      const suggestions = result
-        .split('\n')
-        .filter(line => line.trim().length > 0)
-        .map(line => line.replace(/^[-•*]\s*/, '').trim())
-        .filter(suggestion => suggestion.length > 10);
-      
-      return suggestions.slice(0, 5); // Limit to 5 suggestions
+      return createSuggestionsList(result);
     } catch (error) {
-      console.error('Failed to generate improvement suggestions:', error);
-      throw error;
+      throw handleAIError(error, 'generate improvement suggestions');
     } finally {
       setIsGenerating(false);
     }
