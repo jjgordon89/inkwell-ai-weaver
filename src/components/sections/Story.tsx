@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,6 @@ import { useAI } from '@/hooks/useAI';
 import { useToast } from "@/hooks/use-toast";
 import AITextProcessor from './story/AITextProcessor';
 import EnhancedAIPanel from './story/EnhancedAIPanel';
-import StoryStructureTools from './story/StoryStructureTools';
 import SmartWritingFeatures from './story/SmartWritingFeatures';
 import CollaborativeWriting from './story/CollaborativeWriting';
 
@@ -111,9 +109,6 @@ const Story = () => {
 
         {/* Smart Writing Features */}
         <SmartWritingFeatures />
-
-        {/* Story Structure Tools */}
-        <StoryStructureTools />
 
         {/* Enhanced AI Panel */}
         <EnhancedAIPanel />

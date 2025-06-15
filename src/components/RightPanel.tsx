@@ -8,6 +8,7 @@ import CrossReferences from './sections/CrossReferences';
 import AIAssistance from './sections/AIAssistance';
 import Story from './sections/Story';
 import Outline from './sections/Outline';
+import StoryStructure from './sections/StoryStructure';
 import ExportPublishing from './sections/ExportPublishing';
 import AITextProcessor from './sections/story/AITextProcessor';
 
@@ -21,6 +22,10 @@ const RightPanel = () => {
 
   if (state.activeSection === 'outline') {
     return <Outline />;
+  }
+
+  if (state.activeSection === 'story-structure') {
+    return <StoryStructure />;
   }
 
   if (state.activeSection === 'characters') {
