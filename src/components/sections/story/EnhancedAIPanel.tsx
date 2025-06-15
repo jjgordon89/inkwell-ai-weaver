@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,9 @@ import {
   PenTool, 
   Loader2,
   Target,
-  Zap
+  Zap,
+  ArrowRight,
+  Plus
 } from 'lucide-react';
 import { useWriting } from '@/contexts/WritingContext';
 import { useEnhancedAI } from '@/hooks/useEnhancedAI';
@@ -21,7 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ToneAnalysis, PlotElement, WritingPrompt } from '@/hooks/ai/types';
 
 const EnhancedAIPanel = () => {
-  const { state } = useWriting();
+  const { state, dispatch } = useWriting();
   const { 
     generateContextualSuggestions,
     analyzeToneAndStyle,
@@ -63,6 +64,49 @@ const EnhancedAIPanel = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const applySuggestionAsNote = (suggestion: string) => {
+    if (!state.currentDocument) return;
+
+    // Add suggestion as a comment or note in the text
+    const noteText = `\n\n[AI Suggestion: ${suggestion}]\n\n`;
+    const cursorPosition = state.currentDocument.content.length;
+    const newContent = state.currentDocument.content + noteText;
+    
+    dispatch({
+      type: 'UPDATE_DOCUMENT_CONTENT',
+      payload: {
+        id: state.currentDocument.id,
+        content: newContent
+      }
+    });
+    
+    toast({
+      title: "Suggestion Added",
+      description: "AI suggestion added as a note to your document",
+    });
+  };
+
+  const applyContinuation = () => {
+    if (!state.currentDocument || !storyContinuation) return;
+
+    const newContent = state.currentDocument.content + '\n\n' + storyContinuation;
+    
+    dispatch({
+      type: 'UPDATE_DOCUMENT_CONTENT',
+      payload: {
+        id: state.currentDocument.id,
+        content: newContent
+      }
+    });
+    
+    toast({
+      title: "Story Continuation Applied",
+      description: "AI continuation added to your document",
+    });
+    
+    setStoryContinuation('');
   };
 
   const handleToneAnalysis = async () => {
@@ -187,9 +231,19 @@ const EnhancedAIPanel = () => {
                   {contextSuggestions.map((suggestion, index) => (
                     <div 
                       key={index}
-                      className="p-3 rounded-lg bg-muted/50 border-l-2 border-blue-500/30"
+                      className="p-3 rounded-lg bg-muted/50 border-l-2 border-blue-500/30 group hover:bg-muted/70 transition-colors"
                     >
-                      <p className="text-sm">{suggestion}</p>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm flex-1">{suggestion}</p>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => applySuggestionAsNote(suggestion)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -221,9 +275,20 @@ const EnhancedAIPanel = () => {
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium">Style Suggestions</h4>
                     {toneAnalysis.suggestions.map((suggestion, index) => (
-                      <p key={index} className="text-sm text-muted-foreground">
-                        • {suggestion}
-                      </p>
+                      <div 
+                        key={index}
+                        className="flex items-start justify-between gap-2 group hover:bg-muted/30 p-2 rounded transition-colors"
+                      >
+                        <p className="text-sm text-muted-foreground flex-1">• {suggestion}</p>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => applySuggestionAsNote(suggestion)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -266,13 +331,23 @@ const EnhancedAIPanel = () => {
                   {plotElements.map((element, index) => (
                     <div 
                       key={index}
-                      className="p-3 rounded-lg bg-muted/50 border-l-2 border-green-500/30"
+                      className="p-3 rounded-lg bg-muted/50 border-l-2 border-green-500/30 group hover:bg-muted/70 transition-colors"
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <Badge variant="outline" className="text-xs">{element.type}</Badge>
                         <Badge variant="secondary" className="text-xs">{element.placement}</Badge>
                       </div>
-                      <p className="text-sm">{element.description}</p>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm flex-1">{element.description}</p>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => applySuggestionAsNote(element.description)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -282,7 +357,17 @@ const EnhancedAIPanel = () => {
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium">Story Continuation</h4>
                   <div className="p-3 rounded-lg bg-muted/50 border-l-2 border-purple-500/30">
-                    <p className="text-sm">{storyContinuation}</p>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <p className="text-sm flex-1">{storyContinuation}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={applyContinuation}
+                      className="w-full"
+                    >
+                      <ArrowRight className="h-3 w-3 mr-1" />
+                      Add to Document
+                    </Button>
                   </div>
                 </div>
               )}
@@ -310,14 +395,24 @@ const EnhancedAIPanel = () => {
                   {writingPrompts.map((prompt) => (
                     <div 
                       key={prompt.id}
-                      className="p-4 rounded-lg bg-muted/50 border-l-2 border-orange-500/30"
+                      className="p-4 rounded-lg bg-muted/50 border-l-2 border-orange-500/30 group hover:bg-muted/70 transition-colors"
                     >
                       <div className="flex items-center gap-2 mb-2">
                         <h5 className="font-medium text-sm">{prompt.title}</h5>
                         <Badge variant="outline" className="text-xs">{prompt.genre}</Badge>
                         <Badge variant="secondary" className="text-xs">{prompt.difficulty}</Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">{prompt.prompt}</p>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm text-muted-foreground flex-1">{prompt.prompt}</p>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => applySuggestionAsNote(`Writing Prompt: ${prompt.prompt}`)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>

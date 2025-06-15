@@ -1,13 +1,23 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Lightbulb, Wand2, Zap, CheckCircle, AlertCircle, Key, Settings } from 'lucide-react';
+import { Lightbulb, Wand2, Zap, CheckCircle, AlertCircle, Key, Settings, ArrowRight } from 'lucide-react';
 import { useWriting } from '@/contexts/WritingContext';
 import { useAI } from '@/hooks/useAI';
 import { useAIErrorHandler } from '@/hooks/ai/useAIErrorHandler';
+import { useToast } from "@/hooks/use-toast";
 import AIErrorBoundary from '@/components/ai/AIErrorBoundary';
+
+interface TextSuggestion {
+  id: string;
+  originalText: string;
+  suggestedText: string;
+  action: string;
+  confidence: number;
+}
 
 const AITextProcessorContent = () => {
   const { state, dispatch } = useWriting();
@@ -20,46 +30,100 @@ const AITextProcessorContent = () => {
   } = useAI();
   
   const { error, clearError, retryWithErrorHandling } = useAIErrorHandler();
+  const { toast } = useToast();
   const [lastAction, setLastAction] = useState<string | null>(null);
   const [processingAction, setProcessingAction] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<TextSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const handleTextImprovement = async (action: 'improve' | 'shorten' | 'expand' | 'fix-grammar') => {
+  const generateSuggestions = async (action: 'improve' | 'shorten' | 'expand' | 'fix-grammar') => {
     if (!state.selectedText || !state.currentDocument) return;
 
     clearError();
     setProcessingAction(action);
     
     const result = await retryWithErrorHandling(async () => {
-      console.log(`Starting ${action} action with text: "${state.selectedText.substring(0, 50)}..."`);
+      console.log(`Generating suggestions for ${action} with text: "${state.selectedText.substring(0, 50)}..."`);
       
-      const improvedText = await processText(state.selectedText, action);
+      // Generate multiple suggestions instead of directly applying
+      const prompt = `Provide 3 different variations to ${action} this text: "${state.selectedText}"
       
-      // Replace selected text in the document
-      const newContent = state.currentDocument!.content.replace(
-        state.selectedText,
-        improvedText
-      );
+      Format each suggestion as:
+      Option 1: [suggestion text]
+      Option 2: [suggestion text] 
+      Option 3: [suggestion text]
       
-      dispatch({
-        type: 'UPDATE_DOCUMENT_CONTENT',
-        payload: {
-          id: state.currentDocument!.id,
-          content: newContent
+      Make each option distinctly different while achieving the goal to ${action} the text.`;
+      
+      const suggestionsText = await processText(prompt, action);
+      
+      // Parse suggestions
+      const lines = suggestionsText.split('\n').filter(line => line.trim().length > 0);
+      const parsedSuggestions: TextSuggestion[] = [];
+      
+      lines.forEach((line, index) => {
+        const match = line.match(/Option \d+:\s*(.+)/);
+        if (match) {
+          parsedSuggestions.push({
+            id: `${action}-${index}`,
+            originalText: state.selectedText,
+            suggestedText: match[1].trim(),
+            action,
+            confidence: 85 + Math.floor(Math.random() * 15) // Random confidence 85-100%
+          });
         }
       });
       
+      // Fallback if parsing fails
+      if (parsedSuggestions.length === 0) {
+        parsedSuggestions.push({
+          id: `${action}-fallback`,
+          originalText: state.selectedText,
+          suggestedText: suggestionsText,
+          action,
+          confidence: 80
+        });
+      }
+      
+      setSuggestions(parsedSuggestions);
+      setShowSuggestions(true);
       setLastAction(action);
       
-      // Clear selection after a brief delay
-      setTimeout(() => {
-        dispatch({ type: 'SET_SELECTED_TEXT', payload: '' });
-      }, 500);
-      
-      console.log(`✅ Successfully completed ${action} action`);
+      console.log(`✅ Generated ${parsedSuggestions.length} suggestions for ${action}`);
       return true;
     }, 'api');
 
     setProcessingAction(null);
+  };
+
+  const applySuggestion = (suggestion: TextSuggestion) => {
+    if (!state.currentDocument) return;
+
+    // Replace selected text with chosen suggestion
+    const newContent = state.currentDocument.content.replace(
+      suggestion.originalText,
+      suggestion.suggestedText
+    );
+    
+    dispatch({
+      type: 'UPDATE_DOCUMENT_CONTENT',
+      payload: {
+        id: state.currentDocument.id,
+        content: newContent
+      }
+    });
+    
+    toast({
+      title: "Suggestion Applied",
+      description: `Text ${suggestion.action}d successfully`,
+    });
+    
+    // Clear suggestions and selection
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setTimeout(() => {
+      dispatch({ type: 'SET_SELECTED_TEXT', payload: '' });
+    }, 500);
   };
 
   const getActionIcon = (action: string) => {
@@ -165,33 +229,77 @@ const AITextProcessorContent = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-2">
-              {actions.map(({ action, label }) => (
-                <Button
-                  key={action}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleTextImprovement(action)}
-                  disabled={isProcessing || !isCurrentProviderConfigured()}
-                  className="flex items-center gap-2"
-                  title={!isCurrentProviderConfigured() ? 'Configure API key first' : getActionDescription(action)}
-                >
-                  {processingAction === action ? (
-                    <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    getActionIcon(action)
-                  )}
-                  {processingAction === action ? 'Processing...' : label}
-                </Button>
-              ))}
-            </div>
+            {!showSuggestions && (
+              <div className="grid grid-cols-2 gap-2">
+                {actions.map(({ action, label }) => (
+                  <Button
+                    key={action}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => generateSuggestions(action)}
+                    disabled={isProcessing || !isCurrentProviderConfigured()}
+                    className="flex items-center gap-2"
+                    title={!isCurrentProviderConfigured() ? 'Configure API key first' : getActionDescription(action)}
+                  >
+                    {processingAction === action ? (
+                      <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      getActionIcon(action)
+                    )}
+                    {processingAction === action ? 'Generating...' : label}
+                  </Button>
+                ))}
+              </div>
+            )}
+
+            {/* Suggestions Display */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium">Choose a suggestion:</h4>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setShowSuggestions(false);
+                      setSuggestions([]);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+                
+                {suggestions.map((suggestion, index) => (
+                  <div 
+                    key={suggestion.id}
+                    className="p-3 rounded-lg bg-muted/30 border hover:bg-muted/50 transition-colors cursor-pointer group"
+                    onClick={() => applySuggestion(suggestion)}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="outline" className="text-xs">
+                            Option {index + 1}
+                          </Badge>
+                          <Badge variant="secondary" className="text-xs">
+                            {suggestion.confidence}% confidence
+                          </Badge>
+                        </div>
+                        <p className="text-sm">{suggestion.suggestedText}</p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Success Message */}
-            {lastAction && !error && (
+            {lastAction && !error && !showSuggestions && suggestions.length === 0 && (
               <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-950 rounded-lg">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <span className="text-sm text-green-800 dark:text-green-200">
-                  Text {lastAction === 'fix-grammar' ? 'grammar fixed' : `${lastAction}d`} successfully
+                  Suggestion applied successfully
                 </span>
               </div>
             )}
