@@ -1,36 +1,11 @@
 
-import React, { useState } from 'react';
-import { BookOpen, Plus } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import React from 'react';
+import { BookOpen } from 'lucide-react';
 import { useDocumentOutline } from '@/hooks/outline/useDocumentOutline';
 import StoryTabs from './story/StoryTabs';
 
 const Story = () => {
-  const { addItem, outlineStructure } = useDocumentOutline();
-  const [isAddingChapter, setIsAddingChapter] = useState(false);
-  const [chapterTitle, setChapterTitle] = useState('');
-
-  const handleAddChapter = () => {
-    if (!chapterTitle.trim()) return;
-
-    const newPosition = outlineStructure.items.filter(item => item.type === 'chapter').length;
-    
-    addItem({
-      type: 'chapter',
-      title: chapterTitle,
-      description: '',
-      status: 'not-started',
-      position: newPosition,
-      wordCount: 0,
-      estimatedWordCount: 2000, // Default estimate
-      content: '' // Add content field for chapters
-    });
-
-    setChapterTitle('');
-    setIsAddingChapter(false);
-  };
+  const { outlineStructure } = useDocumentOutline();
 
   const chapters = outlineStructure.items
     .filter(item => item.type === 'chapter')
@@ -40,44 +15,9 @@ const Story = () => {
     <div className="h-full flex bg-background">
       {/* Left sidebar with chapters */}
       <div className="w-80 border-r border-border p-4 flex flex-col">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold">Chapters</h3>
-          </div>
-          
-          <Dialog open={isAddingChapter} onOpenChange={setIsAddingChapter}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline">
-                <Plus className="h-4 w-4 mr-1" />
-                Add
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Chapter</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Chapter Title</label>
-                  <Input
-                    value={chapterTitle}
-                    onChange={(e) => setChapterTitle(e.target.value)}
-                    placeholder="Enter chapter title..."
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddChapter()}
-                  />
-                </div>
-                <div className="flex gap-2 pt-4">
-                  <Button onClick={handleAddChapter} className="flex-1">
-                    Create Chapter
-                  </Button>
-                  <Button variant="outline" onClick={() => setIsAddingChapter(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+        <div className="flex items-center gap-2 mb-4">
+          <BookOpen className="h-5 w-5 text-primary" />
+          <h3 className="font-semibold">Chapters</h3>
         </div>
 
         {/* Chapters list */}
@@ -86,7 +26,7 @@ const Story = () => {
             <div className="text-center py-8 text-muted-foreground">
               <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">No chapters yet</p>
-              <p className="text-xs">Add your first chapter to get started</p>
+              <p className="text-xs">Use the right sidebar to create chapters</p>
             </div>
           ) : (
             chapters.map((chapter, index) => (
