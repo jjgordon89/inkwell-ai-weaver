@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Key, Globe, Server, Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { Key, Globe, Server, Eye, EyeOff, CheckCircle, ExternalLink } from 'lucide-react';
 import { useAI } from '@/hooks/useAI';
 
 const AIProviderSettings = () => {
@@ -27,7 +27,7 @@ const AIProviderSettings = () => {
       case 'OpenAI':
         return <Globe className="h-4 w-4" />;
       case 'Groq':
-        return <Server className="h-4 w-4" />;
+        return <Server className="h-4 w-4 text-orange-500" />;
       case 'Local Model':
         return <Server className="h-4 w-4" />;
       default:
@@ -35,11 +35,34 @@ const AIProviderSettings = () => {
     }
   };
 
+  const getProviderDescription = (providerName: string) => {
+    switch (providerName) {
+      case 'OpenAI':
+        return 'OpenAI\'s GPT models for high-quality text processing';
+      case 'Groq':
+        return 'Groq\'s fast inference engine with open-source models';
+      case 'Local Model':
+        return 'Run AI models locally on your machine';
+      default:
+        return 'AI language model provider';
+    }
+  };
+
+  const getProviderSetupLink = (providerName: string) => {
+    switch (providerName) {
+      case 'OpenAI':
+        return 'https://platform.openai.com/api-keys';
+      case 'Groq':
+        return 'https://console.groq.com/keys';
+      default:
+        return null;
+    }
+  };
+
   const handleProviderChange = (newProvider: string) => {
     console.log(`Provider changing from ${selectedProvider} to ${newProvider}`);
     setSelectedProvider(newProvider);
     setProviderJustChanged(true);
-    // Reset the change indicator after a delay
     setTimeout(() => setProviderJustChanged(false), 2000);
   };
 
@@ -109,15 +132,28 @@ const AIProviderSettings = () => {
                 )}
               </div>
               
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p>{getProviderDescription(provider.name)}</p>
                 <p>Available models: {provider.models.length}</p>
-                <p className="text-xs mt-1">Models: {provider.models.join(', ')}</p>
+                <p className="text-xs">Models: {provider.models.join(', ')}</p>
               </div>
 
               {/* API Key Input */}
               {provider.requiresApiKey && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">API Key</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">API Key</label>
+                    {getProviderSetupLink(provider.name) && (
+                      <a
+                        href={getProviderSetupLink(provider.name)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline flex items-center gap-1"
+                      >
+                        Get API Key <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
                   <div className="flex gap-2">
                     <div className="relative flex-1">
                       <Input
@@ -153,6 +189,11 @@ const AIProviderSettings = () => {
                   {!apiKeys[provider.name] && (
                     <p className="text-sm text-amber-600 dark:text-amber-400">
                       ⚠️ This provider requires an API key to function
+                    </p>
+                  )}
+                  {provider.name === 'Groq' && (
+                    <p className="text-xs text-muted-foreground">
+                      💡 Groq offers fast inference with open-source models like Llama and Mixtral
                     </p>
                   )}
                 </div>

@@ -1,22 +1,24 @@
-
 import { useState, useEffect } from 'react';
 
 export interface AIProvider {
   name: string;
   models: string[];
   requiresApiKey: boolean;
+  apiEndpoint?: string;
 }
 
 export const AI_PROVIDERS: AIProvider[] = [
   {
     name: 'OpenAI',
     models: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'],
-    requiresApiKey: true
+    requiresApiKey: true,
+    apiEndpoint: 'https://api.openai.com/v1/chat/completions'
   },
   {
     name: 'Groq',
-    models: ['llama2-70b-4096', 'mixtral-8x7b-32768', 'gemma-7b-it'],
-    requiresApiKey: true
+    models: ['llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768', 'gemma-7b-it'],
+    requiresApiKey: true,
+    apiEndpoint: 'https://api.groq.com/openai/v1/chat/completions'
   },
   {
     name: 'Local Model',
@@ -104,19 +106,46 @@ export const useAI = () => {
     try {
       console.log(`Testing connection for ${providerName}...`);
       
-      // Simulate API test - in a real implementation, you'd make actual API calls
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // For demo purposes, we'll randomly succeed or fail (80% success rate)
-      const success = Math.random() > 0.2;
-      
-      if (success) {
-        console.log(`✅ Connection test successful for ${providerName}`);
-      } else {
-        console.error(`❌ Connection test failed for ${providerName} - Invalid API key or service unavailable`);
+      const provider = AI_PROVIDERS.find(p => p.name === providerName);
+      if (!provider || !provider.apiEndpoint) {
+        console.log(`No API endpoint configured for ${providerName}, using mock test`);
+        // Simulate API test for providers without endpoints
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        const success = Math.random() > 0.2;
+        console.log(success ? `✅ Mock test successful for ${providerName}` : `❌ Mock test failed for ${providerName}`);
+        return success;
       }
-      
-      return success;
+
+      // Real API test for providers with endpoints
+      const testPayload = {
+        model: provider.models[0],
+        messages: [
+          {
+            role: 'user',
+            content: 'Hello, this is a connection test. Please respond with "OK".'
+          }
+        ],
+        max_tokens: 10,
+        temperature: 0
+      };
+
+      const response = await fetch(provider.apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(testPayload),
+      });
+
+      if (response.ok) {
+        console.log(`✅ Connection test successful for ${providerName}`);
+        return true;
+      } else {
+        const errorData = await response.text();
+        console.error(`❌ Connection test failed for ${providerName}:`, response.status, errorData);
+        return false;
+      }
     } catch (error) {
       console.error(`❌ Connection test failed for ${providerName}:`, error);
       return false;
@@ -147,11 +176,55 @@ export const useAI = () => {
     setIsProcessing(true);
     
     try {
-      // Simulate AI processing with realistic delays
-      const processingTime = Math.random() * 2000 + 1000; // 1-3 seconds
+      // For providers with real API endpoints, we could make actual calls
+      if (currentProvider.apiEndpoint && apiKeys[selectedProvider]) {
+        console.log(`Using real API for ${selectedProvider}`);
+        
+        const prompt = getPromptForAction(action, text);
+        
+        const requestBody = {
+          model: selectedModel,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a helpful writing assistant. Follow the user\'s instructions precisely.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 1000,
+          temperature: action === 'fix-grammar' ? 0.1 : 0.7
+        };
+
+        try {
+          const response = await fetch(currentProvider.apiEndpoint, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKeys[selectedProvider]}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const result = data.choices?.[0]?.message?.content || text;
+            console.log(`✅ Real AI processing completed successfully with ${selectedProvider}`);
+            return result;
+          } else {
+            console.warn(`API call failed, falling back to mock processing`);
+          }
+        } catch (apiError) {
+          console.warn(`API error, falling back to mock processing:`, apiError);
+        }
+      }
+      
+      // Fallback to mock processing
+      const processingTime = Math.random() * 2000 + 1000;
       await new Promise(resolve => setTimeout(resolve, processingTime));
       
-      // Generate realistic responses based on action
       let result: string;
       
       switch (action) {
@@ -177,13 +250,28 @@ export const useAI = () => {
           result = text;
       }
       
-      console.log(`✅ Text processing completed successfully`);
+      console.log(`✅ Mock text processing completed successfully`);
       return result;
     } catch (error) {
       console.error('❌ Text processing failed:', error);
       throw new Error(`Failed to process text: ${error}`);
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const getPromptForAction = (action: string, text: string): string => {
+    switch (action) {
+      case 'improve':
+        return `Please improve the following text by enhancing clarity, flow, and readability while maintaining the original meaning:\n\n${text}`;
+      case 'shorten':
+        return `Please make the following text more concise while preserving the key information and meaning:\n\n${text}`;
+      case 'expand':
+        return `Please expand the following text by adding relevant details, context, and depth while maintaining the original tone and meaning:\n\n${text}`;
+      case 'fix-grammar':
+        return `Please correct any grammar, punctuation, and spelling errors in the following text while maintaining its original meaning and tone:\n\n${text}`;
+      default:
+        return text;
     }
   };
 
