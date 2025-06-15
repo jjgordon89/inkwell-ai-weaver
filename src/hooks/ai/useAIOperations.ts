@@ -52,8 +52,6 @@ export const useAIOperations = () => {
     
     const isExpired = Date.now() - cached.timestamp > state.settings.cacheExpiryMs;
     if (isExpired) {
-      const newCache = new Map(state.resultsCache);
-      newCache.delete(key);
       dispatch({ type: 'CLEAR_CACHE' });
       return null;
     }

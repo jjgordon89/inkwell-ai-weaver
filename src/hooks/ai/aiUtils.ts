@@ -1,6 +1,8 @@
 
 import { validateAIResponse } from '@/utils/validation';
 
+export { validateAIResponse }; // Export the imported function
+
 export interface ParsedAIResponse {
   [key: string]: string | string[] | number | undefined;
 }

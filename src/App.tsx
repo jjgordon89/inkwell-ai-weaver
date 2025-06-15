@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { WritingProvider } from "@/contexts/WritingContext";
-import { AIProvider } from "@/contexts/AIContext";
+import { AIContextProvider } from "@/contexts/AIContext";
 import Index from "@/pages/Index";
 import NotFound from "@/pages/NotFound";
 
@@ -14,13 +14,13 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <WritingProvider>
-          <AIProvider>
+          <AIContextProvider>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster />
-          </AIProvider>
+          </AIContextProvider>
         </WritingProvider>
       </BrowserRouter>
     </QueryClientProvider>

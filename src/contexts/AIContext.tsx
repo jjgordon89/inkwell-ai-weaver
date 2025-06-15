@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import type { AIProvider, AIAction } from '@/hooks/ai/types';
+import type { AIProvider } from '@/hooks/ai/types';
 
 export interface AIState {
   // Provider and model settings
@@ -34,7 +34,7 @@ export interface AIState {
   };
 }
 
-export type AIAction = 
+export type AIContextAction = 
   | { type: 'SET_PROVIDER'; payload: string }
   | { type: 'SET_MODEL'; payload: string }
   | { type: 'SET_API_KEY'; payload: { provider: string; key: string } }
@@ -69,7 +69,7 @@ const initialState: AIState = {
   }
 };
 
-function aiReducer(state: AIState, action: AIAction): AIState {
+function aiReducer(state: AIState, action: AIContextAction): AIState {
   switch (action.type) {
     case 'SET_PROVIDER':
       return {
@@ -172,7 +172,7 @@ function aiReducer(state: AIState, action: AIAction): AIState {
 
 interface AIContextType {
   state: AIState;
-  dispatch: React.Dispatch<AIAction>;
+  dispatch: React.Dispatch<AIContextAction>;
 }
 
 const AIContext = createContext<AIContextType | undefined>(undefined);
@@ -181,7 +181,7 @@ interface AIProviderProps {
   children: ReactNode;
 }
 
-export const AIProvider = ({ children }: AIProviderProps) => {
+export const AIContextProvider = ({ children }: AIProviderProps) => {
   const [state, dispatch] = useReducer(aiReducer, initialState);
 
   return (
@@ -194,7 +194,7 @@ export const AIProvider = ({ children }: AIProviderProps) => {
 export const useAIContext = () => {
   const context = useContext(AIContext);
   if (context === undefined) {
-    throw new Error('useAIContext must be used within an AIProvider');
+    throw new Error('useAIContext must be used within an AIContextProvider');
   }
   return context;
 };
