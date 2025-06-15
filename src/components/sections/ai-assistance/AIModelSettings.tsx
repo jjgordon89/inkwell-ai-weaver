@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -12,11 +12,20 @@ const AIModelSettings = () => {
   const currentProvider = availableProviders.find(p => p.name === selectedProvider);
   const availableModels = currentProvider?.models || [];
 
+  // Reset model selection when provider changes and current model is not available
+  useEffect(() => {
+    if (availableModels.length > 0 && !availableModels.includes(selectedModel)) {
+      setSelectedModel(availableModels[0]);
+    }
+  }, [selectedProvider, availableModels, selectedModel, setSelectedModel]);
+
   const getModelIcon = (modelName: string) => {
     if (modelName.includes('gpt-4')) return <Brain className="h-4 w-4 text-purple-500" />;
     if (modelName.includes('gpt-3.5')) return <Cpu className="h-4 w-4 text-blue-500" />;
     if (modelName.includes('llama')) return <Zap className="h-4 w-4 text-green-500" />;
     if (modelName.includes('mixtral')) return <Brain className="h-4 w-4 text-orange-500" />;
+    if (modelName.includes('gemma')) return <Brain className="h-4 w-4 text-red-500" />;
+    if (modelName.includes('mistral')) return <Brain className="h-4 w-4 text-indigo-500" />;
     return <Brain className="h-4 w-4" />;
   };
 
@@ -27,6 +36,8 @@ const AIModelSettings = () => {
     if (modelName.includes('mixtral')) return 'Mixture of experts model';
     if (modelName.includes('llama-7b')) return 'Compact model for basic tasks';
     if (modelName.includes('codellama')) return 'Specialized for code generation';
+    if (modelName.includes('gemma')) return 'Google\'s efficient language model';
+    if (modelName.includes('mistral')) return 'High-performance open model';
     return 'AI language model';
   };
 
@@ -62,7 +73,7 @@ const AIModelSettings = () => {
         </div>
 
         {/* Model Details */}
-        {selectedModel && (
+        {selectedModel && availableModels.includes(selectedModel) && (
           <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
             <div className="flex items-center gap-2">
               {getModelIcon(selectedModel)}

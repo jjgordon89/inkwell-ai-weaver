@@ -55,10 +55,16 @@ export const useAI = () => {
     if (currentProvider && currentProvider.models.length > 0) {
       // If current model is not available for the new provider, select the first available model
       if (!currentProvider.models.includes(selectedModel)) {
+        console.log(`Switching model from ${selectedModel} to ${currentProvider.models[0]} for provider ${selectedProvider}`);
         setSelectedModel(currentProvider.models[0]);
       }
     }
-  }, [selectedProvider, selectedModel]);
+  }, [selectedProvider]);
+
+  const handleProviderChange = (newProvider: string) => {
+    console.log(`Provider changed from ${selectedProvider} to ${newProvider}`);
+    setSelectedProvider(newProvider);
+  };
 
   const setApiKey = (providerName: string, key: string) => {
     setApiKeys(prev => ({
@@ -158,7 +164,7 @@ export const useAI = () => {
     isTestingConnection,
     selectedProvider,
     selectedModel,
-    setSelectedProvider,
+    setSelectedProvider: handleProviderChange,
     setSelectedModel,
     apiKeys,
     setApiKey,
