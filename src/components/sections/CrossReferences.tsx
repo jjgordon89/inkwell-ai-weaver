@@ -12,8 +12,8 @@ const CrossReferences = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Helper function to find references to a character in the current document
-  const findCharacterReferences = (characterName: string) => {
-    if (!state.currentDocument) return [];
+  const findCharacterReferences = (characterName: string): number => {
+    if (!state.currentDocument) return 0;
     const content = state.currentDocument.content.toLowerCase();
     const name = characterName.toLowerCase();
     const regex = new RegExp(`\\b${name}\\b`, 'g');
