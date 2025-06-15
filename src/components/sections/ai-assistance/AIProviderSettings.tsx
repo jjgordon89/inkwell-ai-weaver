@@ -1,13 +1,25 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Key, Globe, Server } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Key, Globe, Server, Eye, EyeOff } from 'lucide-react';
 import { useAI } from '@/hooks/useAI';
 
 const AIProviderSettings = () => {
-  const { selectedProvider, setSelectedProvider, availableProviders } = useAI();
+  const { 
+    selectedProvider, 
+    setSelectedProvider, 
+    availableProviders,
+    apiKeys,
+    setApiKey,
+    testConnection,
+    isTestingConnection
+  } = useAI();
+  
+  const [showApiKey, setShowApiKey] = useState<Record<string, boolean>>({});
 
   const getProviderIcon = (providerName: string) => {
     switch (providerName) {
@@ -20,6 +32,13 @@ const AIProviderSettings = () => {
       default:
         return <Globe className="h-4 w-4" />;
     }
+  };
+
+  const toggleApiKeyVisibility = (providerName: string) => {
+    setShowApiKey(prev => ({
+      ...prev,
+      [providerName]: !prev[providerName]
+    }));
   };
 
   return (
@@ -56,7 +75,7 @@ const AIProviderSettings = () => {
         {/* Provider Details */}
         {availableProviders.map((provider) => (
           provider.name === selectedProvider && (
-            <div key={provider.name} className="space-y-3 p-3 bg-muted/30 rounded-lg">
+            <div key={provider.name} className="space-y-4 p-4 bg-muted/30 rounded-lg">
               <div className="flex items-center gap-2">
                 {getProviderIcon(provider.name)}
                 <span className="font-medium">{provider.name}</span>
@@ -67,14 +86,54 @@ const AIProviderSettings = () => {
                   </Badge>
                 )}
               </div>
+              
               <div className="text-sm text-muted-foreground">
                 <p>Available models: {provider.models.length}</p>
-                {provider.requiresApiKey && (
-                  <p className="text-amber-600 dark:text-amber-400">
-                    ⚠️ This provider requires an API key to function
-                  </p>
-                )}
               </div>
+
+              {/* API Key Input */}
+              {provider.requiresApiKey && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">API Key</label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        type={showApiKey[provider.name] ? "text" : "password"}
+                        placeholder={`Enter your ${provider.name} API key`}
+                        value={apiKeys[provider.name] || ''}
+                        onChange={(e) => setApiKey(provider.name, e.target.value)}
+                        className="pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => toggleApiKeyVisibility(provider.name)}
+                      >
+                        {showApiKey[provider.name] ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => testConnection(provider.name)}
+                      disabled={!apiKeys[provider.name] || isTestingConnection}
+                    >
+                      {isTestingConnection ? 'Testing...' : 'Test'}
+                    </Button>
+                  </div>
+                  {!apiKeys[provider.name] && (
+                    <p className="text-sm text-amber-600 dark:text-amber-400">
+                      ⚠️ This provider requires an API key to function
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )
         ))}
