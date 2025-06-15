@@ -13,10 +13,21 @@ const AIModelSettings = () => {
   const currentProvider = availableProviders.find(p => p.name === selectedProvider);
   const availableModels = currentProvider?.models || [];
 
+  // Debug logging
+  useEffect(() => {
+    console.log('AIModelSettings - selectedProvider changed:', selectedProvider);
+    console.log('AIModelSettings - currentProvider:', currentProvider);
+    console.log('AIModelSettings - availableModels:', availableModels);
+  }, [selectedProvider, currentProvider, availableModels]);
+
+  useEffect(() => {
+    console.log('AIModelSettings - selectedModel changed:', selectedModel);
+  }, [selectedModel]);
+
   // Reset model selection when provider changes and current model is not available
   useEffect(() => {
     if (availableModels.length > 0 && !availableModels.includes(selectedModel)) {
-      console.log(`Auto-switching model to ${availableModels[0]} for provider ${selectedProvider}`);
+      console.log(`AIModelSettings - Auto-switching model to ${availableModels[0]} for provider ${selectedProvider}`);
       setSelectedModel(availableModels[0]);
       setModelJustChanged(true);
       setTimeout(() => setModelJustChanged(false), 2000);
@@ -24,7 +35,7 @@ const AIModelSettings = () => {
   }, [selectedProvider, availableModels, selectedModel, setSelectedModel]);
 
   const handleModelChange = (newModel: string) => {
-    console.log(`Model changing from ${selectedModel} to ${newModel}`);
+    console.log(`AIModelSettings - Model changing from ${selectedModel} to ${newModel}`);
     setSelectedModel(newModel);
     setModelJustChanged(true);
     setTimeout(() => setModelJustChanged(false), 2000);
@@ -43,17 +54,16 @@ const AIModelSettings = () => {
   const getModelDescription = (modelName: string) => {
     if (modelName.includes('gpt-4')) return 'Advanced reasoning and complex tasks';
     if (modelName.includes('gpt-3.5')) return 'Fast and efficient for most tasks';
-    if (modelName.includes('llama2-70b')) return 'Large model with strong performance';
+    if (modelName.includes('llama3-70b')) return 'Large model with strong performance';
+    if (modelName.includes('llama3-8b')) return 'Compact but capable model';
     if (modelName.includes('mixtral')) return 'Mixture of experts model';
-    if (modelName.includes('llama-7b')) return 'Compact model for basic tasks';
-    if (modelName.includes('codellama')) return 'Specialized for code generation';
     if (modelName.includes('gemma')) return 'Google\'s efficient language model';
     if (modelName.includes('mistral')) return 'High-performance open model';
     return 'AI language model';
   };
 
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Brain className="h-5 w-5" />
@@ -74,9 +84,16 @@ const AIModelSettings = () => {
           <label className="text-sm font-medium mb-2 block">Available Models</label>
           <Select value={selectedModel} onValueChange={handleModelChange}>
             <SelectTrigger className={modelJustChanged ? "ring-2 ring-blue-500 ring-offset-2" : ""}>
-              <SelectValue placeholder="Select a model" />
+              <SelectValue placeholder="Select a model">
+                {selectedModel && (
+                  <div className="flex items-center gap-2">
+                    {getModelIcon(selectedModel)}
+                    {selectedModel}
+                  </div>
+                )}
+              </SelectValue>
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white border shadow-lg z-50">
               {availableModels.map((model) => (
                 <SelectItem key={model} value={model}>
                   <div className="flex items-center gap-2">

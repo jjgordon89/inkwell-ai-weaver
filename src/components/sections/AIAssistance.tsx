@@ -1,14 +1,13 @@
 
 import React from 'react';
 import { Settings, Brain, Zap } from 'lucide-react';
-import { Button } from "@/components/ui/button";
 import { useAI } from '@/hooks/useAI';
 import AIProviderSettings from './ai-assistance/AIProviderSettings';
 import AIModelSettings from './ai-assistance/AIModelSettings';
 import AIConfigurationPanel from './ai-assistance/AIConfigurationPanel';
 
 const AIAssistance = () => {
-  const { selectedProvider, selectedModel, availableProviders, isProcessing } = useAI();
+  const { selectedProvider, selectedModel, isProcessing } = useAI();
 
   return (
     <div className="h-full flex flex-col bg-background p-6">
@@ -53,8 +52,8 @@ const AIAssistance = () => {
         <div className="border rounded-lg p-4 bg-muted/50">
           <h4 className="font-medium mb-2">Current Configuration</h4>
           <div className="text-sm text-muted-foreground space-y-1">
-            <p><span className="font-medium">Provider:</span> {selectedProvider}</p>
-            <p><span className="font-medium">Model:</span> {selectedModel}</p>
+            <p><span className="font-medium">Provider:</span> {selectedProvider || 'None selected'}</p>
+            <p><span className="font-medium">Model:</span> {selectedModel || 'None selected'}</p>
             <p><span className="font-medium">Status:</span> {isProcessing ? 'Processing' : 'Ready'}</p>
           </div>
         </div>
