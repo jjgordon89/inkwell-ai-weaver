@@ -2,11 +2,15 @@
 import React from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { useWriting } from '@/contexts/WritingContext';
 import { useWorldBuilding } from '@/hooks/useWorldBuilding';
 import WorldElementForm from './world-building/WorldElementForm';
 import WorldElementsList from './world-building/WorldElementsList';
+import AIWorldBuildingGenerator from './world-building/AIWorldBuildingGenerator';
+import type { WorldElement } from '@/contexts/WritingContext';
 
 const WorldBuilding = () => {
+  const { dispatch } = useWriting();
   const {
     state,
     isAdding,
@@ -22,6 +26,16 @@ const WorldBuilding = () => {
     groupedElements
   } = useWorldBuilding();
 
+  const handleAIWorldElementGenerated = (generatedElement: Partial<WorldElement>) => {
+    const newWorldElement: WorldElement = {
+      id: crypto.randomUUID(),
+      name: generatedElement.name || 'Untitled Element',
+      type: generatedElement.type || 'location',
+      description: generatedElement.description || ''
+    };
+    dispatch({ type: 'ADD_WORLD_ELEMENT', payload: newWorldElement });
+  };
+
   return (
     <div className="h-full flex flex-col bg-background p-6">
       <div className="flex items-center justify-between mb-6">
@@ -34,6 +48,14 @@ const WorldBuilding = () => {
           <Plus className="h-4 w-4" />
           Add Element
         </Button>
+      </div>
+
+      {/* AI World Building Generator */}
+      <div className="mb-6">
+        <AIWorldBuildingGenerator
+          onWorldElementGenerated={handleAIWorldElementGenerated}
+          currentElements={state.worldElements}
+        />
       </div>
 
       {/* Add New World Element Form */}
