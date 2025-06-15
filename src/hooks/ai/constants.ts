@@ -34,6 +34,25 @@ export const AI_PROVIDERS: AIProvider[] = [
     apiEndpoint: 'https://api.groq.com/openai/v1/chat/completions'
   },
   {
+    name: 'OpenRouter',
+    models: [
+      'anthropic/claude-3.5-sonnet',
+      'anthropic/claude-3-haiku',
+      'openai/gpt-4o',
+      'openai/gpt-4o-mini',
+      'meta-llama/llama-3.1-405b-instruct',
+      'meta-llama/llama-3.1-70b-instruct',
+      'meta-llama/llama-3.1-8b-instruct',
+      'google/gemini-pro-1.5',
+      'mistralai/mixtral-8x7b-instruct',
+      'anthropic/claude-3-opus',
+      'cohere/command-r-plus',
+      'qwen/qwen-2.5-72b-instruct'
+    ],
+    requiresApiKey: true,
+    apiEndpoint: 'https://openrouter.ai/api/v1/chat/completions'
+  },
+  {
     name: 'Local Model',
     models: ['llama-7b', 'codellama-13b', 'mistral-7b'],
     requiresApiKey: false

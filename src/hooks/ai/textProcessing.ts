@@ -102,13 +102,23 @@ const makeOpenAICompatibleAPIRequest = async (
     temperature: action === 'fix-grammar' ? 0.1 : 0.7
   };
 
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  // OpenRouter requires specific headers
+  if (provider.name === 'OpenRouter') {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+    headers['HTTP-Referer'] = window.location.origin;
+    headers['X-Title'] = 'Lovable Writing Assistant';
+  } else {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+
   try {
     const response = await fetch(provider.apiEndpoint, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(requestBody),
     });
 
@@ -137,6 +147,6 @@ export const makeAPIRequest = async (
     return makeGeminiAPIRequest(provider, apiKey, selectedModel, prompt, action);
   }
 
-  // Handle OpenAI-compatible APIs (OpenAI, Groq)
+  // Handle OpenAI-compatible APIs (OpenAI, Groq, OpenRouter)
   return makeOpenAICompatibleAPIRequest(provider, apiKey, selectedModel, prompt, action);
 };

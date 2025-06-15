@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Globe, Server, Brain } from 'lucide-react';
+import { Globe, Server, Brain, Zap } from 'lucide-react';
 
 export const getProviderIcon = (providerName: string) => {
   switch (providerName) {
@@ -10,6 +10,8 @@ export const getProviderIcon = (providerName: string) => {
       return React.createElement(Brain, { className: "h-4 w-4 text-blue-500" });
     case 'Groq':
       return React.createElement(Server, { className: "h-4 w-4 text-orange-500" });
+    case 'OpenRouter':
+      return React.createElement(Zap, { className: "h-4 w-4 text-purple-500" });
     case 'Local Model':
       return React.createElement(Server, { className: "h-4 w-4" });
     default:
@@ -25,6 +27,8 @@ export const getProviderDescription = (providerName: string) => {
       return 'Google\'s advanced Gemini models with multimodal capabilities';
     case 'Groq':
       return 'Groq\'s fast inference engine with open-source models';
+    case 'OpenRouter':
+      return 'Access to multiple AI providers through one unified API';
     case 'Local Model':
       return 'Run AI models locally on your machine';
     default:
@@ -40,6 +44,8 @@ export const getProviderSetupLink = (providerName: string) => {
       return 'https://aistudio.google.com/app/apikey';
     case 'Groq':
       return 'https://console.groq.com/keys';
+    case 'OpenRouter':
+      return 'https://openrouter.ai/keys';
     default:
       return null;
   }

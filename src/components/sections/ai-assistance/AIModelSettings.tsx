@@ -51,6 +51,9 @@ const AIModelSettings = () => {
     if (modelName.includes('mixtral')) return <Brain className="h-4 w-4 text-orange-500" />;
     if (modelName.includes('gemma')) return <Brain className="h-4 w-4 text-red-500" />;
     if (modelName.includes('mistral')) return <Brain className="h-4 w-4 text-indigo-500" />;
+    if (modelName.includes('claude')) return <Brain className="h-4 w-4 text-purple-600" />;
+    if (modelName.includes('command')) return <Brain className="h-4 w-4 text-cyan-500" />;
+    if (modelName.includes('qwen')) return <Brain className="h-4 w-4 text-red-400" />;
     return <Brain className="h-4 w-4" />;
   };
 
@@ -65,10 +68,15 @@ const AIModelSettings = () => {
     if (modelName.includes('llama-3.1-8b')) return 'Fast and efficient Llama model';
     if (modelName.includes('llama3-70b')) return 'Large model with strong performance';
     if (modelName.includes('llama3-8b')) return 'Compact but capable model';
+    if (modelName.includes('claude-3.5-sonnet')) return 'Anthropic\'s most capable and balanced model';
+    if (modelName.includes('claude-3-haiku')) return 'Anthropic\'s fastest model for quick tasks';
+    if (modelName.includes('claude-3-opus')) return 'Anthropic\'s most powerful model';
     if (modelName.includes('mixtral')) return 'Mixture of experts model';
     if (modelName.includes('gemma2-9b')) return 'Google\'s latest efficient language model';
     if (modelName.includes('gemma-7b')) return 'Google\'s efficient language model';
     if (modelName.includes('mistral')) return 'High-performance open model';
+    if (modelName.includes('command-r-plus')) return 'Cohere\'s advanced reasoning model';
+    if (modelName.includes('qwen')) return 'Alibaba\'s multilingual language model';
     return 'AI language model';
   };
 

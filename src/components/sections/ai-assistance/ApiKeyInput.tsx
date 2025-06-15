@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -91,6 +92,12 @@ const ApiKeyInput = ({
       {provider.name === 'Google Gemini' && (
         <p className="text-xs text-muted-foreground">
           💡 Google Gemini models support multimodal capabilities including text and images
+        </p>
+      )}
+      
+      {provider.name === 'OpenRouter' && (
+        <p className="text-xs text-muted-foreground">
+          💡 OpenRouter provides access to multiple AI providers including Claude, GPT-4, and Llama through one API
         </p>
       )}
     </div>
