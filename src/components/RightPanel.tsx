@@ -7,30 +7,32 @@ import Characters from './sections/Characters';
 import StoryArcs from './sections/StoryArcs';
 import WorldBuilding from './sections/WorldBuilding';
 import CrossReferences from './sections/CrossReferences';
+import AIAssistance from './sections/AIAssistance';
 
 const RightPanel = () => {
   const { state, dispatch } = useWriting();
   const { processText, isProcessing } = useAI();
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
-  // Show Characters component when characters section is active
+  // Show specific components based on active section
   if (state.activeSection === 'characters') {
     return <Characters />;
   }
 
-  // Show Story Arcs component when story-arc section is active
   if (state.activeSection === 'story-arc') {
     return <StoryArcs />;
   }
 
-  // Show World Building component when world-building section is active
   if (state.activeSection === 'world-building') {
     return <WorldBuilding />;
   }
 
-  // Show Cross-References component when cross-references section is active
   if (state.activeSection === 'cross-references') {
     return <CrossReferences />;
+  }
+
+  if (state.activeSection === 'ai-assistance') {
+    return <AIAssistance />;
   }
 
   const handleTextImprovement = async (action: 'improve' | 'shorten' | 'expand' | 'fix-grammar') => {
