@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import EnhancedAIPanel from './story/EnhancedAIPanel';
 import StoryStructureTools from './story/StoryStructureTools';
 import SmartWritingFeatures from './story/SmartWritingFeatures';
 import CollaborativeWriting from './story/CollaborativeWriting';
+import DocumentOutline from './story/DocumentOutline';
 
 const Story = () => {
   const { state, updateDocument } = useWriting();
@@ -105,6 +105,9 @@ const Story = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Document Outline */}
+        <DocumentOutline />
 
         {/* Collaborative Writing */}
         <CollaborativeWriting />
