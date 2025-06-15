@@ -54,7 +54,7 @@ interface WritingState {
   storyArcs: StoryArc[];
   worldElements: WorldElement[];
   selectedText: string;
-  activeSection: 'story' | 'characters' | 'story-arc' | 'world-building' | 'cross-references' | 'ai-assistance';
+  activeSection: 'story' | 'characters' | 'story-arc' | 'world-building' | 'cross-references' | 'ai-assistance' | 'export-publishing';
 }
 
 type WritingAction =
