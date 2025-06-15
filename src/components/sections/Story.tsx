@@ -9,6 +9,7 @@ import { useAI } from '@/hooks/useAI';
 import { useToast } from "@/hooks/use-toast";
 import AITextProcessor from './story/AITextProcessor';
 import EnhancedAIPanel from './story/EnhancedAIPanel';
+import StoryStructureTools from './story/StoryStructureTools';
 
 const Story = () => {
   const { state, updateDocument } = useWriting();
@@ -102,6 +103,9 @@ const Story = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Story Structure Tools */}
+        <StoryStructureTools />
 
         {/* Enhanced AI Panel */}
         <EnhancedAIPanel />
