@@ -6,6 +6,7 @@ import { WritingProvider } from "@/contexts/WritingContext";
 import { AIContextProvider } from "@/contexts/AIContext";
 import Index from "@/pages/Index";
 import NotFound from "@/pages/NotFound";
+import ProjectsPage from "@/pages/Projects";
 
 const queryClient = new QueryClient();
 
@@ -17,6 +18,7 @@ function App() {
           <AIContextProvider>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/projects" element={<ProjectsPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster />
