@@ -1,13 +1,14 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Cpu, Zap } from 'lucide-react';
+import { Brain, Cpu, Zap, RefreshCw } from 'lucide-react';
 import { useAI } from '@/hooks/useAI';
 
 const AIModelSettings = () => {
   const { selectedProvider, selectedModel, setSelectedModel, availableProviders } = useAI();
+  const [modelJustChanged, setModelJustChanged] = useState(false);
 
   const currentProvider = availableProviders.find(p => p.name === selectedProvider);
   const availableModels = currentProvider?.models || [];
@@ -15,9 +16,19 @@ const AIModelSettings = () => {
   // Reset model selection when provider changes and current model is not available
   useEffect(() => {
     if (availableModels.length > 0 && !availableModels.includes(selectedModel)) {
+      console.log(`Auto-switching model to ${availableModels[0]} for provider ${selectedProvider}`);
       setSelectedModel(availableModels[0]);
+      setModelJustChanged(true);
+      setTimeout(() => setModelJustChanged(false), 2000);
     }
   }, [selectedProvider, availableModels, selectedModel, setSelectedModel]);
+
+  const handleModelChange = (newModel: string) => {
+    console.log(`Model changing from ${selectedModel} to ${newModel}`);
+    setSelectedModel(newModel);
+    setModelJustChanged(true);
+    setTimeout(() => setModelJustChanged(false), 2000);
+  };
 
   const getModelIcon = (modelName: string) => {
     if (modelName.includes('gpt-4')) return <Brain className="h-4 w-4 text-purple-500" />;
@@ -47,6 +58,12 @@ const AIModelSettings = () => {
         <CardTitle className="flex items-center gap-2">
           <Brain className="h-5 w-5" />
           Model Selection
+          {modelJustChanged && (
+            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Updated
+            </Badge>
+          )}
         </CardTitle>
         <CardDescription>
           Choose the specific AI model to use with {selectedProvider}.
@@ -55,8 +72,8 @@ const AIModelSettings = () => {
       <CardContent className="space-y-4">
         <div>
           <label className="text-sm font-medium mb-2 block">Available Models</label>
-          <Select value={selectedModel} onValueChange={setSelectedModel}>
-            <SelectTrigger>
+          <Select value={selectedModel} onValueChange={handleModelChange}>
+            <SelectTrigger className={modelJustChanged ? "ring-2 ring-blue-500 ring-offset-2" : ""}>
               <SelectValue placeholder="Select a model" />
             </SelectTrigger>
             <SelectContent>
@@ -74,13 +91,20 @@ const AIModelSettings = () => {
 
         {/* Model Details */}
         {selectedModel && availableModels.includes(selectedModel) && (
-          <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
+          <div className={`space-y-3 p-3 bg-muted/30 rounded-lg transition-all duration-300 ${
+            modelJustChanged ? 'ring-2 ring-blue-500 ring-offset-2 bg-blue-50/50' : ''
+          }`}>
             <div className="flex items-center gap-2">
               {getModelIcon(selectedModel)}
               <span className="font-medium">{selectedModel}</span>
               <Badge variant="secondary" className="text-xs">
                 {selectedProvider}
               </Badge>
+              {modelJustChanged && (
+                <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-300">
+                  Selected
+                </Badge>
+              )}
             </div>
             <p className="text-sm text-muted-foreground">
               {getModelDescription(selectedModel)}

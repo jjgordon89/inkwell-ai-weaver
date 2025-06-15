@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Key, Globe, Server, Eye, EyeOff } from 'lucide-react';
+import { Key, Globe, Server, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { useAI } from '@/hooks/useAI';
 
 const AIProviderSettings = () => {
@@ -20,6 +20,7 @@ const AIProviderSettings = () => {
   } = useAI();
   
   const [showApiKey, setShowApiKey] = useState<Record<string, boolean>>({});
+  const [providerJustChanged, setProviderJustChanged] = useState(false);
 
   const getProviderIcon = (providerName: string) => {
     switch (providerName) {
@@ -32,6 +33,14 @@ const AIProviderSettings = () => {
       default:
         return <Globe className="h-4 w-4" />;
     }
+  };
+
+  const handleProviderChange = (newProvider: string) => {
+    console.log(`Provider changing from ${selectedProvider} to ${newProvider}`);
+    setSelectedProvider(newProvider);
+    setProviderJustChanged(true);
+    // Reset the change indicator after a delay
+    setTimeout(() => setProviderJustChanged(false), 2000);
   };
 
   const toggleApiKeyVisibility = (providerName: string) => {
@@ -47,6 +56,12 @@ const AIProviderSettings = () => {
         <CardTitle className="flex items-center gap-2">
           <Globe className="h-5 w-5" />
           AI Provider
+          {providerJustChanged && (
+            <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Changed
+            </Badge>
+          )}
         </CardTitle>
         <CardDescription>
           Choose your preferred AI provider for text processing and suggestions.
@@ -55,8 +70,8 @@ const AIProviderSettings = () => {
       <CardContent className="space-y-4">
         <div>
           <label className="text-sm font-medium mb-2 block">Selected Provider</label>
-          <Select value={selectedProvider} onValueChange={setSelectedProvider}>
-            <SelectTrigger>
+          <Select value={selectedProvider} onValueChange={handleProviderChange}>
+            <SelectTrigger className={providerJustChanged ? "ring-2 ring-green-500 ring-offset-2" : ""}>
               <SelectValue placeholder="Select a provider" />
             </SelectTrigger>
             <SelectContent>
@@ -75,7 +90,9 @@ const AIProviderSettings = () => {
         {/* Provider Details */}
         {availableProviders.map((provider) => (
           provider.name === selectedProvider && (
-            <div key={provider.name} className="space-y-4 p-4 bg-muted/30 rounded-lg">
+            <div key={provider.name} className={`space-y-4 p-4 bg-muted/30 rounded-lg transition-all duration-300 ${
+              providerJustChanged ? 'ring-2 ring-green-500 ring-offset-2 bg-green-50/50' : ''
+            }`}>
               <div className="flex items-center gap-2">
                 {getProviderIcon(provider.name)}
                 <span className="font-medium">{provider.name}</span>
@@ -85,10 +102,16 @@ const AIProviderSettings = () => {
                     API Key Required
                   </Badge>
                 )}
+                {providerJustChanged && (
+                  <Badge variant="outline" className="text-xs bg-green-100 text-green-700 border-green-300">
+                    Active
+                  </Badge>
+                )}
               </div>
               
               <div className="text-sm text-muted-foreground">
                 <p>Available models: {provider.models.length}</p>
+                <p className="text-xs mt-1">Models: {provider.models.join(', ')}</p>
               </div>
 
               {/* API Key Input */}
