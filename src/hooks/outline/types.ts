@@ -5,6 +5,7 @@ export interface OutlineItem {
   title: string;
   description?: string;
   summary?: string;
+  content?: string; // Add content field for writing
   wordCount?: number;
   status: 'not-started' | 'in-progress' | 'completed' | 'needs-revision';
   color?: string;
