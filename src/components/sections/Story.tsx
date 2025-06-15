@@ -3,15 +3,18 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Lightbulb, FileText, Clock, Target, BookOpen } from 'lucide-react';
+import { Lightbulb, FileText, Clock, Target, BookOpen, Loader2 } from 'lucide-react';
 import { useWriting } from '@/contexts/WritingContext';
 import { useAI } from '@/hooks/useAI';
+import { useToast } from "@/hooks/use-toast";
 
 const Story = () => {
-  const { state } = useWriting();
-  const { generateSuggestions, isProcessing } = useAI();
+  const { state, updateDocument } = useWriting();
+  const { generateSuggestions, processText, isProcessing } = useAI();
+  const { toast } = useToast();
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [lastSuggestionTime, setLastSuggestionTime] = useState<Date | null>(null);
+  const [processingAction, setProcessingAction] = useState<string | null>(null);
 
   const handleGenerateSuggestions = async () => {
     if (!state.currentDocument) return;
@@ -20,8 +23,49 @@ const Story = () => {
       const newSuggestions = await generateSuggestions(state.currentDocument.content);
       setSuggestions(newSuggestions);
       setLastSuggestionTime(new Date());
+      toast({
+        title: "Suggestions Generated",
+        description: `Generated ${newSuggestions.length} writing suggestions`,
+      });
     } catch (error) {
       console.error('Failed to generate suggestions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate suggestions. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleQuickAction = async (action: 'improve' | 'fix-grammar' | 'expand' | 'shorten') => {
+    if (!state.selectedText || !state.currentDocument) return;
+    
+    setProcessingAction(action);
+    
+    try {
+      const processedText = await processText(state.selectedText, action);
+      
+      // Replace the selected text in the document
+      const updatedContent = state.currentDocument.content.replace(state.selectedText, processedText);
+      
+      updateDocument(state.currentDocument.id, {
+        content: updatedContent,
+        lastModified: new Date()
+      });
+      
+      toast({
+        title: "Text Processed",
+        description: `Successfully ${action === 'fix-grammar' ? 'fixed grammar' : action === 'improve' ? 'improved' : action === 'expand' ? 'expanded' : 'shortened'} the selected text`,
+      });
+    } catch (error) {
+      console.error(`Failed to ${action} text:`, error);
+      toast({
+        title: "Error",
+        description: `Failed to ${action} text. Please try again.`,
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingAction(null);
     }
   };
 
@@ -107,8 +151,17 @@ const Story = () => {
               disabled={isProcessing || !state.currentDocument}
               className="w-full"
             >
-              <Target className="h-4 w-4 mr-2" />
-              {isProcessing ? 'Generating...' : 'Generate Suggestions'}
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Target className="h-4 w-4 mr-2" />
+                  Generate Suggestions
+                </>
+              )}
             </Button>
 
             {suggestions.length > 0 && (
@@ -148,27 +201,64 @@ const Story = () => {
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
             <CardDescription>
-              Commonly used writing tools and shortcuts
+              AI-powered text processing tools
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" size="sm" disabled={!state.selectedText}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={!state.selectedText || processingAction !== null}
+                onClick={() => handleQuickAction('improve')}
+              >
+                {processingAction === 'improve' ? (
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                ) : null}
                 Improve Text
               </Button>
-              <Button variant="outline" size="sm" disabled={!state.selectedText}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={!state.selectedText || processingAction !== null}
+                onClick={() => handleQuickAction('fix-grammar')}
+              >
+                {processingAction === 'fix-grammar' ? (
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                ) : null}
                 Fix Grammar
               </Button>
-              <Button variant="outline" size="sm" disabled={!state.selectedText}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={!state.selectedText || processingAction !== null}
+                onClick={() => handleQuickAction('expand')}
+              >
+                {processingAction === 'expand' ? (
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                ) : null}
                 Expand Ideas
               </Button>
-              <Button variant="outline" size="sm" disabled={!state.selectedText}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={!state.selectedText || processingAction !== null}
+                onClick={() => handleQuickAction('shorten')}
+              >
+                {processingAction === 'shorten' ? (
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                ) : null}
                 Simplify
               </Button>
             </div>
             {!state.selectedText && (
               <p className="text-xs text-muted-foreground mt-2">
                 Select text in the editor to enable quick actions
+              </p>
+            )}
+            {state.selectedText && (
+              <p className="text-xs text-primary mt-2">
+                Selected: "{state.selectedText.substring(0, 50)}{state.selectedText.length > 50 ? '...' : ''}"
               </p>
             )}
           </CardContent>
