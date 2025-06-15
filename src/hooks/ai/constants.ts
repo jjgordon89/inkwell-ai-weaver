@@ -9,6 +9,16 @@ export const AI_PROVIDERS: AIProvider[] = [
     apiEndpoint: 'https://api.openai.com/v1/chat/completions'
   },
   {
+    name: 'Google Gemini',
+    models: [
+      'gemini-1.5-pro',
+      'gemini-1.5-flash',
+      'gemini-1.0-pro'
+    ],
+    requiresApiKey: true,
+    apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models'
+  },
+  {
     name: 'Groq',
     models: [
       'llama-3.3-70b-versatile',

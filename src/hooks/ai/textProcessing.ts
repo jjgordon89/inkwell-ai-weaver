@@ -40,15 +40,52 @@ export const performMockTextProcessing = async (text: string, action: AIAction, 
   }
 };
 
-export const makeAPIRequest = async (
+const makeGeminiAPIRequest = async (
   provider: AIProvider, 
   apiKey: string, 
   selectedModel: string, 
   prompt: string, 
   action: AIAction
 ): Promise<string | null> => {
-  if (!provider.apiEndpoint) return null;
+  const requestBody = {
+    contents: [{
+      parts: [{
+        text: prompt
+      }]
+    }],
+    generationConfig: {
+      temperature: action === 'fix-grammar' ? 0.1 : 0.7,
+      maxOutputTokens: 1000
+    }
+  };
 
+  try {
+    const response = await fetch(`${provider.apiEndpoint}/${selectedModel}:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
+    }
+  } catch (error) {
+    console.warn(`Gemini API error, falling back to mock processing:`, error);
+  }
+
+  return null;
+};
+
+const makeOpenAICompatibleAPIRequest = async (
+  provider: AIProvider, 
+  apiKey: string, 
+  selectedModel: string, 
+  prompt: string, 
+  action: AIAction
+): Promise<string | null> => {
   const requestBody = {
     model: selectedModel,
     messages: [
@@ -84,4 +121,22 @@ export const makeAPIRequest = async (
   }
 
   return null;
+};
+
+export const makeAPIRequest = async (
+  provider: AIProvider, 
+  apiKey: string, 
+  selectedModel: string, 
+  prompt: string, 
+  action: AIAction
+): Promise<string | null> => {
+  if (!provider.apiEndpoint) return null;
+
+  // Handle Google Gemini API differently
+  if (provider.name === 'Google Gemini') {
+    return makeGeminiAPIRequest(provider, apiKey, selectedModel, prompt, action);
+  }
+
+  // Handle OpenAI-compatible APIs (OpenAI, Groq)
+  return makeOpenAICompatibleAPIRequest(provider, apiKey, selectedModel, prompt, action);
 };

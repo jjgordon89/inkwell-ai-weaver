@@ -44,6 +44,9 @@ const AIModelSettings = () => {
   const getModelIcon = (modelName: string) => {
     if (modelName.includes('gpt-4')) return <Brain className="h-4 w-4 text-purple-500" />;
     if (modelName.includes('gpt-3.5')) return <Cpu className="h-4 w-4 text-blue-500" />;
+    if (modelName.includes('gemini-1.5-pro')) return <Brain className="h-4 w-4 text-blue-600" />;
+    if (modelName.includes('gemini-1.5-flash')) return <Zap className="h-4 w-4 text-blue-500" />;
+    if (modelName.includes('gemini-1.0-pro')) return <Brain className="h-4 w-4 text-blue-400" />;
     if (modelName.includes('llama')) return <Zap className="h-4 w-4 text-green-500" />;
     if (modelName.includes('mixtral')) return <Brain className="h-4 w-4 text-orange-500" />;
     if (modelName.includes('gemma')) return <Brain className="h-4 w-4 text-red-500" />;
@@ -54,6 +57,9 @@ const AIModelSettings = () => {
   const getModelDescription = (modelName: string) => {
     if (modelName.includes('gpt-4')) return 'Advanced reasoning and complex tasks';
     if (modelName.includes('gpt-3.5')) return 'Fast and efficient for most tasks';
+    if (modelName.includes('gemini-1.5-pro')) return 'Google\'s most capable multimodal model';
+    if (modelName.includes('gemini-1.5-flash')) return 'Fast and efficient multimodal model';
+    if (modelName.includes('gemini-1.0-pro')) return 'Google\'s foundational language model';
     if (modelName.includes('llama-3.3-70b')) return 'Latest Llama model with enhanced capabilities';
     if (modelName.includes('llama-3.1-70b')) return 'Large Llama model with strong performance';
     if (modelName.includes('llama-3.1-8b')) return 'Fast and efficient Llama model';

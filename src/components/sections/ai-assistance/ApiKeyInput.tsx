@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -86,6 +85,12 @@ const ApiKeyInput = ({
       {provider.name === 'Groq' && (
         <p className="text-xs text-muted-foreground">
           💡 Groq offers fast inference with open-source models like Llama and Mixtral
+        </p>
+      )}
+      
+      {provider.name === 'Google Gemini' && (
+        <p className="text-xs text-muted-foreground">
+          💡 Google Gemini models support multimodal capabilities including text and images
         </p>
       )}
     </div>
