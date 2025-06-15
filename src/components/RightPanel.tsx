@@ -16,15 +16,6 @@ import ChapterManagement from './sections/story/ChapterManagement';
 const RightPanel = () => {
   const { state } = useWriting();
 
-  // Show specific components based on active section
-  if (state.activeSection === 'story') {
-    return (
-      <div className="h-full bg-muted/30 p-4 flex flex-col space-y-6 border-l">
-        <ChapterManagement />
-      </div>
-    );
-  }
-
   if (state.activeSection === 'outline') {
     return <Outline />;
   }
@@ -61,6 +52,13 @@ const RightPanel = () => {
     <div className="h-full bg-muted/30 p-4 flex flex-col space-y-6 border-l">
       {/* AI Text Processing */}
       <AITextProcessor />
+
+      {/* Chapter Management - only show in story section */}
+      {state.activeSection === 'story' && (
+        <div className="border-t pt-6">
+          <ChapterManagement />
+        </div>
+      )}
 
       <div className="flex-grow border-t pt-6">
         <h3 className="text-lg font-semibold flex items-center mb-2">
