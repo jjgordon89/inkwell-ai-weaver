@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 
 export interface Character {
@@ -6,6 +5,22 @@ export interface Character {
   name: string;
   description: string;
   notes: string;
+  age?: number;
+  occupation?: string;
+  appearance?: string;
+  personality?: string;
+  backstory?: string;
+  tags: string[];
+  relationships: CharacterRelationship[];
+  createdWith?: 'manual' | 'ai';
+}
+
+export interface CharacterRelationship {
+  id: string;
+  characterId: string;
+  relatedCharacterId: string;
+  relationshipType: string;
+  description?: string;
 }
 
 export interface StoryArc {
