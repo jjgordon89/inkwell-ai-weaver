@@ -6,7 +6,16 @@ export interface AIProvider {
   apiEndpoint?: string;
 }
 
-export type AIAction = 'improve' | 'shorten' | 'expand' | 'fix-grammar';
+export type AIAction = 
+  | 'improve' 
+  | 'shorten' 
+  | 'expand' 
+  | 'fix-grammar'
+  | 'analyze-tone'
+  | 'generate-plot'
+  | 'continue-story'
+  | 'writing-prompt'
+  | 'context-suggestion';
 
 export interface AIHookReturn {
   isProcessing: boolean;
@@ -24,4 +33,24 @@ export interface AIHookReturn {
   getCurrentProviderInfo: () => AIProvider | undefined;
   isProviderConfigured: (providerName: string) => boolean;
   isCurrentProviderConfigured: () => boolean;
+}
+
+export interface ToneAnalysis {
+  tone: string;
+  confidence: number;
+  suggestions: string[];
+}
+
+export interface PlotElement {
+  type: 'conflict' | 'twist' | 'resolution' | 'character-development';
+  description: string;
+  placement: 'beginning' | 'middle' | 'end';
+}
+
+export interface WritingPrompt {
+  id: string;
+  title: string;
+  prompt: string;
+  genre: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
 }

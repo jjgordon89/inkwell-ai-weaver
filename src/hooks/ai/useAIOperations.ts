@@ -6,7 +6,7 @@ import { loadAISettings, saveApiKeys, saveSelectedProvider, saveSelectedModel } 
 import { makeAPIRequest, performMockTextProcessing, getPromptForAction } from './textProcessing';
 import { validateAIInput, validateAIResponse } from '@/hooks/ai/aiUtils';
 import { testProviderConnection } from './connectionTest';
-import type { AIAction as ProcessingAction } from './types';
+import type { AIAction as ProcessingAction, AIProvider } from './types';
 
 export const useAIOperations = () => {
   const { state, dispatch } = useAIContext();

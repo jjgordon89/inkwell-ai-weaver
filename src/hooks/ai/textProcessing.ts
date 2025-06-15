@@ -1,4 +1,3 @@
-
 import { AIAction, AIProvider } from './types';
 
 export const getPromptForAction = (action: AIAction, text: string): string => {
@@ -11,6 +10,16 @@ export const getPromptForAction = (action: AIAction, text: string): string => {
       return `Please expand the following text by adding relevant details, context, and depth while maintaining the original tone and meaning:\n\n${text}`;
     case 'fix-grammar':
       return `Please correct any grammar, punctuation, and spelling errors in the following text while maintaining its original meaning and tone:\n\n${text}`;
+    case 'analyze-tone':
+      return `Analyze the tone, mood, and style of the following text. Provide specific observations about the emotional resonance, voice, and narrative approach:\n\n${text}`;
+    case 'generate-plot':
+      return `Based on the following story context, generate creative plot elements, conflicts, and story developments:\n\n${text}`;
+    case 'continue-story':
+      return `Continue the following story naturally, maintaining the established tone, style, and narrative voice:\n\n${text}`;
+    case 'writing-prompt':
+      return `Create an engaging and creative writing prompt based on the following theme or context:\n\n${text}`;
+    case 'context-suggestion':
+      return `Provide contextual writing suggestions and improvements based on the following text:\n\n${text}`;
     default:
       return text;
   }
@@ -35,6 +44,16 @@ export const performMockTextProcessing = async (text: string, action: AIAction, 
         .replace(/\s+/g, ' ')
         .replace(/([.!?])\s*([a-z])/g, (match, punct, letter) => `${punct} ${letter.toUpperCase()}`)
         .trim();
+    case 'analyze-tone':
+      return `Tone: Thoughtful and engaging\nConfidence: 85\nStyle Notes: The writing demonstrates clear narrative voice with balanced pacing\nSuggestions: Consider varying sentence length for rhythm\nConsider adding more sensory details\nMaintain consistent point of view throughout`;
+    case 'generate-plot':
+      return `Type: conflict\nDescription: A hidden secret from the protagonist's past threatens their current relationships\nPlacement: middle\n\nType: character-development\nDescription: The main character must choose between personal safety and protecting others\nPlacement: middle\n\nType: twist\nDescription: An ally reveals unexpected motivations that change everything\nPlacement: end`;
+    case 'continue-story':
+      return `The continuation flows naturally from your text, developing the scene further while maintaining the established tone and moving the narrative forward with appropriate pacing and character development.`;
+    case 'writing-prompt':
+      return `Title: The Memory Thief\nPrompt: In a world where memories can be extracted and traded like currency, your character discovers they have been stealing memories without knowing it. Write about their first conscious theft and the moral dilemma that follows.\nGenre: science fiction\nDifficulty: intermediate`;
+    case 'context-suggestion':
+      return `- Consider developing the emotional stakes in this scene\n- Add more specific sensory details to enhance immersion\n- The pacing could benefit from shorter sentences during tense moments\n- Character motivations could be clearer\n- Consider the setting's impact on the mood`;
     default:
       return text;
   }

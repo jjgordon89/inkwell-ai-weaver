@@ -7,6 +7,8 @@ import { Lightbulb, FileText, Clock, Target, BookOpen, Loader2 } from 'lucide-re
 import { useWriting } from '@/contexts/WritingContext';
 import { useAI } from '@/hooks/useAI';
 import { useToast } from "@/hooks/use-toast";
+import AITextProcessor from './story/AITextProcessor';
+import EnhancedAIPanel from './story/EnhancedAIPanel';
 
 const Story = () => {
   const { state, updateDocument } = useWriting();
@@ -14,7 +16,6 @@ const Story = () => {
   const { toast } = useToast();
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [lastSuggestionTime, setLastSuggestionTime] = useState<Date | null>(null);
-  const [processingAction, setProcessingAction] = useState<string | null>(null);
 
   const handleGenerateSuggestions = async () => {
     if (!state.currentDocument) return;
@@ -34,38 +35,6 @@ const Story = () => {
         description: "Failed to generate suggestions. Please try again.",
         variant: "destructive",
       });
-    }
-  };
-
-  const handleQuickAction = async (action: 'improve' | 'fix-grammar' | 'expand' | 'shorten') => {
-    if (!state.selectedText || !state.currentDocument) return;
-    
-    setProcessingAction(action);
-    
-    try {
-      const processedText = await processText(state.selectedText, action);
-      
-      // Replace the selected text in the document
-      const updatedContent = state.currentDocument.content.replace(state.selectedText, processedText);
-      
-      updateDocument(state.currentDocument.id, {
-        content: updatedContent,
-        lastModified: new Date()
-      });
-      
-      toast({
-        title: "Text Processed",
-        description: `Successfully ${action === 'fix-grammar' ? 'fixed grammar' : action === 'improve' ? 'improved' : action === 'expand' ? 'expanded' : 'shortened'} the selected text`,
-      });
-    } catch (error) {
-      console.error(`Failed to ${action} text:`, error);
-      toast({
-        title: "Error",
-        description: `Failed to ${action} text. Please try again.`,
-        variant: "destructive",
-      });
-    } finally {
-      setProcessingAction(null);
     }
   };
 
@@ -134,15 +103,21 @@ const Story = () => {
           </CardContent>
         </Card>
 
-        {/* AI Writing Suggestions */}
+        {/* Enhanced AI Panel */}
+        <EnhancedAIPanel />
+
+        {/* AI Text Processor */}
+        <AITextProcessor />
+
+        {/* Basic AI Writing Suggestions */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Lightbulb className="h-5 w-5" />
-              AI Writing Suggestions
+              Basic AI Suggestions
             </CardTitle>
             <CardDescription>
-              Get AI-powered suggestions to enhance your writing
+              Simple AI-powered suggestions for your writing
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -159,7 +134,7 @@ const Story = () => {
               ) : (
                 <>
                   <Target className="h-4 w-4 mr-2" />
-                  Generate Suggestions
+                  Generate Basic Suggestions
                 </>
               )}
             </Button>
@@ -185,81 +160,6 @@ const Story = () => {
                   ))}
                 </div>
               </div>
-            )}
-
-            {suggestions.length === 0 && !isProcessing && (
-              <div className="text-center p-6 text-muted-foreground">
-                <Lightbulb className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Click "Generate Suggestions" to get AI-powered writing tips</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>
-              AI-powered text processing tools
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                disabled={!state.selectedText || processingAction !== null}
-                onClick={() => handleQuickAction('improve')}
-              >
-                {processingAction === 'improve' ? (
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                ) : null}
-                Improve Text
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                disabled={!state.selectedText || processingAction !== null}
-                onClick={() => handleQuickAction('fix-grammar')}
-              >
-                {processingAction === 'fix-grammar' ? (
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                ) : null}
-                Fix Grammar
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                disabled={!state.selectedText || processingAction !== null}
-                onClick={() => handleQuickAction('expand')}
-              >
-                {processingAction === 'expand' ? (
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                ) : null}
-                Expand Ideas
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                disabled={!state.selectedText || processingAction !== null}
-                onClick={() => handleQuickAction('shorten')}
-              >
-                {processingAction === 'shorten' ? (
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                ) : null}
-                Simplify
-              </Button>
-            </div>
-            {!state.selectedText && (
-              <p className="text-xs text-muted-foreground mt-2">
-                Select text in the editor to enable quick actions
-              </p>
-            )}
-            {state.selectedText && (
-              <p className="text-xs text-primary mt-2">
-                Selected: "{state.selectedText.substring(0, 50)}{state.selectedText.length > 50 ? '...' : ''}"
-              </p>
             )}
           </CardContent>
         </Card>
