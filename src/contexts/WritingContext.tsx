@@ -58,6 +58,7 @@ interface WritingState {
 type WritingAction =
   | { type: 'SET_CURRENT_DOCUMENT'; payload: Document }
   | { type: 'UPDATE_DOCUMENT_CONTENT'; payload: { id: string; content: string } }
+  | { type: 'UPDATE_DOCUMENT'; payload: { id: string; updates: Partial<Document> } }
   | { type: 'ADD_CHARACTER'; payload: Character }
   | { type: 'UPDATE_CHARACTER'; payload: Character }
   | { type: 'DELETE_CHARACTER'; payload: string }
@@ -99,6 +100,15 @@ function writingReducer(state: WritingState, action: WritingAction): WritingStat
           }
         : state.currentDocument;
       return { ...state, currentDocument: updatedDocument };
+    case 'UPDATE_DOCUMENT':
+      const updatedDoc = state.currentDocument && state.currentDocument.id === action.payload.id
+        ? {
+            ...state.currentDocument,
+            ...action.payload.updates,
+            lastModified: new Date()
+          }
+        : state.currentDocument;
+      return { ...state, currentDocument: updatedDoc };
     case 'ADD_CHARACTER':
       return { ...state, characters: [...state.characters, action.payload] };
     case 'UPDATE_CHARACTER':
@@ -148,13 +158,18 @@ function writingReducer(state: WritingState, action: WritingAction): WritingStat
 const WritingContext = createContext<{
   state: WritingState;
   dispatch: React.Dispatch<WritingAction>;
+  updateDocument: (id: string, updates: Partial<Document>) => void;
 } | null>(null);
 
 export const WritingProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(writingReducer, initialState);
 
+  const updateDocument = (id: string, updates: Partial<Document>) => {
+    dispatch({ type: 'UPDATE_DOCUMENT', payload: { id, updates } });
+  };
+
   return (
-    <WritingContext.Provider value={{ state, dispatch }}>
+    <WritingContext.Provider value={{ state, dispatch, updateDocument }}>
       {children}
     </WritingContext.Provider>
   );
