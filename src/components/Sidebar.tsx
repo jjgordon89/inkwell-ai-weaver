@@ -1,5 +1,5 @@
 
-import { Book, Users, GitMerge, Globe, Link as LinkIcon, Bot } from 'lucide-react';
+import { Book, Users, GitMerge, Globe, Link as LinkIcon, Bot, List } from 'lucide-react';
 import { useWriting } from '@/contexts/WritingContext';
 
 const Sidebar = () => {
@@ -7,6 +7,7 @@ const Sidebar = () => {
 
   const navItems = [
     { name: 'Story', icon: Book, section: 'story' as const },
+    { name: 'Outline', icon: List, section: 'outline' as const },
     { name: 'Characters', icon: Users, section: 'characters' as const },
     { name: 'Story Arc', icon: GitMerge, section: 'story-arc' as const },
     { name: 'World Building', icon: Globe, section: 'world-building' as const },

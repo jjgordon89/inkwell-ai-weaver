@@ -7,6 +7,7 @@ import WorldBuilding from './sections/WorldBuilding';
 import CrossReferences from './sections/CrossReferences';
 import AIAssistance from './sections/AIAssistance';
 import Story from './sections/Story';
+import Outline from './sections/Outline';
 import ExportPublishing from './sections/ExportPublishing';
 import AITextProcessor from './sections/story/AITextProcessor';
 
@@ -16,6 +17,10 @@ const RightPanel = () => {
   // Show specific components based on active section
   if (state.activeSection === 'story') {
     return <Story />;
+  }
+
+  if (state.activeSection === 'outline') {
+    return <Outline />;
   }
 
   if (state.activeSection === 'characters') {
