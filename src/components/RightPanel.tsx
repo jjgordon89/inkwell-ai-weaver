@@ -4,6 +4,7 @@ import { useWriting } from '@/contexts/WritingContext';
 import { useAI } from '@/hooks/useAI';
 import { useState } from 'react';
 import Characters from './sections/Characters';
+import StoryArcs from './sections/StoryArcs';
 
 const RightPanel = () => {
   const { state, dispatch } = useWriting();
@@ -13,6 +14,11 @@ const RightPanel = () => {
   // Show Characters component when characters section is active
   if (state.activeSection === 'characters') {
     return <Characters />;
+  }
+
+  // Show Story Arcs component when story-arc section is active
+  if (state.activeSection === 'story-arc') {
+    return <StoryArcs />;
   }
 
   const handleTextImprovement = async (action: 'improve' | 'shorten' | 'expand' | 'fix-grammar') => {
