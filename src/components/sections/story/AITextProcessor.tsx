@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,8 +6,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Lightbulb, Wand2, Zap, CheckCircle, AlertCircle, Key, Settings } from 'lucide-react';
 import { useWriting } from '@/contexts/WritingContext';
 import { useAI } from '@/hooks/useAI';
+import { useAIErrorHandler } from '@/hooks/ai/useAIErrorHandler';
+import AIErrorBoundary from '@/components/ai/AIErrorBoundary';
 
-const AITextProcessor = () => {
+const AITextProcessorContent = () => {
   const { state, dispatch } = useWriting();
   const { 
     processText, 
@@ -18,24 +19,23 @@ const AITextProcessor = () => {
     isCurrentProviderConfigured 
   } = useAI();
   
+  const { error, clearError, retryWithErrorHandling } = useAIErrorHandler();
   const [lastAction, setLastAction] = useState<string | null>(null);
   const [processingAction, setProcessingAction] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const handleTextImprovement = async (action: 'improve' | 'shorten' | 'expand' | 'fix-grammar') => {
     if (!state.selectedText || !state.currentDocument) return;
 
-    // Clear any previous errors
-    setError(null);
+    clearError();
     setProcessingAction(action);
     
-    try {
+    const result = await retryWithErrorHandling(async () => {
       console.log(`Starting ${action} action with text: "${state.selectedText.substring(0, 50)}..."`);
       
       const improvedText = await processText(state.selectedText, action);
       
       // Replace selected text in the document
-      const newContent = state.currentDocument.content.replace(
+      const newContent = state.currentDocument!.content.replace(
         state.selectedText,
         improvedText
       );
@@ -43,7 +43,7 @@ const AITextProcessor = () => {
       dispatch({
         type: 'UPDATE_DOCUMENT_CONTENT',
         payload: {
-          id: state.currentDocument.id,
+          id: state.currentDocument!.id,
           content: newContent
         }
       });
@@ -56,12 +56,10 @@ const AITextProcessor = () => {
       }, 500);
       
       console.log(`✅ Successfully completed ${action} action`);
-    } catch (error) {
-      console.error(`❌ AI processing failed for ${action}:`, error);
-      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
-    } finally {
-      setProcessingAction(null);
-    }
+      return true;
+    }, 'api');
+
+    setProcessingAction(null);
   };
 
   const getActionIcon = (action: string) => {
@@ -134,7 +132,17 @@ const AITextProcessor = () => {
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>
+              {error.message}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="ml-2"
+                onClick={clearError}
+              >
+                Dismiss
+              </Button>
+            </AlertDescription>
           </Alert>
         )}
 
@@ -199,6 +207,14 @@ const AITextProcessor = () => {
         )}
       </CardContent>
     </Card>
+  );
+};
+
+const AITextProcessor = () => {
+  return (
+    <AIErrorBoundary>
+      <AITextProcessorContent />
+    </AIErrorBoundary>
   );
 };
 

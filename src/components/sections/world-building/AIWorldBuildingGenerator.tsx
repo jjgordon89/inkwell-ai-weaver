@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,42 +7,40 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Bot, Lightbulb, AlertCircle, Wand2 } from 'lucide-react';
 import { useWorldBuildingAI } from '@/hooks/useWorldBuildingAI';
 import { useAI } from '@/hooks/useAI';
+import { useAIErrorHandler } from '@/hooks/ai/useAIErrorHandler';
 import { WorldElement } from '@/contexts/WritingContext';
+import AIErrorBoundary from '@/components/ai/AIErrorBoundary';
 
 interface AIWorldBuildingGeneratorProps {
   onWorldElementGenerated: (worldElement: Partial<WorldElement>) => void;
   currentElements: WorldElement[];
 }
 
-const AIWorldBuildingGenerator = ({ onWorldElementGenerated, currentElements }: AIWorldBuildingGeneratorProps) => {
+const AIWorldBuildingGeneratorContent = ({ onWorldElementGenerated, currentElements }: AIWorldBuildingGeneratorProps) => {
   const { generateWorldElement, improveSuggestions, isGenerating } = useWorldBuildingAI();
   const { isCurrentProviderConfigured } = useAI();
+  const { error, clearError, retryWithErrorHandling } = useAIErrorHandler();
   const [prompt, setPrompt] = useState('');
   const [selectedType, setSelectedType] = useState<WorldElement['type']>('location');
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
 
-    setError(null);
-    try {
+    const result = await retryWithErrorHandling(async () => {
       const generatedElement = await generateWorldElement(prompt, selectedType);
       onWorldElementGenerated(generatedElement);
       setPrompt('');
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to generate world element');
-    }
+      return true;
+    }, 'api');
   };
 
   const handleGetSuggestions = async () => {
-    setError(null);
-    try {
+    const result = await retryWithErrorHandling(async () => {
       const newSuggestions = await improveSuggestions(currentElements);
       setSuggestions(newSuggestions);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to generate suggestions');
-    }
+      return true;
+    }, 'api');
   };
 
   const handleSuggestionClick = (suggestion: string) => {
@@ -87,7 +84,17 @@ const AIWorldBuildingGenerator = ({ onWorldElementGenerated, currentElements }: 
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>
+              {error.message}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="ml-2"
+                onClick={clearError}
+              >
+                Dismiss
+              </Button>
+            </AlertDescription>
           </Alert>
         )}
 
@@ -151,6 +158,14 @@ const AIWorldBuildingGenerator = ({ onWorldElementGenerated, currentElements }: 
         )}
       </CardContent>
     </Card>
+  );
+};
+
+const AIWorldBuildingGenerator = (props: AIWorldBuildingGeneratorProps) => {
+  return (
+    <AIErrorBoundary>
+      <AIWorldBuildingGeneratorContent {...props} />
+    </AIErrorBoundary>
   );
 };
 

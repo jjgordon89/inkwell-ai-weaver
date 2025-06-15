@@ -1,13 +1,15 @@
 
 import React, { useState } from 'react';
 import { useAI } from '@/hooks/useAI';
+import { useAIErrorHandler } from '@/hooks/ai/useAIErrorHandler';
 import ConfigurationStatus from './ConfigurationStatus';
 import GeneralSettings from './GeneralSettings';
 import AdvancedParameters from './AdvancedParameters';
 import TestAIConfiguration from './TestAIConfiguration';
 import ConfigurationActions from './ConfigurationActions';
+import AIErrorBoundary from '@/components/ai/AIErrorBoundary';
 
-const AIConfigurationPanel = () => {
+const AIConfigurationPanelContent = () => {
   const { 
     processText, 
     isProcessing, 
@@ -16,6 +18,7 @@ const AIConfigurationPanel = () => {
     isCurrentProviderConfigured 
   } = useAI();
   
+  const { error, clearError, retryWithErrorHandling } = useAIErrorHandler();
   const [autoSuggest, setAutoSuggest] = useState(true);
   const [realTimeProcessing, setRealTimeProcessing] = useState(false);
   const [maxTokens, setMaxTokens] = useState('1000');
@@ -28,32 +31,38 @@ const AIConfigurationPanel = () => {
     setTemperature('0.7');
   };
 
-  const saveSettings = () => {
-    const settings = {
-      autoSuggest,
-      realTimeProcessing,
-      maxTokens,
-      temperature
-    };
-    localStorage.setItem('ai-configuration', JSON.stringify(settings));
-    console.log('AI configuration saved:', settings);
+  const saveSettings = async () => {
+    await retryWithErrorHandling(async () => {
+      const settings = {
+        autoSuggest,
+        realTimeProcessing,
+        maxTokens,
+        temperature
+      };
+      localStorage.setItem('ai-configuration', JSON.stringify(settings));
+      console.log('AI configuration saved:', settings);
+      return true;
+    }, 'validation');
   };
 
   // Load settings on component mount
   React.useEffect(() => {
-    try {
-      const saved = localStorage.getItem('ai-configuration');
-      if (saved) {
-        const settings = JSON.parse(saved);
-        setAutoSuggest(settings.autoSuggest ?? true);
-        setRealTimeProcessing(settings.realTimeProcessing ?? false);
-        setMaxTokens(settings.maxTokens ?? '1000');
-        setTemperature(settings.temperature ?? '0.7');
-      }
-    } catch (error) {
-      console.error('Failed to load AI configuration:', error);
-    }
-  }, []);
+    const loadSettings = async () => {
+      await retryWithErrorHandling(async () => {
+        const saved = localStorage.getItem('ai-configuration');
+        if (saved) {
+          const settings = JSON.parse(saved);
+          setAutoSuggest(settings.autoSuggest ?? true);
+          setRealTimeProcessing(settings.realTimeProcessing ?? false);
+          setMaxTokens(settings.maxTokens ?? '1000');
+          setTemperature(settings.temperature ?? '0.7');
+        }
+        return true;
+      }, 'validation');
+    };
+    
+    loadSettings();
+  }, [retryWithErrorHandling]);
 
   return (
     <div className="space-y-4">
@@ -88,6 +97,14 @@ const AIConfigurationPanel = () => {
         onReset={resetSettings}
       />
     </div>
+  );
+};
+
+const AIConfigurationPanel = () => {
+  return (
+    <AIErrorBoundary>
+      <AIConfigurationPanelContent />
+    </AIErrorBoundary>
   );
 };
 

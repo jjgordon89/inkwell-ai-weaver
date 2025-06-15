@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,41 +6,39 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Bot, Lightbulb, AlertCircle, Wand2 } from 'lucide-react';
 import { useStoryArcAI } from '@/hooks/useStoryArcAI';
 import { useAI } from '@/hooks/useAI';
+import { useAIErrorHandler } from '@/hooks/ai/useAIErrorHandler';
 import { StoryArc } from '@/contexts/WritingContext';
+import AIErrorBoundary from '@/components/ai/AIErrorBoundary';
 
 interface AIStoryArcGeneratorProps {
   onStoryArcGenerated: (storyArc: Partial<StoryArc>) => void;
   currentArcs: StoryArc[];
 }
 
-const AIStoryArcGenerator = ({ onStoryArcGenerated, currentArcs }: AIStoryArcGeneratorProps) => {
+const AIStoryArcGeneratorContent = ({ onStoryArcGenerated, currentArcs }: AIStoryArcGeneratorProps) => {
   const { generateStoryArc, improveSuggestions, isGenerating } = useStoryArcAI();
   const { isCurrentProviderConfigured } = useAI();
+  const { error, clearError, retryWithErrorHandling } = useAIErrorHandler();
   const [prompt, setPrompt] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
 
-    setError(null);
-    try {
+    const result = await retryWithErrorHandling(async () => {
       const generatedArc = await generateStoryArc(prompt);
       onStoryArcGenerated(generatedArc);
       setPrompt('');
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to generate story arc');
-    }
+      return true;
+    }, 'api');
   };
 
   const handleGetSuggestions = async () => {
-    setError(null);
-    try {
+    const result = await retryWithErrorHandling(async () => {
       const newSuggestions = await improveSuggestions(currentArcs);
       setSuggestions(newSuggestions);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to generate suggestions');
-    }
+      return true;
+    }, 'api');
   };
 
   const handleSuggestionClick = (suggestion: string) => {
@@ -85,7 +82,17 @@ const AIStoryArcGenerator = ({ onStoryArcGenerated, currentArcs }: AIStoryArcGen
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>
+              {error.message}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="ml-2"
+                onClick={clearError}
+              >
+                Dismiss
+              </Button>
+            </AlertDescription>
           </Alert>
         )}
 
@@ -138,6 +145,14 @@ const AIStoryArcGenerator = ({ onStoryArcGenerated, currentArcs }: AIStoryArcGen
         )}
       </CardContent>
     </Card>
+  );
+};
+
+const AIStoryArcGenerator = (props: AIStoryArcGeneratorProps) => {
+  return (
+    <AIErrorBoundary>
+      <AIStoryArcGeneratorContent {...props} />
+    </AIErrorBoundary>
   );
 };
 
