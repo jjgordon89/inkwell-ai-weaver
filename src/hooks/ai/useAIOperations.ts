@@ -84,7 +84,17 @@ export const useAIOperations = () => {
     dispatch({ type: 'SET_TESTING_CONNECTION', payload: true });
     
     try {
-      const result = await testProviderConnection(providerName, state.apiKeys);
+      const provider = AI_PROVIDERS.find(p => p.name === providerName);
+      if (!provider) {
+        throw new Error(`Provider ${providerName} not found`);
+      }
+      
+      const apiKey = state.apiKeys[providerName];
+      if (!apiKey && provider.requiresApiKey) {
+        throw new Error(`API key required for ${providerName}`);
+      }
+      
+      const result = await testProviderConnection(provider, apiKey || '');
       return result;
     } catch (error) {
       dispatch({ 
