@@ -79,7 +79,7 @@ ${content}
 
 Return only the JSON array, no other text.`;
 
-      const result = await processText(extractionPrompt, 'analyze');
+      const result = await processText(extractionPrompt, 'context-suggestion');
       
       try {
         // Clean the result to extract just the JSON
