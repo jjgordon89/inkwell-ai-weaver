@@ -21,7 +21,7 @@ const CharacterCard = ({ character, onEdit, onDelete, onViewRelationships }: Cha
           <div className="flex items-center gap-2">
             <CardTitle className="text-lg">{character.name}</CardTitle>
             {character.createdWith === 'ai' && (
-              <Bot className="h-4 w-4 text-blue-500" title="Generated with AI" />
+              <Bot className="h-4 w-4 text-blue-500" />
             )}
           </div>
           <div className="flex gap-1">
