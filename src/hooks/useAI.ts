@@ -32,15 +32,24 @@ export const useAI = () => {
   const [selectedModel, setSelectedModel] = useState<string>('gpt-4');
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
 
-  // Load API keys from localStorage on mount
+  // Load settings from localStorage on mount
   useEffect(() => {
-    const savedKeys = localStorage.getItem('ai-api-keys');
-    if (savedKeys) {
-      try {
+    try {
+      const savedKeys = localStorage.getItem('ai-api-keys');
+      const savedProvider = localStorage.getItem('ai-selected-provider');
+      const savedModel = localStorage.getItem('ai-selected-model');
+
+      if (savedKeys) {
         setApiKeys(JSON.parse(savedKeys));
-      } catch (error) {
-        console.error('Failed to load saved API keys:', error);
       }
+      if (savedProvider && AI_PROVIDERS.find(p => p.name === savedProvider)) {
+        setSelectedProvider(savedProvider);
+      }
+      if (savedModel) {
+        setSelectedModel(savedModel);
+      }
+    } catch (error) {
+      console.error('Failed to load saved AI settings:', error);
     }
   }, []);
 
@@ -49,17 +58,27 @@ export const useAI = () => {
     localStorage.setItem('ai-api-keys', JSON.stringify(apiKeys));
   }, [apiKeys]);
 
+  // Save provider to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('ai-selected-provider', selectedProvider);
+  }, [selectedProvider]);
+
+  // Save model to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('ai-selected-model', selectedModel);
+  }, [selectedModel]);
+
   // Update selected model when provider changes
   useEffect(() => {
     const currentProvider = AI_PROVIDERS.find(p => p.name === selectedProvider);
     if (currentProvider && currentProvider.models.length > 0) {
       // If current model is not available for the new provider, select the first available model
       if (!currentProvider.models.includes(selectedModel)) {
-        console.log(`Switching model from ${selectedModel} to ${currentProvider.models[0]} for provider ${selectedProvider}`);
+        console.log(`Auto-switching model from ${selectedModel} to ${currentProvider.models[0]} for provider ${selectedProvider}`);
         setSelectedModel(currentProvider.models[0]);
       }
     }
-  }, [selectedProvider]);
+  }, [selectedProvider, selectedModel]);
 
   const handleProviderChange = (newProvider: string) => {
     console.log(`Provider changed from ${selectedProvider} to ${newProvider}`);
@@ -69,7 +88,7 @@ export const useAI = () => {
   const setApiKey = (providerName: string, key: string) => {
     setApiKeys(prev => ({
       ...prev,
-      [providerName]: key
+      [providerName]: key.trim()
     }));
   };
 
@@ -83,16 +102,18 @@ export const useAI = () => {
     setIsTestingConnection(true);
     
     try {
+      console.log(`Testing connection for ${providerName}...`);
+      
       // Simulate API test - in a real implementation, you'd make actual API calls
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // For demo purposes, we'll randomly succeed or fail
-      const success = Math.random() > 0.3;
+      // For demo purposes, we'll randomly succeed or fail (80% success rate)
+      const success = Math.random() > 0.2;
       
       if (success) {
         console.log(`✅ Connection test successful for ${providerName}`);
       } else {
-        console.error(`❌ Connection test failed for ${providerName}`);
+        console.error(`❌ Connection test failed for ${providerName} - Invalid API key or service unavailable`);
       }
       
       return success;
@@ -108,55 +129,123 @@ export const useAI = () => {
     text: string,
     action: 'improve' | 'shorten' | 'expand' | 'fix-grammar'
   ): Promise<string> => {
-    const currentProvider = AI_PROVIDERS.find(p => p.name === selectedProvider);
-    
-    if (currentProvider?.requiresApiKey && !apiKeys[selectedProvider]) {
-      throw new Error(`API key required for ${selectedProvider}`);
+    if (!text || text.trim().length === 0) {
+      throw new Error('No text provided for processing');
     }
 
+    const currentProvider = AI_PROVIDERS.find(p => p.name === selectedProvider);
+    
+    if (!currentProvider) {
+      throw new Error(`Invalid provider: ${selectedProvider}`);
+    }
+
+    if (currentProvider.requiresApiKey && !apiKeys[selectedProvider]) {
+      throw new Error(`API key required for ${selectedProvider}. Please add your API key in the settings.`);
+    }
+
+    console.log(`Processing text with ${selectedProvider} (${selectedModel}) - Action: ${action}`);
     setIsProcessing(true);
     
     try {
-      // Simulate AI processing
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Simulate AI processing with realistic delays
+      const processingTime = Math.random() * 2000 + 1000; // 1-3 seconds
+      await new Promise(resolve => setTimeout(resolve, processingTime));
       
-      const responses = {
-        improve: `Enhanced version: ${text}`,
-        shorten: text.slice(0, Math.floor(text.length * 0.7)),
-        expand: `${text} Additional details and context would enhance this passage further.`,
-        'fix-grammar': text.replace(/\b(i)\b/g, 'I')
-      };
+      // Generate realistic responses based on action
+      let result: string;
       
-      return responses[action] || text;
+      switch (action) {
+        case 'improve':
+          result = `Enhanced version using ${selectedModel}: ${text.replace(/\b(good|nice|ok)\b/gi, 'excellent').replace(/\b(bad|poor)\b/gi, 'suboptimal')}`;
+          break;
+        case 'shorten':
+          const words = text.split(' ');
+          const targetLength = Math.max(Math.floor(words.length * 0.7), 3);
+          result = words.slice(0, targetLength).join(' ') + (targetLength < words.length ? '...' : '');
+          break;
+        case 'expand':
+          result = `${text} This expanded version provides additional context and detail, offering readers a more comprehensive understanding of the topic while maintaining the original meaning and intent.`;
+          break;
+        case 'fix-grammar':
+          result = text
+            .replace(/\bi\b/g, 'I')
+            .replace(/\s+/g, ' ')
+            .replace(/([.!?])\s*([a-z])/g, (match, punct, letter) => `${punct} ${letter.toUpperCase()}`)
+            .trim();
+          break;
+        default:
+          result = text;
+      }
+      
+      console.log(`✅ Text processing completed successfully`);
+      return result;
+    } catch (error) {
+      console.error('❌ Text processing failed:', error);
+      throw new Error(`Failed to process text: ${error}`);
     } finally {
       setIsProcessing(false);
     }
   };
 
   const generateSuggestions = async (context: string): Promise<string[]> => {
+    if (!context || context.trim().length === 0) {
+      return [];
+    }
+
     const currentProvider = AI_PROVIDERS.find(p => p.name === selectedProvider);
     
-    if (currentProvider?.requiresApiKey && !apiKeys[selectedProvider]) {
+    if (!currentProvider) {
+      throw new Error(`Invalid provider: ${selectedProvider}`);
+    }
+
+    if (currentProvider.requiresApiKey && !apiKeys[selectedProvider]) {
       throw new Error(`API key required for ${selectedProvider}`);
     }
 
+    console.log(`Generating suggestions with ${selectedProvider} (${selectedModel})`);
     setIsProcessing(true);
     
     try {
       // Simulate AI processing
       await new Promise(resolve => setTimeout(resolve, 1000));
       
+      // Generate contextual suggestions
       const suggestions = [
-        'Consider adding more sensory details',
-        'This character could use more development',
-        'The pacing might benefit from a slower buildup',
-        'Add dialogue to break up the narrative'
+        'Consider adding more sensory details to enhance immersion',
+        'This character could benefit from deeper emotional development',
+        'The pacing might be improved with shorter, punchier sentences',
+        'Try adding dialogue to break up narrative sections',
+        'Consider the emotional arc of this scene',
+        'This moment could use more specific, concrete details'
       ];
       
-      return suggestions;
+      // Return 3-4 random suggestions
+      const shuffled = suggestions.sort(() => 0.5 - Math.random());
+      const result = shuffled.slice(0, Math.floor(Math.random() * 2) + 3);
+      
+      console.log(`✅ Generated ${result.length} suggestions`);
+      return result;
+    } catch (error) {
+      console.error('❌ Suggestion generation failed:', error);
+      throw new Error(`Failed to generate suggestions: ${error}`);
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const getCurrentProviderInfo = () => {
+    return AI_PROVIDERS.find(p => p.name === selectedProvider);
+  };
+
+  const isProviderConfigured = (providerName: string) => {
+    const provider = AI_PROVIDERS.find(p => p.name === providerName);
+    if (!provider) return false;
+    
+    return !provider.requiresApiKey || Boolean(apiKeys[providerName]);
+  };
+
+  const isCurrentProviderConfigured = () => {
+    return isProviderConfigured(selectedProvider);
   };
 
   return {
@@ -171,6 +260,9 @@ export const useAI = () => {
     testConnection,
     processText,
     generateSuggestions,
-    availableProviders: AI_PROVIDERS
+    availableProviders: AI_PROVIDERS,
+    getCurrentProviderInfo,
+    isProviderConfigured,
+    isCurrentProviderConfigured
   };
 };

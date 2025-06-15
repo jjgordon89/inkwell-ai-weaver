@@ -3,21 +3,35 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Lightbulb, Wand2, Zap, CheckCircle, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Lightbulb, Wand2, Zap, CheckCircle, AlertCircle, Key, Settings } from 'lucide-react';
 import { useWriting } from '@/contexts/WritingContext';
 import { useAI } from '@/hooks/useAI';
 
 const AITextProcessor = () => {
   const { state, dispatch } = useWriting();
-  const { processText, isProcessing } = useAI();
+  const { 
+    processText, 
+    isProcessing, 
+    selectedProvider, 
+    selectedModel, 
+    isCurrentProviderConfigured 
+  } = useAI();
+  
   const [lastAction, setLastAction] = useState<string | null>(null);
   const [processingAction, setProcessingAction] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleTextImprovement = async (action: 'improve' | 'shorten' | 'expand' | 'fix-grammar') => {
     if (!state.selectedText || !state.currentDocument) return;
 
+    // Clear any previous errors
+    setError(null);
     setProcessingAction(action);
+    
     try {
+      console.log(`Starting ${action} action with text: "${state.selectedText.substring(0, 50)}..."`);
+      
       const improvedText = await processText(state.selectedText, action);
       
       // Replace selected text in the document
@@ -36,10 +50,15 @@ const AITextProcessor = () => {
       
       setLastAction(action);
       
-      // Clear selection
-      dispatch({ type: 'SET_SELECTED_TEXT', payload: '' });
+      // Clear selection after a brief delay
+      setTimeout(() => {
+        dispatch({ type: 'SET_SELECTED_TEXT', payload: '' });
+      }, 500);
+      
+      console.log(`✅ Successfully completed ${action} action`);
     } catch (error) {
-      console.error('AI processing failed:', error);
+      console.error(`❌ AI processing failed for ${action}:`, error);
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
     } finally {
       setProcessingAction(null);
     }
@@ -65,6 +84,13 @@ const AITextProcessor = () => {
     }
   };
 
+  const actions = [
+    { action: 'improve', label: 'Improve' },
+    { action: 'shorten', label: 'Shorten' },
+    { action: 'expand', label: 'Expand' },
+    { action: 'fix-grammar', label: 'Fix Grammar' }
+  ] as const;
+
   return (
     <Card>
       <CardHeader>
@@ -80,32 +106,67 @@ const AITextProcessor = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Provider Status */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>Using:</span>
+          <Badge variant="outline" className="text-xs">
+            {selectedProvider} • {selectedModel}
+          </Badge>
+          {!isCurrentProviderConfigured() && (
+            <Badge variant="destructive" className="text-xs">
+              <Key className="h-3 w-3 mr-1" />
+              API Key Required
+            </Badge>
+          )}
+        </div>
+
+        {/* Configuration Warning */}
+        {!isCurrentProviderConfigured() && (
+          <Alert>
+            <Settings className="h-4 w-4" />
+            <AlertDescription>
+              Please configure your {selectedProvider} API key in the AI Assistance settings to use text processing features.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Error Display */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         {state.selectedText ? (
           <div className="space-y-3">
+            {/* Selected Text Display */}
             <div className="p-3 bg-muted/50 rounded-lg border">
               <p className="text-sm font-medium mb-1">Selected Text:</p>
               <p className="text-sm text-muted-foreground italic">
                 "{state.selectedText.substring(0, 100)}{state.selectedText.length > 100 ? '...' : ''}"
               </p>
-              <Badge variant="outline" className="mt-2 text-xs">
-                {state.selectedText.split(' ').length} words
-              </Badge>
+              <div className="flex gap-2 mt-2">
+                <Badge variant="outline" className="text-xs">
+                  {state.selectedText.split(' ').length} words
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  {state.selectedText.length} characters
+                </Badge>
+              </div>
             </div>
 
+            {/* Action Buttons */}
             <div className="grid grid-cols-2 gap-2">
-              {[
-                { action: 'improve', label: 'Improve' },
-                { action: 'shorten', label: 'Shorten' },
-                { action: 'expand', label: 'Expand' },
-                { action: 'fix-grammar', label: 'Fix Grammar' }
-              ].map(({ action, label }) => (
+              {actions.map(({ action, label }) => (
                 <Button
                   key={action}
                   variant="outline"
                   size="sm"
-                  onClick={() => handleTextImprovement(action as any)}
-                  disabled={isProcessing}
+                  onClick={() => handleTextImprovement(action)}
+                  disabled={isProcessing || !isCurrentProviderConfigured()}
                   className="flex items-center gap-2"
+                  title={!isCurrentProviderConfigured() ? 'Configure API key first' : getActionDescription(action)}
                 >
                   {processingAction === action ? (
                     <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -117,7 +178,8 @@ const AITextProcessor = () => {
               ))}
             </div>
 
-            {lastAction && (
+            {/* Success Message */}
+            {lastAction && !error && (
               <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-950 rounded-lg">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <span className="text-sm text-green-800 dark:text-green-200">
