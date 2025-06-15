@@ -1,18 +1,25 @@
 
 import { Book, Users, GitMerge, Globe, Link as LinkIcon, Bot } from 'lucide-react';
+import { useWriting } from '@/contexts/WritingContext';
 
 const Sidebar = () => {
+  const { state, dispatch } = useWriting();
+
   const navItems = [
-    { name: 'Story', icon: Book, active: true },
-    { name: 'Characters', icon: Users, active: false },
-    { name: 'Story Arc', icon: GitMerge, active: false },
-    { name: 'World Building', icon: Globe, active: false },
-    { name: 'Cross-References', icon: LinkIcon, active: false },
+    { name: 'Story', icon: Book, section: 'story' as const },
+    { name: 'Characters', icon: Users, section: 'characters' as const },
+    { name: 'Story Arc', icon: GitMerge, section: 'story-arc' as const },
+    { name: 'World Building', icon: Globe, section: 'world-building' as const },
+    { name: 'Cross-References', icon: LinkIcon, section: 'cross-references' as const },
   ];
 
   const aiItems = [
-      { name: 'AI Assistance', icon: Bot, active: false },
-  ]
+    { name: 'AI Assistance', icon: Bot, section: 'ai-assistance' as const },
+  ];
+
+  const handleSectionChange = (section: typeof state.activeSection) => {
+    dispatch({ type: 'SET_ACTIVE_SECTION', payload: section });
+  };
 
   return (
     <div className="h-full bg-muted/50 p-4 flex flex-col border-r">
@@ -27,17 +34,17 @@ const Sidebar = () => {
         <ul>
           {navItems.map((item) => (
             <li key={item.name}>
-              <a
-                href="#"
-                className={`flex items-center p-2 rounded-md transition-colors ${
-                  item.active 
+              <button
+                onClick={() => handleSectionChange(item.section)}
+                className={`w-full flex items-center p-2 rounded-md transition-colors ${
+                  state.activeSection === item.section
                     ? 'bg-primary/10 text-primary font-semibold' 
                     : 'text-foreground/70 hover:bg-accent hover:text-accent-foreground'
                 }`}
               >
                 <item.icon className="h-5 w-5 mr-3" />
                 <span>{item.name}</span>
-              </a>
+              </button>
             </li>
           ))}
         </ul>
@@ -45,17 +52,21 @@ const Sidebar = () => {
           AI & ML
         </h2>
         <ul>
-            {aiItems.map((item) => (
-                <li key={item.name}>
-                <a
-                    href="#"
-                    className="flex items-center p-2 rounded-md text-foreground/70 hover:bg-accent hover:text-accent-foreground transition-colors"
-                >
-                    <item.icon className="h-5 w-5 mr-3" />
-                    <span>{item.name}</span>
-                </a>
-                </li>
-            ))}
+          {aiItems.map((item) => (
+            <li key={item.name}>
+              <button
+                onClick={() => handleSectionChange(item.section)}
+                className={`w-full flex items-center p-2 rounded-md transition-colors ${
+                  state.activeSection === item.section
+                    ? 'bg-primary/10 text-primary font-semibold' 
+                    : 'text-foreground/70 hover:bg-accent hover:text-accent-foreground'
+                }`}
+              >
+                <item.icon className="h-5 w-5 mr-3" />
+                <span>{item.name}</span>
+              </button>
+            </li>
+          ))}
         </ul>
       </nav>
       <div className="mt-auto">
