@@ -6,6 +6,7 @@ import { useState } from 'react';
 import Characters from './sections/Characters';
 import StoryArcs from './sections/StoryArcs';
 import WorldBuilding from './sections/WorldBuilding';
+import CrossReferences from './sections/CrossReferences';
 
 const RightPanel = () => {
   const { state, dispatch } = useWriting();
@@ -25,6 +26,11 @@ const RightPanel = () => {
   // Show World Building component when world-building section is active
   if (state.activeSection === 'world-building') {
     return <WorldBuilding />;
+  }
+
+  // Show Cross-References component when cross-references section is active
+  if (state.activeSection === 'cross-references') {
+    return <CrossReferences />;
   }
 
   const handleTextImprovement = async (action: 'improve' | 'shorten' | 'expand' | 'fix-grammar') => {
