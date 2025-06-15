@@ -139,15 +139,12 @@ const Sidebar = () => {
             ))}
           </ul>
         </div>
-      </nav>
-
-      {/* Footer */}
+      </nav>      {/* Footer */}
       <div className="mt-auto pt-6 border-t border-border/20 space-y-3">
         <Button variant="ghost" size="sm" className="w-full justify-start">
           <Settings className="h-4 w-4 mr-2" />
           Settings
         </Button>
-        <p className="text-xs text-muted-foreground">&copy; 2025 Lovable</p>
       </div>
     </div>
   );

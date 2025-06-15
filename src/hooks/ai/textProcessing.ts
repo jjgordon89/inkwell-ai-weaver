@@ -129,7 +129,7 @@ const makeOpenAICompatibleAPIRequest = async (
   if (provider.name === 'OpenRouter') {
     headers['Authorization'] = `Bearer ${apiKey}`;
     headers['HTTP-Referer'] = window.location.origin;
-    headers['X-Title'] = 'Lovable Writing Assistant';
+    headers['X-Title'] = 'Inkwell AI Weaver';
   } else {
     headers['Authorization'] = `Bearer ${apiKey}`;
   }
