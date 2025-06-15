@@ -30,6 +30,7 @@ export interface ManuscriptTemplate {
 export interface SubmissionFormat {
   id: string;
   name: string;
+  description: string;
   publisher?: string;
   requirements: {
     wordCount?: { min: number; max: number };
