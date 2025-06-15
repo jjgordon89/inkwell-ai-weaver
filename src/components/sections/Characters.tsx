@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Plus, User } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { Character } from '@/contexts/WritingContext';
 import CharacterSearch from './characters/CharacterSearch';
 import CharacterForm from './characters/CharacterForm';
 import CharacterCard from './characters/CharacterCard';
+import EnhancedCharacterPanel from './characters/EnhancedCharacterPanel';
 
 const Characters = () => {
   const { state, dispatch } = useWriting();
@@ -133,6 +133,11 @@ const Characters = () => {
             </div>
           </SheetContent>
         </Sheet>
+      </div>
+
+      {/* Enhanced Character Tools */}
+      <div className="mb-6">
+        <EnhancedCharacterPanel />
       </div>
 
       {/* Search and Filter */}

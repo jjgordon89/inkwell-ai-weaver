@@ -13,6 +13,8 @@ export interface Character {
   tags: string[];
   relationships: CharacterRelationship[];
   createdWith?: 'manual' | 'ai';
+  voiceNotes?: string;
+  arcProgress?: number; // 0-100 for character development tracking
 }
 
 export interface CharacterRelationship {
