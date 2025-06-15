@@ -54,10 +54,14 @@ const AIModelSettings = () => {
   const getModelDescription = (modelName: string) => {
     if (modelName.includes('gpt-4')) return 'Advanced reasoning and complex tasks';
     if (modelName.includes('gpt-3.5')) return 'Fast and efficient for most tasks';
+    if (modelName.includes('llama-3.3-70b')) return 'Latest Llama model with enhanced capabilities';
+    if (modelName.includes('llama-3.1-70b')) return 'Large Llama model with strong performance';
+    if (modelName.includes('llama-3.1-8b')) return 'Fast and efficient Llama model';
     if (modelName.includes('llama3-70b')) return 'Large model with strong performance';
     if (modelName.includes('llama3-8b')) return 'Compact but capable model';
     if (modelName.includes('mixtral')) return 'Mixture of experts model';
-    if (modelName.includes('gemma')) return 'Google\'s efficient language model';
+    if (modelName.includes('gemma2-9b')) return 'Google\'s latest efficient language model';
+    if (modelName.includes('gemma-7b')) return 'Google\'s efficient language model';
     if (modelName.includes('mistral')) return 'High-performance open model';
     return 'AI language model';
   };

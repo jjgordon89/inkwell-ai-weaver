@@ -10,7 +10,16 @@ export const AI_PROVIDERS: AIProvider[] = [
   },
   {
     name: 'Groq',
-    models: ['llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768', 'gemma-7b-it'],
+    models: [
+      'llama-3.3-70b-versatile',
+      'llama-3.1-70b-versatile', 
+      'llama-3.1-8b-instant',
+      'llama3-70b-8192', 
+      'llama3-8b-8192', 
+      'mixtral-8x7b-32768', 
+      'gemma2-9b-it',
+      'gemma-7b-it'
+    ],
     requiresApiKey: true,
     apiEndpoint: 'https://api.groq.com/openai/v1/chat/completions'
   },
