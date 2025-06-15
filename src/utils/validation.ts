@@ -100,7 +100,7 @@ export function validateCharacterInput(data: {
   backstory?: string;
   appearance?: string;
 }): ValidationResult {
-  const fields = {
+  const fields: Record<string, { value: any; rules: ValidationRule[] }> = {
     name: {
       value: data.name,
       rules: [
