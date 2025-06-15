@@ -49,6 +49,8 @@ type WritingAction =
   | { type: 'ADD_STORY_ARC'; payload: StoryArc }
   | { type: 'UPDATE_STORY_ARC'; payload: StoryArc }
   | { type: 'ADD_WORLD_ELEMENT'; payload: WorldElement }
+  | { type: 'UPDATE_WORLD_ELEMENT'; payload: WorldElement }
+  | { type: 'DELETE_WORLD_ELEMENT'; payload: string }
   | { type: 'SET_SELECTED_TEXT'; payload: string }
   | { type: 'SET_ACTIVE_SECTION'; payload: WritingState['activeSection'] };
 
@@ -107,6 +109,18 @@ function writingReducer(state: WritingState, action: WritingAction): WritingStat
       };
     case 'ADD_WORLD_ELEMENT':
       return { ...state, worldElements: [...state.worldElements, action.payload] };
+    case 'UPDATE_WORLD_ELEMENT':
+      return {
+        ...state,
+        worldElements: state.worldElements.map(element =>
+          element.id === action.payload.id ? action.payload : element
+        )
+      };
+    case 'DELETE_WORLD_ELEMENT':
+      return {
+        ...state,
+        worldElements: state.worldElements.filter(element => element.id !== action.payload)
+      };
     case 'SET_SELECTED_TEXT':
       return { ...state, selectedText: action.payload };
     case 'SET_ACTIVE_SECTION':
