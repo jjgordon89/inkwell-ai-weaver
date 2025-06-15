@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAI } from '@/hooks/useAI';
 import type { Scene, PacingAnalysis } from './types';
@@ -36,7 +35,7 @@ Recommendations:
 - [recommendation 2]
 - [recommendation 3]`;
 
-      const result = await processText(prompt, 'analyze');
+      const result = await processText(prompt, 'analyze-tone');
       
       // Parse the AI response
       const lines = result.split('\n');
