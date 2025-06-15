@@ -1,33 +1,15 @@
+
 import { useState, useEffect } from 'react';
+import { AI_PROVIDERS } from './ai/constants';
+import { loadAISettings, saveApiKeys, saveSelectedProvider, saveSelectedModel } from './ai/storage';
+import { getPromptForAction, performMockTextProcessing, makeAPIRequest } from './ai/textProcessing';
+import { testProviderConnection } from './ai/connectionTest';
+import type { AIProvider, AIAction, AIHookReturn } from './ai/types';
 
-export interface AIProvider {
-  name: string;
-  models: string[];
-  requiresApiKey: boolean;
-  apiEndpoint?: string;
-}
+export type { AIProvider, AIAction } from './ai/types';
+export { AI_PROVIDERS } from './ai/constants';
 
-export const AI_PROVIDERS: AIProvider[] = [
-  {
-    name: 'OpenAI',
-    models: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'],
-    requiresApiKey: true,
-    apiEndpoint: 'https://api.openai.com/v1/chat/completions'
-  },
-  {
-    name: 'Groq',
-    models: ['llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768', 'gemma-7b-it'],
-    requiresApiKey: true,
-    apiEndpoint: 'https://api.groq.com/openai/v1/chat/completions'
-  },
-  {
-    name: 'Local Model',
-    models: ['llama-7b', 'codellama-13b', 'mistral-7b'],
-    requiresApiKey: false
-  }
-];
-
-export const useAI = () => {
+export const useAI = (): AIHookReturn => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<string>('OpenAI');
@@ -36,45 +18,34 @@ export const useAI = () => {
 
   // Load settings from localStorage on mount
   useEffect(() => {
-    try {
-      const savedKeys = localStorage.getItem('ai-api-keys');
-      const savedProvider = localStorage.getItem('ai-selected-provider');
-      const savedModel = localStorage.getItem('ai-selected-model');
-
-      if (savedKeys) {
-        setApiKeys(JSON.parse(savedKeys));
-      }
-      if (savedProvider && AI_PROVIDERS.find(p => p.name === savedProvider)) {
-        setSelectedProvider(savedProvider);
-      }
-      if (savedModel) {
-        setSelectedModel(savedModel);
-      }
-    } catch (error) {
-      console.error('Failed to load saved AI settings:', error);
+    const settings = loadAISettings();
+    setApiKeys(settings.apiKeys);
+    
+    if (AI_PROVIDERS.find(p => p.name === settings.selectedProvider)) {
+      setSelectedProvider(settings.selectedProvider);
+    }
+    if (settings.selectedModel) {
+      setSelectedModel(settings.selectedModel);
     }
   }, []);
 
-  // Save API keys to localStorage whenever they change
+  // Save settings to localStorage when they change
   useEffect(() => {
-    localStorage.setItem('ai-api-keys', JSON.stringify(apiKeys));
+    saveApiKeys(apiKeys);
   }, [apiKeys]);
 
-  // Save provider to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('ai-selected-provider', selectedProvider);
+    saveSelectedProvider(selectedProvider);
   }, [selectedProvider]);
 
-  // Save model to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('ai-selected-model', selectedModel);
+    saveSelectedModel(selectedModel);
   }, [selectedModel]);
 
   // Update selected model when provider changes
   useEffect(() => {
     const currentProvider = AI_PROVIDERS.find(p => p.name === selectedProvider);
     if (currentProvider && currentProvider.models.length > 0) {
-      // If current model is not available for the new provider, select the first available model
       if (!currentProvider.models.includes(selectedModel)) {
         console.log(`Auto-switching model from ${selectedModel} to ${currentProvider.models[0]} for provider ${selectedProvider}`);
         setSelectedModel(currentProvider.models[0]);
@@ -107,57 +78,17 @@ export const useAI = () => {
       console.log(`Testing connection for ${providerName}...`);
       
       const provider = AI_PROVIDERS.find(p => p.name === providerName);
-      if (!provider || !provider.apiEndpoint) {
-        console.log(`No API endpoint configured for ${providerName}, using mock test`);
-        // Simulate API test for providers without endpoints
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        const success = Math.random() > 0.2;
-        console.log(success ? `✅ Mock test successful for ${providerName}` : `❌ Mock test failed for ${providerName}`);
-        return success;
-      }
-
-      // Real API test for providers with endpoints
-      const testPayload = {
-        model: provider.models[0],
-        messages: [
-          {
-            role: 'user',
-            content: 'Hello, this is a connection test. Please respond with "OK".'
-          }
-        ],
-        max_tokens: 10,
-        temperature: 0
-      };
-
-      const response = await fetch(provider.apiEndpoint, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(testPayload),
-      });
-
-      if (response.ok) {
-        console.log(`✅ Connection test successful for ${providerName}`);
-        return true;
-      } else {
-        const errorData = await response.text();
-        console.error(`❌ Connection test failed for ${providerName}:`, response.status, errorData);
+      if (!provider) {
         return false;
       }
-    } catch (error) {
-      console.error(`❌ Connection test failed for ${providerName}:`, error);
-      return false;
+
+      return await testProviderConnection(provider, apiKey);
     } finally {
       setIsTestingConnection(false);
     }
   };
 
-  const processText = async (
-    text: string,
-    action: 'improve' | 'shorten' | 'expand' | 'fix-grammar'
-  ): Promise<string> => {
+  const processText = async (text: string, action: AIAction): Promise<string> => {
     if (!text || text.trim().length === 0) {
       throw new Error('No text provided for processing');
     }
@@ -176,80 +107,23 @@ export const useAI = () => {
     setIsProcessing(true);
     
     try {
-      // For providers with real API endpoints, we could make actual calls
+      // Try real API if available and configured
       if (currentProvider.apiEndpoint && apiKeys[selectedProvider]) {
         console.log(`Using real API for ${selectedProvider}`);
         
         const prompt = getPromptForAction(action, text);
+        const result = await makeAPIRequest(currentProvider, apiKeys[selectedProvider], selectedModel, prompt, action);
         
-        const requestBody = {
-          model: selectedModel,
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a helpful writing assistant. Follow the user\'s instructions precisely.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          max_tokens: 1000,
-          temperature: action === 'fix-grammar' ? 0.1 : 0.7
-        };
-
-        try {
-          const response = await fetch(currentProvider.apiEndpoint, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${apiKeys[selectedProvider]}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestBody),
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            const result = data.choices?.[0]?.message?.content || text;
-            console.log(`✅ Real AI processing completed successfully with ${selectedProvider}`);
-            return result;
-          } else {
-            console.warn(`API call failed, falling back to mock processing`);
-          }
-        } catch (apiError) {
-          console.warn(`API error, falling back to mock processing:`, apiError);
+        if (result) {
+          console.log(`✅ Real AI processing completed successfully with ${selectedProvider}`);
+          return result;
         }
+        
+        console.warn(`API call failed, falling back to mock processing`);
       }
       
       // Fallback to mock processing
-      const processingTime = Math.random() * 2000 + 1000;
-      await new Promise(resolve => setTimeout(resolve, processingTime));
-      
-      let result: string;
-      
-      switch (action) {
-        case 'improve':
-          result = `Enhanced version using ${selectedModel}: ${text.replace(/\b(good|nice|ok)\b/gi, 'excellent').replace(/\b(bad|poor)\b/gi, 'suboptimal')}`;
-          break;
-        case 'shorten':
-          const words = text.split(' ');
-          const targetLength = Math.max(Math.floor(words.length * 0.7), 3);
-          result = words.slice(0, targetLength).join(' ') + (targetLength < words.length ? '...' : '');
-          break;
-        case 'expand':
-          result = `${text} This expanded version provides additional context and detail, offering readers a more comprehensive understanding of the topic while maintaining the original meaning and intent.`;
-          break;
-        case 'fix-grammar':
-          result = text
-            .replace(/\bi\b/g, 'I')
-            .replace(/\s+/g, ' ')
-            .replace(/([.!?])\s*([a-z])/g, (match, punct, letter) => `${punct} ${letter.toUpperCase()}`)
-            .trim();
-          break;
-        default:
-          result = text;
-      }
-      
+      const result = await performMockTextProcessing(text, action, selectedModel);
       console.log(`✅ Mock text processing completed successfully`);
       return result;
     } catch (error) {
@@ -257,21 +131,6 @@ export const useAI = () => {
       throw new Error(`Failed to process text: ${error}`);
     } finally {
       setIsProcessing(false);
-    }
-  };
-
-  const getPromptForAction = (action: string, text: string): string => {
-    switch (action) {
-      case 'improve':
-        return `Please improve the following text by enhancing clarity, flow, and readability while maintaining the original meaning:\n\n${text}`;
-      case 'shorten':
-        return `Please make the following text more concise while preserving the key information and meaning:\n\n${text}`;
-      case 'expand':
-        return `Please expand the following text by adding relevant details, context, and depth while maintaining the original tone and meaning:\n\n${text}`;
-      case 'fix-grammar':
-        return `Please correct any grammar, punctuation, and spelling errors in the following text while maintaining its original meaning and tone:\n\n${text}`;
-      default:
-        return text;
     }
   };
 
