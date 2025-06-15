@@ -1,12 +1,13 @@
 
 import React from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, GitMerge } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useStoryArcs } from '@/hooks/useStoryArcs';
 import { useWriting } from '@/contexts/WritingContext';
 import StoryArcForm from './story-arcs/StoryArcForm';
 import StoryArcsList from './story-arcs/StoryArcsList';
 import AIStoryArcGenerator from './story-arcs/AIStoryArcGenerator';
+import EmptyState from '@/components/ui/empty-state';
 import type { StoryArc } from '@/contexts/WritingContext';
 
 const StoryArcs = () => {
@@ -70,18 +71,30 @@ const StoryArcs = () => {
         />
       )}
 
-      {/* Story Arcs List */}
+      {/* Story Arcs List or Empty State */}
       <div className="flex-grow overflow-auto">
-        <StoryArcsList
-          storyArcs={storyArcs}
-          editingId={editingId}
-          formData={formData}
-          onFormDataChange={setFormData}
-          onEdit={handleEdit}
-          onSaveEdit={handleSaveEdit}
-          onCancel={handleCancel}
-          onToggleComplete={handleToggleComplete}
-        />
+        {storyArcs.length === 0 && !isAdding ? (
+          <EmptyState
+            icon={GitMerge}
+            title="No Story Arcs Yet"
+            description="Start building your narrative structure by creating your first story arc. Story arcs help you track character development and plot progression throughout your story."
+            action={{
+              label: "Create Your First Arc",
+              onClick: () => setIsAdding(true)
+            }}
+          />
+        ) : (
+          <StoryArcsList
+            storyArcs={storyArcs}
+            editingId={editingId}
+            formData={formData}
+            onFormDataChange={setFormData}
+            onEdit={handleEdit}
+            onSaveEdit={handleSaveEdit}
+            onCancel={handleCancel}
+            onToggleComplete={handleToggleComplete}
+          />
+        )}
       </div>
     </div>
   );
