@@ -3,6 +3,8 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useFormValidation } from '@/hooks/useFormValidation';
+import { validationRules } from '@/utils/validation';
 
 interface AdvancedParametersProps {
   maxTokens: string;
@@ -17,14 +19,38 @@ const AdvancedParameters = ({
   temperature,
   setTemperature
 }: AdvancedParametersProps) => {
-  const isValidTemperature = () => {
-    const temp = parseFloat(temperature);
-    return !isNaN(temp) && temp >= 0 && temp <= 2;
+  const {
+    setField,
+    setFieldTouched,
+    getFieldError,
+    isFieldInvalid
+  } = useFormValidation({
+    maxTokens: {
+      value: maxTokens,
+      rules: [
+        validationRules.required('Max tokens is required'),
+        validationRules.positiveNumber('Max tokens must be a positive number'),
+        validationRules.range(1, 10000, 'Max tokens must be between 1 and 10,000')
+      ]
+    },
+    temperature: {
+      value: temperature,
+      rules: [
+        validationRules.required('Temperature is required'),
+        validationRules.number('Temperature must be a valid number'),
+        validationRules.range(0, 2, 'Temperature must be between 0.0 and 2.0')
+      ]
+    }
+  });
+
+  const handleMaxTokensChange = (value: string) => {
+    setMaxTokens(value);
+    setField('maxTokens', value);
   };
 
-  const isValidMaxTokens = () => {
-    const tokens = parseInt(maxTokens);
-    return !isNaN(tokens) && tokens > 0 && tokens <= 10000;
+  const handleTemperatureChange = (value: string) => {
+    setTemperature(value);
+    setField('temperature', value);
   };
 
   return (
@@ -42,13 +68,16 @@ const AdvancedParameters = ({
             <Input
               id="max-tokens"
               type="number"
+              min="1"
+              max="10000"
               value={maxTokens}
-              onChange={(e) => setMaxTokens(e.target.value)}
+              onChange={(e) => handleMaxTokensChange(e.target.value)}
+              onBlur={() => setFieldTouched('maxTokens')}
               placeholder="1000"
-              className={!isValidMaxTokens() ? "border-red-500" : ""}
+              className={isFieldInvalid('maxTokens') ? "border-red-500" : ""}
             />
-            {!isValidMaxTokens() && (
-              <p className="text-xs text-red-500">Must be between 1 and 10,000</p>
+            {getFieldError('maxTokens') && (
+              <p className="text-xs text-red-500">{getFieldError('maxTokens')}</p>
             )}
           </div>
           <div className="space-y-2">
@@ -60,12 +89,13 @@ const AdvancedParameters = ({
               min="0"
               max="2"
               value={temperature}
-              onChange={(e) => setTemperature(e.target.value)}
+              onChange={(e) => handleTemperatureChange(e.target.value)}
+              onBlur={() => setFieldTouched('temperature')}
               placeholder="0.7"
-              className={!isValidTemperature() ? "border-red-500" : ""}
+              className={isFieldInvalid('temperature') ? "border-red-500" : ""}
             />
-            {!isValidTemperature() && (
-              <p className="text-xs text-red-500">Must be between 0.0 and 2.0</p>
+            {getFieldError('temperature') && (
+              <p className="text-xs text-red-500">{getFieldError('temperature')}</p>
             )}
           </div>
         </div>

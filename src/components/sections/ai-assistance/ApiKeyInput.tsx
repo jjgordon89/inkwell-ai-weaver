@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, ExternalLink } from 'lucide-react';
 import { AIProvider } from '@/hooks/useAI';
 import { getProviderSetupLink } from './providerUtils';
+import { validateApiKey } from '@/utils/validation';
 
 interface ApiKeyInputProps {
   provider: AIProvider;
@@ -22,11 +23,24 @@ const ApiKeyInput = ({
   isTestingConnection 
 }: ApiKeyInputProps) => {
   const [showApiKey, setShowApiKey] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const toggleApiKeyVisibility = () => {
     setShowApiKey(prev => !prev);
   };
 
+  const handleApiKeyChange = (key: string) => {
+    onApiKeyChange(key);
+    
+    if (key.trim()) {
+      const validation = validateApiKey(key, provider.name);
+      setValidationError(validation.isValid ? null : validation.errors[0]);
+    } else {
+      setValidationError(null);
+    }
+  };
+
+  const isValidForTesting = apiKey.trim().length > 0 && !validationError;
   const setupLink = getProviderSetupLink(provider.name);
 
   return (
@@ -50,8 +64,9 @@ const ApiKeyInput = ({
             type={showApiKey ? "text" : "password"}
             placeholder={`Enter your ${provider.name} API key`}
             value={apiKey}
-            onChange={(e) => onApiKeyChange(e.target.value)}
-            className="pr-10"
+            onChange={(e) => handleApiKeyChange(e.target.value)}
+            className={`pr-10 ${validationError ? 'border-red-500' : ''}`}
+            maxLength={200}
           />
           <Button
             type="button"
@@ -71,11 +86,17 @@ const ApiKeyInput = ({
           variant="outline"
           size="sm"
           onClick={onTestConnection}
-          disabled={!apiKey || isTestingConnection}
+          disabled={!isValidForTesting || isTestingConnection}
         >
           {isTestingConnection ? 'Testing...' : 'Test'}
         </Button>
       </div>
+      
+      {validationError && (
+        <p className="text-sm text-red-600 dark:text-red-400">
+          {validationError}
+        </p>
+      )}
       
       {!apiKey && (
         <p className="text-sm text-amber-600 dark:text-amber-400">
