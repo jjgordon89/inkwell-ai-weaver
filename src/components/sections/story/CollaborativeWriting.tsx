@@ -14,11 +14,14 @@ import {
   Save,
   Loader2,
   MessageSquarePlus,
-  ArrowRight
+  ArrowRight,
+  UserPlus,
+  MapPin
 } from 'lucide-react';
 import { useWriting } from '@/contexts/WritingContext';
 import { useAI } from '@/hooks/useAI';
 import { useToast } from "@/hooks/use-toast";
+import type { Character, WorldElement } from '@/contexts/WritingContext';
 
 interface WritingSession {
   id: string;
@@ -36,6 +39,12 @@ interface WritingTurn {
   timestamp: Date;
 }
 
+interface ExtractedElement {
+  type: 'character' | 'location' | 'organization' | 'concept';
+  name: string;
+  description: string;
+}
+
 const CollaborativeWriting = () => {
   const { state, dispatch } = useWriting();
   const { processText, isProcessing, isCurrentProviderConfigured } = useAI();
@@ -45,6 +54,100 @@ const CollaborativeWriting = () => {
   const [initialPrompt, setInitialPrompt] = useState('');
   const [userInput, setUserInput] = useState('');
   const [isSessionActive, setIsSessionActive] = useState(false);
+  const [extractedElements, setExtractedElements] = useState<ExtractedElement[]>([]);
+
+  const extractStoryElements = async (content: string): Promise<ExtractedElement[]> => {
+    try {
+      const extractionPrompt = `Analyze this story text and extract any characters, locations, organizations, or concepts that are mentioned. Return ONLY a JSON array of objects with this exact format:
+[
+  {
+    "type": "character",
+    "name": "Character Name",
+    "description": "Brief description based on what's mentioned in the text"
+  },
+  {
+    "type": "location", 
+    "name": "Location Name",
+    "description": "Brief description based on what's mentioned in the text"
+  }
+]
+
+Valid types are: "character", "location", "organization", "concept"
+
+Story text to analyze:
+${content}
+
+Return only the JSON array, no other text.`;
+
+      const result = await processText(extractionPrompt, 'analyze');
+      
+      try {
+        // Clean the result to extract just the JSON
+        const jsonMatch = result.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          return Array.isArray(parsed) ? parsed : [];
+        }
+        return [];
+      } catch (parseError) {
+        console.error('Failed to parse extracted elements:', parseError);
+        return [];
+      }
+    } catch (error) {
+      console.error('Failed to extract story elements:', error);
+      return [];
+    }
+  };
+
+  const addExtractedElements = (elements: ExtractedElement[]) => {
+    let addedCount = 0;
+
+    elements.forEach(element => {
+      if (element.type === 'character') {
+        // Check if character already exists
+        const existingCharacter = state.characters.find(
+          char => char.name.toLowerCase() === element.name.toLowerCase()
+        );
+        
+        if (!existingCharacter) {
+          const newCharacter: Character = {
+            id: crypto.randomUUID(),
+            name: element.name,
+            description: element.description,
+            notes: 'Added from collaborative writing session',
+            tags: ['collaborative-writing'],
+            relationships: [],
+            createdWith: 'ai'
+          };
+          dispatch({ type: 'ADD_CHARACTER', payload: newCharacter });
+          addedCount++;
+        }
+      } else {
+        // Handle world elements (location, organization, concept)
+        const existingElement = state.worldElements.find(
+          el => el.name.toLowerCase() === element.name.toLowerCase() && el.type === element.type
+        );
+        
+        if (!existingElement) {
+          const newWorldElement: WorldElement = {
+            id: crypto.randomUUID(),
+            name: element.name,
+            type: element.type as WorldElement['type'],
+            description: element.description
+          };
+          dispatch({ type: 'ADD_WORLD_ELEMENT', payload: newWorldElement });
+          addedCount++;
+        }
+      }
+    });
+
+    if (addedCount > 0) {
+      toast({
+        title: "Story Elements Added",
+        description: `Added ${addedCount} new elements to Characters and World Building sections`,
+      });
+    }
+  };
 
   const startWritingSession = async () => {
     if (!initialPrompt.trim()) {
@@ -91,6 +194,10 @@ const CollaborativeWriting = () => {
       setCurrentSession(newSession);
       setIsSessionActive(true);
       setInitialPrompt('');
+
+      // Extract elements from initial content
+      const elements = await extractStoryElements(initialContent);
+      setExtractedElements(elements);
 
       toast({
         title: "Writing Session Started",
@@ -148,6 +255,10 @@ const CollaborativeWriting = () => {
 
       setCurrentSession(finalSession);
 
+      // Extract elements from new AI content
+      const newElements = await extractStoryElements(continuation);
+      setExtractedElements(prev => [...prev, ...newElements]);
+
       toast({
         title: "Story Continued",
         description: "AI has added the next section. Your turn!",
@@ -183,6 +294,7 @@ const CollaborativeWriting = () => {
     setIsSessionActive(false);
     setUserInput('');
     setInitialPrompt('');
+    setExtractedElements([]);
     toast({
       title: "Session Reset",
       description: "Ready to start a new writing session",
@@ -216,7 +328,7 @@ const CollaborativeWriting = () => {
           Collaborative Writing
         </CardTitle>
         <CardDescription>
-          Start writing from a prompt and continue collaboratively with AI
+          Start writing from a prompt and continue collaboratively with AI - characters and locations are automatically added to your project
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -303,6 +415,43 @@ const CollaborativeWriting = () => {
                 )}
               </div>
             </div>
+
+            {/* Extracted Elements */}
+            {extractedElements.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Discovered Elements</span>
+                  <Button
+                    size="sm"
+                    onClick={() => addExtractedElements(extractedElements)}
+                    disabled={extractedElements.length === 0}
+                  >
+                    <UserPlus className="h-3 w-3 mr-1" />
+                    Add All to Project
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {extractedElements.map((element, index) => (
+                    <Badge
+                      key={index}
+                      variant="outline"
+                      className={
+                        element.type === 'character'
+                          ? 'text-blue-600 border-blue-300'
+                          : 'text-green-600 border-green-300'
+                      }
+                    >
+                      {element.type === 'character' ? (
+                        <UserPlus className="h-3 w-3 mr-1" />
+                      ) : (
+                        <MapPin className="h-3 w-3 mr-1" />
+                      )}
+                      {element.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Story Content */}
             <div className="space-y-3 max-h-96 overflow-y-auto bg-muted/30 p-4 rounded-lg">
