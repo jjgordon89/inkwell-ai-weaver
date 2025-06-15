@@ -14,6 +14,7 @@ export interface OutlineItem {
   notes?: string;
   tags?: string[];
   estimatedWordCount?: number;
+  content?: string;
   createdAt: Date;
   updatedAt: Date;
 }

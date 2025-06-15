@@ -18,7 +18,9 @@ export const useDocumentOutline = () => {
       ...item,
       id: crypto.randomUUID(),
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      content: '',
+      wordCount: 0,
     };
 
     setOutlineStructure(prev => {
@@ -34,11 +36,16 @@ export const useDocumentOutline = () => {
 
   const updateItem = (itemId: string, updates: Partial<OutlineItem>) => {
     setOutlineStructure(prev => {
-      const newItems = prev.items.map(item =>
-        item.id === itemId 
-          ? { ...item, ...updates, updatedAt: new Date() }
-          : item
-      );
+      const newItems = prev.items.map(item => {
+        if (item.id === itemId) {
+          const updatedItem = { ...item, ...updates, updatedAt: new Date() };
+          if (updates.content !== undefined && updates.content !== null) {
+            updatedItem.wordCount = updates.content.trim().split(/\s+/).filter(Boolean).length;
+          }
+          return updatedItem;
+        }
+        return item;
+      });
       
       return {
         ...prev,
