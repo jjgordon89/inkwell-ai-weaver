@@ -39,8 +39,22 @@ const AIModelSettings = () => {
     setModelJustChanged(true);
     setTimeout(() => setModelJustChanged(false), 2000);
   };
-
   const getModelIcon = (modelName: string) => {
+    // Local models (Ollama/LM Studio)
+    if (modelName.includes('llama')) return <Zap className="h-4 w-4 text-green-500" />;
+    if (modelName.includes('codellama')) return <Cpu className="h-4 w-4 text-green-600" />;
+    if (modelName.includes('mistral')) return <Brain className="h-4 w-4 text-indigo-500" />;
+    if (modelName.includes('deepseek')) return <Cpu className="h-4 w-4 text-purple-500" />;
+    if (modelName.includes('qwen')) return <Brain className="h-4 w-4 text-red-400" />;
+    if (modelName.includes('phi')) return <Brain className="h-4 w-4 text-orange-500" />;
+    if (modelName.includes('nous-hermes')) return <Brain className="h-4 w-4 text-blue-400" />;
+    if (modelName.includes('starling')) return <Brain className="h-4 w-4 text-yellow-500" />;
+    if (modelName.includes('openchat')) return <Brain className="h-4 w-4 text-teal-500" />;
+    if (modelName.includes('wizard')) return <Brain className="h-4 w-4 text-purple-400" />;
+    if (modelName.includes('vicuna')) return <Brain className="h-4 w-4 text-green-400" />;
+    if (modelName.includes('alpaca')) return <Brain className="h-4 w-4 text-brown-400" />;
+    if (modelName.includes('orca')) return <Brain className="h-4 w-4 text-cyan-400" />;
+    
     // OpenAI models
     if (modelName.includes('gpt-4.1')) return <Brain className="h-4 w-4 text-green-600" />;
     if (modelName.includes('o3-2025')) return <Brain className="h-4 w-4 text-purple-600" />;
@@ -54,18 +68,38 @@ const AIModelSettings = () => {
     if (modelName.includes('gemini-1.5-flash')) return <Zap className="h-4 w-4 text-blue-500" />;
     if (modelName.includes('gemini-1.0-pro')) return <Brain className="h-4 w-4 text-blue-400" />;
     
-    // Other models
-    if (modelName.includes('llama')) return <Zap className="h-4 w-4 text-green-500" />;
+    // Cloud models
     if (modelName.includes('mixtral')) return <Brain className="h-4 w-4 text-orange-500" />;
     if (modelName.includes('gemma')) return <Brain className="h-4 w-4 text-red-500" />;
-    if (modelName.includes('mistral')) return <Brain className="h-4 w-4 text-indigo-500" />;
     if (modelName.includes('claude')) return <Brain className="h-4 w-4 text-purple-600" />;
     if (modelName.includes('command')) return <Brain className="h-4 w-4 text-cyan-500" />;
-    if (modelName.includes('qwen')) return <Brain className="h-4 w-4 text-red-400" />;
+    
     return <Brain className="h-4 w-4" />;
   };
-
   const getModelDescription = (modelName: string) => {
+    // Local models - provide helpful descriptions
+    if (modelName.includes('llama-3') || modelName.includes('llama3')) {
+      if (modelName.includes('70b')) return 'Large Llama model with excellent reasoning (requires 40GB+ RAM)';
+      if (modelName.includes('8b')) return 'Efficient Llama model, great for most tasks (requires 8GB+ RAM)';
+      if (modelName.includes('405b')) return 'Massive Llama model with superior capabilities (requires 200GB+ RAM)';
+      return 'Meta\'s Llama language model for local use';
+    }
+    if (modelName.includes('codellama')) return 'Specialized for code generation and programming tasks';
+    if (modelName.includes('mistral')) {
+      if (modelName.includes('7b')) return 'Efficient European model, good balance of speed and quality';
+      return 'High-performance open model from Mistral AI';
+    }
+    if (modelName.includes('deepseek')) return 'Strong coding and reasoning model';
+    if (modelName.includes('qwen')) return 'Alibaba\'s multilingual model with strong reasoning';
+    if (modelName.includes('phi')) return 'Microsoft\'s small but capable model';
+    if (modelName.includes('nous-hermes')) return 'Fine-tuned for helpful and harmless responses';
+    if (modelName.includes('starling')) return 'Optimized for helpfulness and following instructions';
+    if (modelName.includes('openchat')) return 'Conversational model with strong performance';
+    if (modelName.includes('wizard')) return 'Enhanced model for reasoning and problem-solving';
+    if (modelName.includes('vicuna')) return 'ChatGPT-style conversational model';
+    if (modelName.includes('alpaca')) return 'Instruction-following model based on Llama';
+    if (modelName.includes('orca')) return 'Microsoft\'s reasoning-focused model';
+    
     // OpenAI models
     if (modelName === 'gpt-4.1-2025-04-14') return 'OpenAI\'s flagship model with superior performance across all tasks';
     if (modelName === 'o3-2025-04-16') return 'Advanced reasoning model for complex multi-step problems';
@@ -80,7 +114,7 @@ const AIModelSettings = () => {
     if (modelName.includes('gemini-1.5-flash')) return 'Fast and efficient multimodal model';
     if (modelName.includes('gemini-1.0-pro')) return 'Google\'s foundational language model';
     
-    // Other models
+    // Other cloud models
     if (modelName.includes('llama-3.3-70b')) return 'Latest Llama model with enhanced capabilities';
     if (modelName.includes('llama-3.1-70b')) return 'Large Llama model with strong performance';
     if (modelName.includes('llama-3.1-8b')) return 'Fast and efficient Llama model';
@@ -92,9 +126,8 @@ const AIModelSettings = () => {
     if (modelName.includes('mixtral')) return 'Mixture of experts model';
     if (modelName.includes('gemma2-9b')) return 'Google\'s latest efficient language model';
     if (modelName.includes('gemma-7b')) return 'Google\'s efficient language model';
-    if (modelName.includes('mistral')) return 'High-performance open model';
     if (modelName.includes('command-r-plus')) return 'Cohere\'s advanced reasoning model';
-    if (modelName.includes('qwen')) return 'Alibaba\'s multilingual language model';
+    
     return 'AI language model';
   };
 

@@ -12,6 +12,7 @@ globs: *
 ## WORKFLOW & RELEASE RULES
 
 ## TECH STACK
+*   sql.js - SQLite compiled to WebAssembly
 
 ## PROJECT DOCUMENTATION & CONTEXT SYSTEM
 

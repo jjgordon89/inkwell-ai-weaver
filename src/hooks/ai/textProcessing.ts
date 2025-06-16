@@ -178,6 +178,90 @@ const makeOpenAICompatibleAPIRequest = async (
   return null;
 };
 
+const makeOllamaAPIRequest = async (
+  provider: AIProvider, 
+  apiKey: string, 
+  selectedModel: string, 
+  prompt: string, 
+  action: AIAction
+): Promise<string | null> => {
+  const requestBody = {
+    model: selectedModel,
+    prompt: prompt,
+    stream: false,
+    options: {
+      temperature: action === 'fix-grammar' ? 0.1 : 0.7,
+      num_predict: 1000
+    }
+  };
+
+  try {
+    const response = await fetch(`${provider.apiEndpoint}/api/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.response || null;
+    }
+  } catch (error) {
+    console.warn(`Ollama API error, falling back to mock processing:`, error);
+  }
+
+  return null;
+};
+
+const makeLMStudioAPIRequest = async (
+  provider: AIProvider, 
+  apiKey: string, 
+  selectedModel: string, 
+  prompt: string, 
+  action: AIAction
+): Promise<string | null> => {
+  // LM Studio uses OpenAI-compatible API format
+  const requestBody = {
+    model: selectedModel,
+    messages: [
+      {
+        role: 'system',
+        content: 'You are a helpful writing assistant. Follow the user\'s instructions precisely.'
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ],
+    max_tokens: 1000,
+    temperature: action === 'fix-grammar' ? 0.1 : 0.7,
+    stream: false
+  };
+
+  try {
+    const response = await fetch(`${provider.apiEndpoint}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // LM Studio doesn't typically require auth for local access
+        ...(apiKey && { 'Authorization': `Bearer ${apiKey}` })
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content || null;
+    }
+  } catch (error) {
+    console.warn(`LM Studio API error, falling back to mock processing:`, error);
+  }
+
+  return null;
+};
+
 export const makeAPIRequest = async (
   provider: AIProvider, 
   apiKey: string, 
@@ -187,11 +271,19 @@ export const makeAPIRequest = async (
 ): Promise<string | null> => {
   if (!provider.apiEndpoint) return null;
 
-  // Handle Google Gemini API differently
-  if (provider.name === 'Google Gemini') {
-    return makeGeminiAPIRequest(provider, apiKey, selectedModel, prompt, action);
+  // Handle different provider types
+  switch (provider.name) {
+    case 'Google Gemini':
+      return makeGeminiAPIRequest(provider, apiKey, selectedModel, prompt, action);
+    
+    case 'Ollama':
+      return makeOllamaAPIRequest(provider, apiKey, selectedModel, prompt, action);
+    
+    case 'LM Studio':
+      return makeLMStudioAPIRequest(provider, apiKey, selectedModel, prompt, action);
+    
+    default:
+      // Handle OpenAI-compatible APIs (OpenAI, Groq, OpenRouter)
+      return makeOpenAICompatibleAPIRequest(provider, apiKey, selectedModel, prompt, action);
   }
-
-  // Handle OpenAI-compatible APIs (OpenAI, Groq, OpenRouter)
-  return makeOpenAICompatibleAPIRequest(provider, apiKey, selectedModel, prompt, action);
 };

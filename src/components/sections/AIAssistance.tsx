@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { Settings, Brain, Zap } from 'lucide-react';
+import { Settings, Brain, Zap, TestTube } from 'lucide-react';
 import { useAI } from '@/hooks/useAI';
 import AIProviderSettings from './ai-assistance/AIProviderSettings';
 import AIModelSettings from './ai-assistance/AIModelSettings';
 import AIConfigurationPanel from './ai-assistance/AIConfigurationPanel';
+import LocalModelTester from '../ai/LocalModelTester';
 
 const AIAssistance = () => {
   const { selectedProvider, selectedModel, isProcessing } = useAI();
@@ -40,12 +41,19 @@ const AIAssistance = () => {
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Model Configuration</h3>
           <AIModelSettings />
-        </div>
-
-        {/* Configuration Panel */}
+        </div>        {/* Configuration Panel */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Advanced Settings</h3>
           <AIConfigurationPanel />
+        </div>
+
+        {/* Local Model Tester */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <TestTube className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-semibold">Local Model Testing</h3>
+          </div>
+          <LocalModelTester />
         </div>
 
         {/* Current Configuration Summary */}

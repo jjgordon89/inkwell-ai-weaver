@@ -2,11 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Globe, CheckCircle } from 'lucide-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Globe, CheckCircle, Monitor, Server, AlertCircle } from 'lucide-react';
 import { useAI } from '@/hooks/useAI';
+import { useLocalModels } from '@/hooks/ai/useLocalModels';
 import ProviderSelector from './ProviderSelector';
 import ProviderDetails from './ProviderDetails';
 import ApiKeyInput from './ApiKeyInput';
+import LocalModelManager from '@/components/ai/LocalModelManager';
+import LocalProviderStatus from '@/components/ai/LocalProviderStatus';
 
 const AIProviderSettings = () => {
   const { 
@@ -18,6 +22,13 @@ const AIProviderSettings = () => {
     testConnection,
     isTestingConnection
   } = useAI();
+  
+  const { 
+    state: localModelState, 
+    hasConnectedProvider, 
+    getConnectionStatus,
+    updateProviderModels 
+  } = useLocalModels();
   
   const [providerJustChanged, setProviderJustChanged] = useState(false);
 
@@ -65,8 +76,7 @@ const AIProviderSettings = () => {
           Choose your preferred AI provider for text processing and suggestions.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <ProviderSelector
+      <CardContent className="space-y-4">        <ProviderSelector
           selectedProvider={selectedProvider}
           availableProviders={availableProviders}
           onProviderChange={handleProviderChange}
@@ -81,7 +91,22 @@ const AIProviderSettings = () => {
               providerJustChanged={providerJustChanged}
             />
 
-            {/* API Key Input */}
+            {/* Local Provider Status and Model Manager for local providers */}
+            {currentProvider.type === 'local' && (
+              <div className="space-y-4">
+                <LocalProviderStatus 
+                  providerName={currentProvider.name as 'Ollama' | 'LM Studio'}
+                  endpoint={currentProvider.apiEndpoint}
+                />
+                <LocalModelManager
+                  onModelsUpdate={(provider, models) => {
+                    updateProviderModels(provider, models);
+                  }}
+                />
+              </div>
+            )}
+
+            {/* API Key Input for providers that require it */}
             {currentProvider.requiresApiKey && (
               <ApiKeyInput
                 provider={currentProvider}

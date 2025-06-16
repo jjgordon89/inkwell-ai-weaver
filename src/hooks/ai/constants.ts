@@ -14,7 +14,8 @@ export const AI_PROVIDERS: AIProvider[] = [
       'gpt-3.5-turbo'
     ],
     requiresApiKey: true,
-    apiEndpoint: 'https://api.openai.com/v1/chat/completions'
+    apiEndpoint: 'https://api.openai.com/v1/chat/completions',
+    type: 'cloud'
   },
   {
     name: 'Google Gemini',
@@ -24,7 +25,8 @@ export const AI_PROVIDERS: AIProvider[] = [
       'gemini-1.0-pro'
     ],
     requiresApiKey: true,
-    apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models'
+    apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models',
+    type: 'cloud'
   },
   {
     name: 'Groq',
@@ -39,7 +41,8 @@ export const AI_PROVIDERS: AIProvider[] = [
       'gemma-7b-it'
     ],
     requiresApiKey: true,
-    apiEndpoint: 'https://api.groq.com/openai/v1/chat/completions'
+    apiEndpoint: 'https://api.groq.com/openai/v1/chat/completions',
+    type: 'cloud'
   },
   {
     name: 'OpenRouter',
@@ -58,11 +61,26 @@ export const AI_PROVIDERS: AIProvider[] = [
       'qwen/qwen-2.5-72b-instruct'
     ],
     requiresApiKey: true,
-    apiEndpoint: 'https://openrouter.ai/api/v1/chat/completions'
+    apiEndpoint: 'https://openrouter.ai/api/v1/chat/completions',
+    type: 'cloud'
+  },  {
+    name: 'Ollama',
+    models: [], // Will be dynamically loaded
+    requiresApiKey: false,
+    apiEndpoint: 'http://localhost:11434',
+    type: 'local',
+    defaultPort: 11434,
+    description: 'Run large language models locally with Ollama',
+    setupInstructions: 'Install Ollama from https://ollama.ai and ensure it\'s running on localhost:11434'
   },
   {
-    name: 'Local Model',
-    models: ['llama-7b', 'codellama-13b', 'mistral-7b'],
-    requiresApiKey: false
+    name: 'LM Studio',
+    models: [], // Will be dynamically loaded
+    requiresApiKey: false,
+    apiEndpoint: 'http://localhost:1234',
+    type: 'local',
+    defaultPort: 1234,
+    description: 'Run models locally with LM Studio',
+    setupInstructions: 'Install LM Studio from https://lmstudio.ai and start the local server'
   }
 ];

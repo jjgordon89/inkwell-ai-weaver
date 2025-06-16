@@ -10,11 +10,6 @@ import Story from './sections/Story';
 import Outline from './sections/Outline';
 import StoryStructure from './sections/StoryStructure';
 import ExportPublishing from './sections/ExportPublishing';
-import AITextProcessor from './sections/story/AITextProcessor';
-import ChapterManagement from './sections/story/ChapterManagement';
-import SmartWritingFeatures from './sections/story/SmartWritingFeatures';
-import EnhancedAIPanel from './sections/story/EnhancedAIPanel';
-import CollaborativeWriting from './sections/story/CollaborativeWriting';
 import StoryTabs from './sections/story/StoryTabs';
 
 const RightPanel = () => {
@@ -43,7 +38,6 @@ const RightPanel = () => {
   if (state.activeSection === 'cross-references') {
     return <CrossReferences />;
   }
-
   if (state.activeSection === 'ai-assistance') {
     return <AIAssistance />;
   }
@@ -51,36 +45,8 @@ const RightPanel = () => {
   // Show story-specific features when in story section
   if (state.activeSection === 'story') {
     return (
-      <div className="h-full bg-muted/30 p-4 flex flex-col space-y-6 border-l overflow-y-auto">
-        {/* Overview Section */}
-        <div className="space-y-4">
-          <StoryTabs />
-        </div>
-
-        {/* AI Text Processing */}
-        <div className="border-t pt-6">
-          <AITextProcessor />
-        </div>
-
-        {/* Enhanced AI Panel */}
-        <div className="border-t pt-6">
-          <EnhancedAIPanel />
-        </div>
-
-        {/* Smart Writing Features */}
-        <div className="border-t pt-6">
-          <SmartWritingFeatures />
-        </div>
-
-        {/* Collaborative Writing */}
-        <div className="border-t pt-6">
-          <CollaborativeWriting />
-        </div>
-
-        {/* Chapter Management */}
-        <div className="border-t pt-6">
-          <ChapterManagement />
-        </div>
+      <div className="h-full bg-muted/30 p-4 flex flex-col border-l overflow-y-auto">
+        <StoryTabs />
       </div>
     );
   }
@@ -90,18 +56,8 @@ const RightPanel = () => {
   );
 
   return (
-    <div className="h-full bg-muted/30 p-4 flex flex-col space-y-6 border-l">
-      {/* AI Text Processing */}
-      <AITextProcessor />
-
-      {/* Chapter Management - only show in story section */}
-      {state.activeSection === 'story' && (
-        <div className="border-t pt-6">
-          <ChapterManagement />
-        </div>
-      )}
-
-      <div className="flex-grow border-t pt-6">
+    <div className="h-full bg-muted/30 p-4 flex flex-col border-l">
+      <div className="flex-grow">
         <h3 className="text-lg font-semibold flex items-center mb-2">
           <User className="h-5 w-5 mr-2 text-primary" />
           Character Info

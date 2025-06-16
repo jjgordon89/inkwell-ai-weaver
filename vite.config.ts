@@ -19,4 +19,22 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // sql.js WASM support
+  optimizeDeps: {
+    exclude: ['sql.js'],
+  },
+  define: {
+    // Ensure proper handling of Node.js globals for sql.js
+    global: 'globalThis',
+  },
+  build: {
+    rollupOptions: {
+      external: [],
+    },
+  },
+  // Ensure WASM files are served correctly
+  assetsInclude: ['**/*.wasm'],
+  worker: {
+    format: 'es',
+  },
 }));

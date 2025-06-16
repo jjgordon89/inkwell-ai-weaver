@@ -4,6 +4,7 @@ import { useWriting } from '@/contexts/WritingContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from 'react-router-dom';
+import AISettingsMenu from './ai/AISettingsMenu';
 
 const Sidebar = () => {
   const { state, dispatch } = useWriting();
@@ -170,10 +171,7 @@ const Sidebar = () => {
         </div>
       </nav>      {/* Footer */}
       <div className="mt-auto pt-6 border-t border-border/20 space-y-3">
-        <Button variant="ghost" size="sm" className="w-full justify-start">
-          <Settings className="h-4 w-4 mr-2" />
-          Settings
-        </Button>
+        <AISettingsMenu />
       </div>
     </div>
   );

@@ -4,6 +4,11 @@ export interface AIProvider {
   models: string[];
   requiresApiKey: boolean;
   apiEndpoint?: string;
+  type?: 'cloud' | 'local';
+  defaultPort?: number;
+  description?: string;
+  setupInstructions?: string;
+  customEndpoint?: string; // For user-specified endpoints
 }
 
 export type AIAction = 

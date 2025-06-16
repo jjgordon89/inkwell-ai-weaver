@@ -84,6 +84,65 @@ const testOpenAICompatibleConnection = async (provider: AIProvider, apiKey: stri
   }
 };
 
+const testOllamaConnection = async (provider: AIProvider, apiKey: string): Promise<boolean> => {
+  try {
+    // First check if Ollama is running by getting available models
+    const response = await fetch(`${provider.apiEndpoint}/api/tags`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.models && data.models.length > 0) {
+        console.log(`✅ Connection test successful for ${provider.name} (${data.models.length} models available)`);
+        return true;
+      } else {
+        console.warn(`⚠️ Ollama is running but no models are available. Install models using: ollama pull llama2`);
+        return false;
+      }
+    } else {
+      console.error(`❌ Connection test failed for ${provider.name}:`, response.status);
+      return false;
+    }
+  } catch (error) {
+    console.error(`❌ Connection test failed for ${provider.name}:`, error);
+    return false;
+  }
+};
+
+const testLMStudioConnection = async (provider: AIProvider, apiKey: string): Promise<boolean> => {
+  try {
+    // Check if LM Studio server is running
+    const response = await fetch(`${provider.apiEndpoint}/v1/models`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(apiKey && { 'Authorization': `Bearer ${apiKey}` })
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.data && data.data.length > 0) {
+        console.log(`✅ Connection test successful for ${provider.name} (${data.data.length} models available)`);
+        return true;
+      } else {
+        console.warn(`⚠️ LM Studio is running but no models are loaded. Load a model in LM Studio first.`);
+        return false;
+      }
+    } else {
+      console.error(`❌ Connection test failed for ${provider.name}:`, response.status);
+      return false;
+    }
+  } catch (error) {
+    console.error(`❌ Connection test failed for ${provider.name}:`, error);
+    return false;
+  }
+};
+
 export const testProviderConnection = async (
   provider: AIProvider, 
   apiKey: string
@@ -97,11 +156,19 @@ export const testProviderConnection = async (
     return success;
   }
 
-  // Handle Google Gemini API differently
-  if (provider.name === 'Google Gemini') {
-    return testGeminiConnection(provider, apiKey);
+  // Handle different provider types
+  switch (provider.name) {
+    case 'Google Gemini':
+      return testGeminiConnection(provider, apiKey);
+    
+    case 'Ollama':
+      return testOllamaConnection(provider, apiKey);
+    
+    case 'LM Studio':
+      return testLMStudioConnection(provider, apiKey);
+    
+    default:
+      // Handle OpenAI-compatible APIs (OpenAI, Groq, OpenRouter)
+      return testOpenAICompatibleConnection(provider, apiKey);
   }
-
-  // Handle OpenAI-compatible APIs (OpenAI, Groq, OpenRouter)
-  return testOpenAICompatibleConnection(provider, apiKey);
 };

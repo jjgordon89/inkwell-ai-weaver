@@ -2,7 +2,7 @@
 import { useEffect, useCallback } from 'react';
 import { useAIContext } from '@/contexts/AIContext';
 import { AI_PROVIDERS } from './constants';
-import { loadAISettings, saveApiKeys, saveSelectedProvider, saveSelectedModel } from './storage';
+import { DatabaseAIStorage } from '@/lib/databaseAIStorage';
 import { makeAPIRequest, performMockTextProcessing, getPromptForAction } from './textProcessing';
 import { validateAIInput, validateAIResponse } from '@/hooks/ai/aiUtils';
 import { testProviderConnection } from './connectionTest';
@@ -10,26 +10,53 @@ import type { AIAction as ProcessingAction, AIProvider } from './types';
 
 export const useAIOperations = () => {
   const { state, dispatch } = useAIContext();
-
   // Load initial settings
   useEffect(() => {
-    const settings = loadAISettings();
-    dispatch({
-      type: 'LOAD_INITIAL_STATE',
-      payload: {
-        selectedProvider: settings.selectedProvider || 'OpenAI',
-        selectedModel: settings.selectedModel || 'gpt-4.1-2025-04-14',
-        apiKeys: settings.apiKeys,
-        availableProviders: AI_PROVIDERS
+    const loadSettings = async () => {
+      try {
+        const settings = await DatabaseAIStorage.loadAISettings();
+        dispatch({
+          type: 'LOAD_INITIAL_STATE',
+          payload: {
+            selectedProvider: settings.selectedProvider || 'OpenAI',
+            selectedModel: settings.selectedModel || 'gpt-4.1-2025-04-14',
+            apiKeys: settings.apiKeys,
+            availableProviders: AI_PROVIDERS
+          }
+        });
+      } catch (error) {
+        console.error('Failed to load AI settings from database:', error);
+        // Fallback to defaults
+        dispatch({
+          type: 'LOAD_INITIAL_STATE',
+          payload: {
+            selectedProvider: 'OpenAI',
+            selectedModel: 'gpt-4.1-2025-04-14',
+            apiKeys: {},
+            availableProviders: AI_PROVIDERS
+          }
+        });
       }
-    });
-  }, [dispatch]);
+    };
 
+    loadSettings();
+  }, [dispatch]);
   // Save settings when they change
   useEffect(() => {
-    saveSelectedProvider(state.selectedProvider);
-    saveSelectedModel(state.selectedModel);
-    saveApiKeys(state.apiKeys);
+    const saveSettings = async () => {
+      try {
+        await DatabaseAIStorage.saveSelectedProvider(state.selectedProvider);
+        await DatabaseAIStorage.saveSelectedModel(state.selectedModel);
+        await DatabaseAIStorage.saveApiKeys(state.apiKeys);
+      } catch (error) {
+        console.error('Failed to save AI settings to database:', error);
+      }
+    };
+
+    // Only save if we have a selected provider (i.e., after initial load)
+    if (state.selectedProvider) {
+      saveSettings();
+    }
   }, [state.selectedProvider, state.selectedModel, state.apiKeys]);
 
   // Auto-update model when provider changes
@@ -135,18 +162,20 @@ export const useAIOperations = () => {
       }
 
       console.log(`Processing text with ${state.selectedProvider} (${state.selectedModel}) - Action: ${action}`);
-      dispatch({ type: 'SET_PROCESSING', payload: true });
-
-      let result: string;
+      dispatch({ type: 'SET_PROCESSING', payload: true });      let result: string;
 
       // Try real API if available and configured
-      if (currentProvider.apiEndpoint && state.apiKeys[state.selectedProvider]) {
+      // For local providers, we don't need an API key
+      const canUseAPI = currentProvider.apiEndpoint && 
+        (!currentProvider.requiresApiKey || state.apiKeys[state.selectedProvider]);
+
+      if (canUseAPI) {
         console.log(`Using real API for ${state.selectedProvider}`);
         
         const prompt = getPromptForAction(action, text);
         const apiResult = await makeAPIRequest(
           currentProvider, 
-          state.apiKeys[state.selectedProvider], 
+          state.apiKeys[state.selectedProvider] || '', 
           state.selectedModel, 
           prompt, 
           action
@@ -166,6 +195,7 @@ export const useAIOperations = () => {
         }
       } else {
         // Fallback to mock processing
+        console.log(`Using mock processing for ${state.selectedProvider} (API not available or not configured)`);
         result = await performMockTextProcessing(text, action, state.selectedModel);
       }
 
