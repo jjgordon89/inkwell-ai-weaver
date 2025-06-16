@@ -92,7 +92,7 @@ function writingReducer(state: WritingState, action: WritingAction): WritingStat
   switch (action.type) {
     case 'SET_CURRENT_DOCUMENT':
       return { ...state, currentDocument: action.payload };
-    case 'UPDATE_DOCUMENT_CONTENT':
+    case 'UPDATE_DOCUMENT_CONTENT': {
       const updatedDocument = state.currentDocument && state.currentDocument.id === action.payload.id
         ? {
             ...state.currentDocument,
@@ -102,7 +102,8 @@ function writingReducer(state: WritingState, action: WritingAction): WritingStat
           }
         : state.currentDocument;
       return { ...state, currentDocument: updatedDocument };
-    case 'UPDATE_DOCUMENT':
+    }
+    case 'UPDATE_DOCUMENT': {
       const updatedDoc = state.currentDocument && state.currentDocument.id === action.payload.id
         ? {
             ...state.currentDocument,
@@ -111,6 +112,7 @@ function writingReducer(state: WritingState, action: WritingAction): WritingStat
           }
         : state.currentDocument;
       return { ...state, currentDocument: updatedDoc };
+    }
     case 'ADD_CHARACTER':
       return { ...state, characters: [...state.characters, action.payload] };
     case 'UPDATE_CHARACTER':

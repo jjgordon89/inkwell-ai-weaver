@@ -5,8 +5,8 @@ import { Link, GitMerge, Globe } from 'lucide-react';
 
 interface Connection {
   type: string;
-  from: any;
-  to: any;
+  from: { id: string; name: string; title?: string };
+  to: { id: string; name: string; title?: string };
   relationship: string;
 }
 

@@ -12,8 +12,8 @@ export const useEnhancedAI = () => {
   const generateContextualSuggestions = async (
     documentContent: string,
     selectedText?: string,
-    characters?: any[],
-    storyArcs?: any[]
+    characters?: Array<{ id: string; name: string }>,
+    storyArcs?: Array<{ id: string; title: string }>
   ): Promise<string[]> => {
     setIsAnalyzing(true);
     

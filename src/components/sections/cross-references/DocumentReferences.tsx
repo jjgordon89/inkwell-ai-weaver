@@ -6,7 +6,7 @@ import { Character } from '@/contexts/WritingContext';
 
 interface DocumentReferencesProps {
   characters: Character[];
-  currentDocument: any;
+  currentDocument: { id: string; title: string; content: string } | null;
   findCharacterReferences: (characterName: string) => number;
 }
 

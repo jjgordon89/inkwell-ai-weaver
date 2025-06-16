@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BookOpen, Layout, Grid3X3, Clock, Plus, Filter } from 'lucide-react';
 import { useDocumentOutline } from '@/hooks/outline/useDocumentOutline';
+import type { OutlineItem, StatusFilter } from '@/hooks/outline/types';
 import HierarchyView from './outline/HierarchyView';
 import CorkboardView from './outline/CorkboardView';
 import TimelineView from './outline/TimelineView';
@@ -31,7 +32,7 @@ const DocumentOutline = () => {
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<string | null>(null);
 
-  const handleAddItem = (itemData: any) => {
+  const handleAddItem = (itemData: Omit<OutlineItem, "id" | "createdAt" | "updatedAt">) => {
     addItem(itemData);
     setIsAddingItem(false);
   };
@@ -71,7 +72,7 @@ const DocumentOutline = () => {
             
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+              <Select value={statusFilter} onValueChange={(value: string) => setStatusFilter(value as StatusFilter)}>
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>

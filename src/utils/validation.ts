@@ -4,6 +4,7 @@ export interface ValidationResult {
   errors: string[];
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface ValidationRule<T = any> {
   validate: (value: T) => boolean;
   message: string;
@@ -80,7 +81,7 @@ export function validateField<T>(value: T, rules: ValidationRule<T>[]): Validati
 }
 
 // Validate multiple fields
-export function validateFields(fields: Record<string, { value: any; rules: ValidationRule[] }>): Record<string, ValidationResult> {
+export function validateFields(fields: Record<string, { value: unknown; rules: ValidationRule[] }>): Record<string, ValidationResult> {
   const results: Record<string, ValidationResult> = {};
 
   for (const [fieldName, { value, rules }] of Object.entries(fields)) {
@@ -100,7 +101,7 @@ export function validateCharacterInput(data: {
   backstory?: string;
   appearance?: string;
 }): ValidationResult {
-  const fields: Record<string, { value: any; rules: ValidationRule[] }> = {
+  const fields: Record<string, { value: unknown; rules: ValidationRule[] }> = {
     name: {
       value: data.name,
       rules: [

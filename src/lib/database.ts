@@ -344,7 +344,15 @@ class SQLiteDatabase {
       throw error;
     }
   }
-  async getAIProviders(): Promise<Array<any>> {
+  async getAIProviders(): Promise<Array<{
+    name: string;
+    api_key?: string;
+    endpoint?: string;
+    model?: string;
+    is_active: boolean;
+    is_local: boolean;
+    configuration?: object;
+  }>> {
     await this.initialize();
     if (!this.db) return [];
 
@@ -353,7 +361,15 @@ class SQLiteDatabase {
         SELECT name, api_key, endpoint, model, is_active, is_local, configuration 
         FROM ai_providers ORDER BY name
       `);
-      const results: Array<any> = [];
+      const results: Array<{
+        name: string;
+        api_key?: string;
+        endpoint?: string;
+        model?: string;
+        is_active: boolean;
+        is_local: boolean;
+        configuration?: object;
+      }> = [];
       
       while (stmt.step()) {
         const row = stmt.getAsObject();
@@ -376,13 +392,13 @@ class SQLiteDatabase {
     }
   }
   // Generic query method for advanced usage
-  async query(sql: string, params: any[] = []): Promise<any[]> {
+  async query(sql: string, params: (string | number | null)[] = []): Promise<Record<string, unknown>[]> {
     await this.initialize();
     if (!this.db) return [];
 
     try {
       const stmt = this.db.prepare(sql);
-      const results: any[] = [];
+      const results: Record<string, unknown>[] = [];
       
       // Bind parameters if provided
       if (params.length > 0) {

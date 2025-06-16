@@ -8,12 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useDocumentOutline } from '@/hooks/outline/useDocumentOutline';
-import type { Chapter } from '@/hooks/outline/types';
+import type { Chapter, OutlineItem } from '@/hooks/outline/types';
 
 const ChapterManagement = () => {
   const { outlineStructure, addItem, updateItem, deleteItem } = useDocumentOutline();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
+  const [editingChapter, setEditingChapter] = useState<OutlineItem | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: ''
@@ -48,7 +48,7 @@ const ChapterManagement = () => {
     setIsDialogOpen(false);
   };
 
-  const handleEdit = (chapter: any) => {
+  const handleEdit = (chapter: OutlineItem) => {
     setEditingChapter(chapter);
     setFormData({
       title: chapter.title,

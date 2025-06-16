@@ -142,7 +142,7 @@ function aiReducer(state: AIState, action: AIContextAction): AIState {
         }
       };
       
-    case 'CACHE_RESULT':
+    case 'CACHE_RESULT': {
       const newCache = new Map(state.resultsCache);
       newCache.set(action.payload.key, {
         result: action.payload.result,
@@ -152,6 +152,7 @@ function aiReducer(state: AIState, action: AIContextAction): AIState {
         ...state,
         resultsCache: newCache
       };
+    }
       
     case 'CLEAR_CACHE':
       return {

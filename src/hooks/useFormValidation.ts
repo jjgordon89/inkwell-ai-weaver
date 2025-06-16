@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { ValidationResult, ValidationRule, validateField } from '@/utils/validation';
 
 interface FormField {
-  value: any;
+  value: unknown;
   rules: ValidationRule[];
   touched: boolean;
   error: string | null;
@@ -14,7 +14,7 @@ interface UseFormValidationReturn {
   errors: Record<string, string | null>;
   isValid: boolean;
   hasErrors: boolean;
-  setField: (name: string, value: any) => void;
+  setField: (name: string, value: unknown) => void;
   setFieldTouched: (name: string) => void;
   validateField: (name: string) => ValidationResult;
   validateAll: () => boolean;
@@ -24,7 +24,7 @@ interface UseFormValidationReturn {
 }
 
 export const useFormValidation = (
-  initialFields: Record<string, { value: any; rules: ValidationRule[] }>
+  initialFields: Record<string, { value: unknown; rules: ValidationRule[] }>
 ): UseFormValidationReturn => {
   const [fields, setFields] = useState<Record<string, FormField>>(() => {
     const initial: Record<string, FormField> = {};
@@ -39,7 +39,7 @@ export const useFormValidation = (
     return initial;
   });
 
-  const setField = useCallback((name: string, value: any) => {
+  const setField = useCallback((name: string, value: unknown) => {
     setFields(prev => {
       const field = prev[name];
       if (!field) return prev;

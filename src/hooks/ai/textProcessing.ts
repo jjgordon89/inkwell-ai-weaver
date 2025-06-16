@@ -46,10 +46,11 @@ export const performMockTextProcessing = async (text: string, action: AIAction, 
   switch (action) {
     case 'improve':
       return `Enhanced version using ${selectedModel}: ${text.replace(/\b(good|nice|ok)\b/gi, 'excellent').replace(/\b(bad|poor)\b/gi, 'suboptimal')}`;
-    case 'shorten':
+    case 'shorten': {
       const words = text.split(' ');
       const targetLength = Math.max(Math.floor(words.length * 0.7), 3);
       return words.slice(0, targetLength).join(' ') + (targetLength < words.length ? '...' : '');
+    }
     case 'expand':
       return `${text} This expanded version provides additional context and detail, offering readers a more comprehensive understanding of the topic while maintaining the original meaning and intent.`;
     case 'fix-grammar':
@@ -158,6 +159,10 @@ const makeOpenAICompatibleAPIRequest = async (
     headers['X-Title'] = 'Inkwell AI Weaver';
   } else {
     headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+
+  if (!provider.apiEndpoint) {
+    return null;
   }
 
   try {

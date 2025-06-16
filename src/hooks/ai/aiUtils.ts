@@ -30,24 +30,27 @@ export const parseAIResponse = (response: string): ParsedAIResponse => {
     
     // Handle special cases
     switch (key) {
-      case 'age':
+      case 'age': {
         const age = parseInt(value);
         parsed[key] = isNaN(age) ? undefined : Math.max(0, Math.min(200, age));
         break;
-      case 'tags':
+      }
+      case 'tags': {
         const tags = value.split(',')
           .map(tag => tag.trim())
           .filter(tag => tag.length > 0 && tag.length <= 50)
           .slice(0, 10); // Limit to 10 tags
         parsed[key] = tags;
         break;
-      default:
+      }
+      default: {
         // Sanitize string values
         const sanitizedValue = value.replace(/[<>]/g, '').trim();
         if (sanitizedValue.length <= 5000) { // Limit field length
           parsed[key] = sanitizedValue;
         }
         break;
+      }
     }
   });
 

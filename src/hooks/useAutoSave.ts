@@ -19,7 +19,7 @@ export const useAutoSave = (delay: number = 2000) => {
         );
         
         const existingIndex = savedDocuments.findIndex(
-          (doc: any) => doc.id === state.currentDocument?.id
+          (doc: { id: string }) => doc.id === state.currentDocument?.id
         );
         
         if (existingIndex >= 0) {
