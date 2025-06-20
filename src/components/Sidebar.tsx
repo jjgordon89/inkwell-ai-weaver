@@ -6,6 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Link } from 'react-router-dom';
 import AISettingsMenu from './ai/AISettingsMenu';
 
+type NavItem = {
+  name: string;
+  icon: React.ComponentType<{ className?: string }>;
+  section: string;
+};
+
 const Sidebar = () => {
   const { state, dispatch } = useWriting();
 
@@ -13,25 +19,25 @@ const Sidebar = () => {
     { name: 'All Projects', icon: Folder, path: '/projects' },
   ];
 
-  const writingItems = [
-    { name: 'Story', icon: Book, section: 'story' as const },
-    { name: 'Outline', icon: List, section: 'outline' as const },
-    { name: 'Story Structure', icon: Layers, section: 'story-structure' as const },
+  const writingItems: NavItem[] = [
+    { name: 'Story', icon: Book, section: 'story' },
+    { name: 'Outline', icon: List, section: 'outline' },
+    { name: 'Story Structure', icon: Layers, section: 'story-structure' },
   ];
 
-  const storyElementsItems = [
-    { name: 'Characters', icon: Users, section: 'characters' as const },
-    { name: 'Story Arcs', icon: GitMerge, section: 'story-arc' as const },
-    { name: 'World Building', icon: Globe, section: 'world-building' as const },
+  const storyElementsItems: NavItem[] = [
+    { name: 'Characters', icon: Users, section: 'characters' },
+    { name: 'Story Arcs', icon: GitMerge, section: 'story-arc' },
+    { name: 'World Building', icon: Globe, section: 'world-building' },
   ];
 
-  const toolsItems = [
-    { name: 'AI Assistance', icon: Bot, section: 'ai-assistance' as const },
-    { name: 'Cross-References', icon: LinkIcon, section: 'cross-references' as const },
+  const toolsItems: NavItem[] = [
+    { name: 'AI Assistance', icon: Bot, section: 'ai-assistance' },
+    { name: 'Cross-References', icon: LinkIcon, section: 'cross-references' },
   ];
 
-  const handleSectionChange = (section: typeof state.activeSection) => {
-    dispatch({ type: 'SET_ACTIVE_SECTION', payload: section });
+  const handleSectionChange = (section: string) => {
+    dispatch({ type: 'SET_ACTIVE_SECTION', payload: section as any });
   };
 
   const getQuickAction = (section: string) => {
@@ -47,7 +53,7 @@ const Sidebar = () => {
     }
   };
 
-  const renderNavSection = (title: string, items: typeof writingItems, color: string, icon: React.ReactNode) => (
+  const renderNavSection = (title: string, items: NavItem[], color: string, icon: React.ReactNode) => (
     <div className="space-y-4">
       <div className="flex items-center space-x-2 mb-4">
         <div className={`w-3 h-3 rounded-full ${color}`}></div>
