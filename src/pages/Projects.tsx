@@ -1,9 +1,8 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EmptyState from "@/components/ui/empty-state";
 import { Plus, Book } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const ProjectsPage = () => {
   // Mock data for projects. In a real app, this would come from an API.
@@ -12,12 +11,14 @@ const ProjectsPage = () => {
     { id: 2, name: "Echoes of Nebula", lastEdited: "1 day ago" },
   ];
 
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto p-8">
         <header className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold">My Projects</h1>
-          <Button>
+          <Button onClick={() => navigate("/projects/new")}>
             <Plus className="mr-2 h-4 w-4" />
             Create New Project
           </Button>
@@ -49,7 +50,7 @@ const ProjectsPage = () => {
               description="Get started by creating your first manuscript."
               action={{
                 label: "Create New Project",
-                onClick: () => console.log("Create new project clicked"),
+                onClick: () => navigate("/projects/new"),
               }}
             />
           )}
