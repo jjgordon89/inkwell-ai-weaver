@@ -1,6 +1,5 @@
-
 import React, { useState, useMemo } from 'react';
-import { Search, Plus, ChevronRight, ChevronDown, FileText, Folder, BookOpen, MoreHorizontal, Trash2, Edit3 } from 'lucide-react';
+import { Search, Plus, ChevronRight, ChevronDown, FileText, Folder, BookOpen, MoreHorizontal, Trash2, Edit3, Upload, Download, FileTemplate } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +7,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useProject } from '@/contexts/ProjectContext';
 import type { DocumentNode } from '@/types/document';
+import TemplateDialog from '../dialogs/TemplateDialog';
+import ImportDialog from '../dialogs/ImportDialog';
+import ExportDialog from '../dialogs/ExportDialog';
 
 interface BinderItemProps {
   node: DocumentNode;
@@ -149,7 +151,10 @@ const DocumentBinder = () => {
   const { state, dispatch } = useProject();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['1'])); // Expand root by default
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['1']));
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
 
   const handleDocumentSelect = (node: DocumentNode) => {
     dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: node.id });
@@ -256,9 +261,32 @@ const DocumentBinder = () => {
       <div className="p-4 border-b bg-muted/30">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold">Binder</h2>
-          <Button size="sm" onClick={handleAddDocument}>
-            <Plus className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setShowTemplateDialog(true)}>
+                <FileTemplate className="h-4 w-4 mr-2" />
+                New from Template
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleAddDocument}>
+                <FileText className="h-4 w-4 mr-2" />
+                New Document
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setShowImportDialog(true)}>
+                <Upload className="h-4 w-4 mr-2" />
+                Import Document
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowExportDialog(true)}>
+                <Download className="h-4 w-4 mr-2" />
+                Export Project
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         
         {/* Search */}
@@ -342,6 +370,20 @@ const DocumentBinder = () => {
           </div>
         )}
       </div>
+
+      {/* Dialogs */}
+      <TemplateDialog 
+        open={showTemplateDialog} 
+        onOpenChange={setShowTemplateDialog} 
+      />
+      <ImportDialog 
+        open={showImportDialog} 
+        onOpenChange={setShowImportDialog} 
+      />
+      <ExportDialog 
+        open={showExportDialog} 
+        onOpenChange={setShowExportDialog} 
+      />
     </div>
   );
 };
