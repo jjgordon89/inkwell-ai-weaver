@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EmptyState from "@/components/ui/empty-state";
@@ -28,7 +29,7 @@ const ProjectsPage = () => {
           {projects.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects.map((project) => (
-                <Link to="/" key={project.id}>
+                <Link to="/studio" key={project.id}>
                   <Card className="hover:shadow-lg transition-shadow duration-200 cursor-pointer h-full flex flex-col">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-3">
@@ -58,6 +59,3 @@ const ProjectsPage = () => {
       </div>
     </div>
   );
-};
-
-export default ProjectsPage;
