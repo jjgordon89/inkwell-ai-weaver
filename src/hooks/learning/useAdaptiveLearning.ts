@@ -1,5 +1,6 @@
-
 import { useState, useEffect, useCallback } from 'react';
+import { useGenreDetection } from './useGenreDetection';
+import { usePersonalizedCompletion } from './usePersonalizedCompletion';
 
 export interface UserPreference {
   id: string;
@@ -15,6 +16,7 @@ export interface WritingPattern {
   pattern: string;
   frequency: number;
   context: string;
+  genre: string;
   lastSeen: Date;
 }
 
@@ -31,6 +33,24 @@ export const useAdaptiveLearning = () => {
   const [writingPatterns, setWritingPatterns] = useState<WritingPattern[]>([]);
   const [suggestionHistory, setSuggestionHistory] = useState<SuggestionFeedback[]>([]);
   const [isLearning, setIsLearning] = useState(false);
+  const [currentGenre, setCurrentGenre] = useState<string>('general');
+
+  // Integration with new features
+  const {
+    detectGenre,
+    getGenreSpecificSuggestions,
+    getDominantGenre,
+    genreHistory,
+    isAnalyzing: isAnalyzingGenre
+  } = useGenreDetection();
+
+  const {
+    learnFromText: learnCompletionPatterns,
+    generatePersonalizedCompletions,
+    recordCompletionUsage,
+    getCompletionStats,
+    isLearning: isLearningCompletions
+  } = usePersonalizedCompletion();
 
   // Load preferences from localStorage
   useEffect(() => {
@@ -62,14 +82,27 @@ export const useAdaptiveLearning = () => {
     localStorage.setItem('suggestion-history', JSON.stringify(suggestionHistory));
   }, [suggestionHistory]);
 
+  // Update current genre based on analysis
+  useEffect(() => {
+    const dominant = getDominantGenre();
+    setCurrentGenre(dominant);
+  }, [getDominantGenre]);
+
   const analyzeWritingStyle = useCallback(async (text: string) => {
     if (!text || text.trim().length < 100) return;
 
     setIsLearning(true);
     
     try {
-      // Simulate AI analysis
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Detect genre first
+      const genreAnalysis = await detectGenre(text);
+      setCurrentGenre(genreAnalysis.primaryGenre);
+      
+      // Update genre preference
+      updatePreference('genre', 'detected', genreAnalysis.primaryGenre, genreAnalysis.confidence);
+      
+      // Learn completion patterns for this genre
+      await learnCompletionPatterns(text, genreAnalysis.primaryGenre);
       
       // Analyze sentence length patterns
       const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
@@ -90,10 +123,10 @@ export const useAdaptiveLearning = () => {
       
       updatePreference('style', 'dialogue-frequency', hasFrequentDialogue ? 'high' : 'low', 0.8);
       
-      // Detect writing patterns
+      // Detect writing patterns with genre context
       const commonPhrases = extractCommonPhrases(text);
       commonPhrases.forEach(phrase => {
-        updateWritingPattern(phrase.text, phrase.frequency, 'common-phrase');
+        updateWritingPattern(phrase.text, phrase.frequency, 'common-phrase', genreAnalysis.primaryGenre);
       });
       
     } catch (error) {
@@ -101,7 +134,7 @@ export const useAdaptiveLearning = () => {
     } finally {
       setIsLearning(false);
     }
-  }, []);
+  }, [detectGenre, learnCompletionPatterns]);
 
   const updatePreference = (category: UserPreference['category'], key: string, value: any, confidence: number) => {
     setPreferences(prev => {
@@ -126,9 +159,9 @@ export const useAdaptiveLearning = () => {
     });
   };
 
-  const updateWritingPattern = (pattern: string, frequency: number, context: string) => {
+  const updateWritingPattern = (pattern: string, frequency: number, context: string, genre: string = 'general') => {
     setWritingPatterns(prev => {
-      const existing = prev.find(p => p.pattern === pattern);
+      const existing = prev.find(p => p.pattern === pattern && p.genre === genre);
       
       if (existing) {
         return prev.map(p => 
@@ -142,6 +175,7 @@ export const useAdaptiveLearning = () => {
           pattern,
           frequency,
           context,
+          genre,
           lastSeen: new Date()
         }];
       }
@@ -157,7 +191,7 @@ export const useAdaptiveLearning = () => {
       timestamp: new Date()
     };
     
-    setSuggestionHistory(prev => [feedback, ...prev].slice(0, 1000)); // Keep last 1000 entries
+    setSuggestionHistory(prev => [feedback, ...prev].slice(0, 1000));
     
     // Update preferences based on feedback
     if (action === 'accepted') {
@@ -168,19 +202,14 @@ export const useAdaptiveLearning = () => {
   };
 
   const getPersonalizedSuggestions = (suggestionType: string): string[] => {
+    // Get genre-specific suggestions
+    const genreSuggestions = getGenreSpecificSuggestions(currentGenre);
+    
+    // Get user style preferences
     const userStylePrefs = preferences.filter(p => p.category === 'style');
     const assistancePrefs = preferences.filter(p => p.category === 'assistance');
     
-    // Base suggestions that adapt to user preferences
-    const baseSuggestions = [
-      'Consider varying your sentence structure for better flow',
-      'Add more sensory details to enhance reader immersion',
-      'Develop character motivations more explicitly',
-      'Show rather than tell emotional states',
-      'Consider the pacing of this scene'
-    ];
-    
-    const personalizedSuggestions: string[] = [];
+    const personalizedSuggestions: string[] = [...genreSuggestions];
     
     // Adapt suggestions based on learned preferences
     userStylePrefs.forEach(pref => {
@@ -200,12 +229,10 @@ export const useAdaptiveLearning = () => {
       .filter(p => p.value === 'disliked' && p.confidence > 0.3)
       .map(p => p.key);
     
-    const filteredSuggestions = baseSuggestions
+    const filteredSuggestions = personalizedSuggestions
       .filter(suggestion => !dislikedTypes.some(type => suggestion.toLowerCase().includes(type)));
     
-    return personalizedSuggestions.length > 0 
-      ? personalizedSuggestions 
-      : filteredSuggestions.slice(0, 3);
+    return filteredSuggestions.slice(0, 5);
   };
 
   const extractCommonPhrases = (text: string) => {
@@ -244,19 +271,53 @@ export const useAdaptiveLearning = () => {
       assistanceIntensity: Math.max(0.1, Math.min(1.0, assistanceIntensity)),
       suggestionFrequency,
       autoSuggestionsEnabled: suggestionFrequency > 0.3,
-      proactiveSuggestionsEnabled: suggestionFrequency > 0.6
+      proactiveSuggestionsEnabled: suggestionFrequency > 0.6,
+      currentGenre,
+      genreConfidence: genreHistory[0]?.confidence || 0
+    };
+  };
+
+  const getEnhancedStats = () => {
+    const completionStats = getCompletionStats();
+    
+    return {
+      // Existing stats
+      preferences: preferences.length,
+      writingPatterns: writingPatterns.length,
+      suggestionHistory: suggestionHistory.length,
+      isLearning: isLearning || isAnalyzingGenre || isLearningCompletions,
+      
+      // New enhanced stats
+      currentGenre,
+      genreHistory: genreHistory.slice(0, 5),
+      completionPatterns: completionStats.totalPatterns,
+      genreBreakdown: completionStats.genreBreakdown,
+      avgCompletionConfidence: completionStats.avgConfidence,
+      mostUsedCompletions: completionStats.mostUsedPatterns.slice(0, 3)
     };
   };
 
   return {
+    // Original functionality
     preferences,
     writingPatterns,
     suggestionHistory,
-    isLearning,
+    isLearning: isLearning || isAnalyzingGenre || isLearningCompletions,
     analyzeWritingStyle,
     recordSuggestionFeedback,
     getPersonalizedSuggestions,
     getAdaptiveSettings,
-    updatePreference
+    updatePreference,
+    
+    // Enhanced functionality
+    currentGenre,
+    genreHistory,
+    generatePersonalizedCompletions,
+    recordCompletionUsage,
+    getEnhancedStats,
+    
+    // Direct access to sub-features
+    detectGenre,
+    getGenreSpecificSuggestions
   };
 };
