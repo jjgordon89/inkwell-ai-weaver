@@ -1,5 +1,9 @@
+
 import React, { useState, Suspense } from 'react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { Button } from "@/components/ui/button";
+import { Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import DocumentBinder from './DocumentBinder';
 import InspectorPanel from './InspectorPanel';
 import ViewManager from './ViewManager';
@@ -67,6 +71,16 @@ const WritingStudioLayout = () => {
   if (isMobile) {
     return (
       <div className="h-screen flex flex-col">
+        {/* Header */}
+        <div className="h-12 flex items-center justify-between px-4 border-b bg-background">
+          <h1 className="text-lg font-semibold">Manuscript</h1>
+          <Link to="/settings">
+            <Button variant="ghost" size="sm">
+              <Settings className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+
         <ViewManager 
           onViewChange={handleViewChange}
         />
@@ -85,6 +99,16 @@ const WritingStudioLayout = () => {
   // Desktop layout
   return (
     <div className="h-screen flex flex-col">
+      {/* Header */}
+      <div className="h-12 flex items-center justify-between px-6 border-b bg-background">
+        <h1 className="text-lg font-semibold">Manuscript</h1>
+        <Link to="/settings">
+          <Button variant="ghost" size="sm">
+            <Settings className="h-4 w-4" />
+          </Button>
+        </Link>
+      </div>
+
       <ViewManager 
         onViewChange={handleViewChange}
       />
