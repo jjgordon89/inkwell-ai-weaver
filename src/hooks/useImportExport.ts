@@ -174,8 +174,8 @@ export const useImportExport = () => {
   }, [state.flatDocuments, toast]);
 
   const exportDocument = useCallback(async (documentId: string, format: string) => {
-    const document = state.flatDocuments.find(doc => doc.id === documentId);
-    if (!document || !document.content) {
+    const doc = state.flatDocuments.find(doc => doc.id === documentId);
+    if (!doc || !doc.content) {
       toast({
         title: "No Content",
         description: "Document has no content to export.",
@@ -184,11 +184,11 @@ export const useImportExport = () => {
       return;
     }
 
-    const blob = new Blob([document.content], { type: 'text/plain' });
+    const blob = new Blob([doc.content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${document.title}.${format}`;
+    a.download = `${doc.title}.${format}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -196,7 +196,7 @@ export const useImportExport = () => {
 
     toast({
       title: "Export Successful",
-      description: `"${document.title}" exported successfully`,
+      description: `"${doc.title}" exported successfully`,
     });
   }, [state.flatDocuments, toast]);
 
