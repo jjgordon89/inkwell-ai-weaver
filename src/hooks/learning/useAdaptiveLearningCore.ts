@@ -109,7 +109,8 @@ export const useAdaptiveLearningCore = () => {
       genreBreakdown: completionStats.genreBreakdown,
       feedbackStats,
       isLearning: isAnalyzingStyle || isAnalyzingGenre || isLearningCompletions,
-      currentGenre: getDominantGenre()
+      currentGenre: getDominantGenre(),
+      mostUsedCompletions: completionStats.mostUsedPatterns || []
     };
   }, [preferences, genreHistory, getCompletionStats, getFeedbackStats, isAnalyzingStyle, isAnalyzingGenre, isLearningCompletions, getDominantGenre]);
 
