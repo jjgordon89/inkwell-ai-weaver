@@ -1,13 +1,14 @@
-
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useEditorState } from '@/hooks/useEditorState';
 import { useTextSelection } from '@/hooks/useTextSelection';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
+import { useContextualAITriggers } from '@/hooks/useContextualAITriggers';
 import InlineAISuggestions from '@/components/ai/InlineAISuggestions';
 import AIAssistantOverlay from '@/components/ai/AIAssistantOverlay';
 import ProactiveWritingSupport from '@/components/ai/ProactiveWritingSupport';
 import SuggestionsPanel from '@/components/ai/SuggestionsPanel';
+import ContextualSuggestions from '@/components/ai/ContextualSuggestions';
 import EditorHeader from '@/components/editor/EditorHeader';
 import EditorTextarea, { EditorTextareaRef } from '@/components/editor/EditorTextarea';
 import EditorFooter from '@/components/editor/EditorFooter';
@@ -16,9 +17,18 @@ import EditorKeyboardHandler from '@/components/editor/EditorKeyboardHandler';
 import { useEditorContentHandler } from '@/components/editor/EditorContentHandler';
 import { useEditorActionHandlers } from '@/components/editor/EditorActionHandlers';
 
+interface ContextualSuggestion {
+  id: string;
+  type: 'writing_block' | 'character_dialogue' | 'structure' | 'general';
+  message: string;
+  priority: 'low' | 'medium' | 'high';
+  actionable?: boolean;
+}
+
 const EditorContainer = () => {
   const textareaRef = useRef<EditorTextareaRef>(null);
   const [showSuggestionsPanel, setShowSuggestionsPanel] = useState(false);
+  const [contextualSuggestions, setContextualSuggestions] = useState<ContextualSuggestion[]>([]);
 
   const {
     currentDocument,
@@ -54,6 +64,33 @@ const EditorContainer = () => {
   // Enable auto-save
   useAutoSave();
 
+  // Handle contextual AI suggestions
+  const handleContextualSuggestion = useCallback((message: string, type: string) => {
+    const suggestion: ContextualSuggestion = {
+      id: `contextual-${Date.now()}-${Math.random()}`,
+      type: type.includes('writing_block') ? 'writing_block' : 
+            type.includes('character') ? 'character_dialogue' :
+            type.includes('structure') ? 'structure' : 'general',
+      message,
+      priority: type.includes('pause') ? 'high' : 'medium',
+      actionable: true
+    };
+    
+    setContextualSuggestions(prev => {
+      // Remove duplicates and keep only recent suggestions
+      const filtered = prev.filter(s => s.message !== message);
+      return [...filtered, suggestion].slice(-5);
+    });
+  }, []);
+
+  // Initialize contextual AI triggers
+  const {
+    writingBlocks,
+    dialogueContext,
+    isTyping,
+    handleTypingActivity
+  } = useContextualAITriggers(textareaRef, handleContextualSuggestion);
+
   // Content handlers
   const {
     handleContentChangeWithHistory,
@@ -64,6 +101,12 @@ const EditorContainer = () => {
     textareaRef
   });
 
+  // Enhanced content change handler with typing activity tracking
+  const enhancedContentChangeHandler = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    handleTypingActivity();
+    handleContentChangeWithHistory(e);
+  }, [handleTypingActivity, handleContentChangeWithHistory]);
+
   // Action handlers
   const {
     handleQuickAIAction,
@@ -71,11 +114,33 @@ const EditorContainer = () => {
     suggestions
   } = useEditorActionHandlers({
     textareaRef,
-    onContentChangeWithHistory: handleContentChangeWithHistory,
+    onContentChangeWithHistory: enhancedContentChangeHandler,
     onTextCompletion: handleTextCompletion,
     onShowFloatingActions: setShowFloatingActions,
     textAfterCursor
   });
+
+  // Handle contextual suggestion actions
+  const handleApplyContextualSuggestion = useCallback(async (suggestion: ContextualSuggestion) => {
+    if (suggestion.type === 'writing_block' && suggestion.message.includes('continue')) {
+      await handleQuickAIAction('continue');
+    } else if (suggestion.type === 'character_dialogue') {
+      // Focus on the current character's voice
+      const character = dialogueContext.currentCharacter;
+      if (character && textareaRef.current) {
+        const prompt = `Continue this dialogue in ${character}'s distinctive voice and personality`;
+        handleApplyAISuggestion(prompt);
+      }
+    }
+    
+    // Dismiss the suggestion after applying
+    setContextualSuggestions(prev => prev.filter(s => s.id !== suggestion.id));
+  }, [handleQuickAIAction, handleApplyAISuggestion, dialogueContext.currentCharacter]);
+
+  // Dismiss contextual suggestions
+  const dismissContextualSuggestion = useCallback((id: string) => {
+    setContextualSuggestions(prev => prev.filter(s => s.id !== id));
+  }, []);
 
   // Handle undo action
   const handleUndo = useCallback(() => {
@@ -87,13 +152,13 @@ const EditorContainer = () => {
           selectionStart: previousState.cursorPosition 
         }
       } as React.ChangeEvent<HTMLTextAreaElement>;
-      handleContentChangeWithHistory(syntheticEvent);
+      enhancedContentChangeHandler(syntheticEvent);
       
       setTimeout(() => {
         textareaRef.current?.setSelectionRange(previousState.cursorPosition, previousState.cursorPosition);
       }, 0);
     }
-  }, [undo, handleContentChangeWithHistory]);
+  }, [undo, enhancedContentChangeHandler]);
 
   // Handle redo action
   const handleRedo = useCallback(() => {
@@ -105,13 +170,13 @@ const EditorContainer = () => {
           selectionStart: nextState.cursorPosition 
         }
       } as React.ChangeEvent<HTMLTextAreaElement>;
-      handleContentChangeWithHistory(syntheticEvent);
+      enhancedContentChangeHandler(syntheticEvent);
       
       setTimeout(() => {
         textareaRef.current?.setSelectionRange(nextState.cursorPosition, nextState.cursorPosition);
       }, 0);
     }
-  }, [redo, handleContentChangeWithHistory]);
+  }, [redo, enhancedContentChangeHandler]);
 
   const handleTextSelectionWrapper = useCallback(() => {
     if (!textareaRef.current) return;
@@ -173,7 +238,7 @@ const EditorContainer = () => {
           content={currentDocument.content || ''}
           textBeforeCursor={textBeforeCursor}
           textAfterCursor={textAfterCursor}
-          onChange={handleContentChangeWithHistory}
+          onChange={enhancedContentChangeHandler}
           onTextSelection={handleTextSelectionWrapper}
           onTextCompletion={handleTextCompletion}
         />
@@ -187,6 +252,15 @@ const EditorContainer = () => {
         
         <EditorFooter wordCount={currentDocument.wordCount || 0} />
       </div>
+
+      {/* Contextual AI Suggestions */}
+      <ContextualSuggestions
+        suggestions={contextualSuggestions}
+        onDismiss={dismissContextualSuggestion}
+        onApplyAction={handleApplyContextualSuggestion}
+        isVisible={contextualSuggestions.length > 0}
+        position={cursorPosition}
+      />
 
       {/* AI Suggestions Panel */}
       <SuggestionsPanel
