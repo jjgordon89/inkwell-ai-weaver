@@ -1,5 +1,5 @@
 
-import { WritingContext } from '@/contexts/WritingContext';
+import { Character, StoryArc } from '@/contexts/WritingContext';
 
 export const applySuggestionAsNote = (
   suggestion: string,
