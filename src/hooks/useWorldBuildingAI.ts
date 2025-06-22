@@ -13,10 +13,7 @@ export const useWorldBuildingAI = () => {
       const aiPrompt = `Create a ${type} for world building based on: "${prompt}".
         Respond with a JSON object containing:
         - name: A compelling name
-        - description: Rich, detailed description
-        - category: The category this element belongs to
-        - connections: How it relates to other world elements
-        - details: Specific interesting details
+        - description: Rich, detailed description that includes significance, connections to other elements, and specific details
         
         Make it vivid and useful for a writer's world building.`;
       
@@ -26,16 +23,14 @@ export const useWorldBuildingAI = () => {
         const parsed = JSON.parse(result);
         return {
           type,
-          ...parsed
+          name: parsed.name || `${type}: ${prompt.substring(0, 20)}...`,
+          description: parsed.description || result
         };
       } catch {
         return {
           type,
           name: `${type}: ${prompt.substring(0, 20)}...`,
-          description: result,
-          category: '',
-          connections: [],
-          details: {}
+          description: result
         };
       }
     } catch (error) {

@@ -13,10 +13,7 @@ export const useStoryArcAI = () => {
       const aiPrompt = `Create a story arc based on this description: "${prompt}". 
         Respond with a JSON object containing:
         - title: A compelling title for the arc
-        - description: A detailed description of the arc
-        - events: An array of 3-5 key events in this arc
-        - characterDevelopment: How main characters develop in this arc
-        - themes: Main themes explored
+        - description: A detailed description of the arc that includes key events, character development, and themes
         
         Keep it concise but meaningful for a writer's planning.`;
       
@@ -24,14 +21,14 @@ export const useStoryArcAI = () => {
       
       try {
         const parsed = JSON.parse(result);
-        return parsed;
+        return {
+          title: parsed.title || `Story Arc: ${prompt.substring(0, 30)}...`,
+          description: parsed.description || result
+        };
       } catch {
         return {
           title: `Story Arc: ${prompt.substring(0, 30)}...`,
-          description: result,
-          events: [],
-          characterDevelopment: '',
-          themes: []
+          description: result
         };
       }
     } catch (error) {
