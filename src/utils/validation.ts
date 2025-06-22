@@ -1,4 +1,7 @@
 
+import { wordCount } from './stringUtils';
+import { isEmpty } from './objectUtils';
+
 export interface ValidationResult {
   isValid: boolean;
   errors: string[];
@@ -25,6 +28,16 @@ export const validationRules = {
   maxLength: (max: number, message?: string): ValidationRule<string> => ({
     validate: (value: string) => value.length <= max,
     message: message || `Must be no more than ${max} characters`
+  }),
+
+  minWords: (min: number, message?: string): ValidationRule<string> => ({
+    validate: (value: string) => wordCount(value) >= min,
+    message: message || `Must be at least ${min} words`
+  }),
+
+  maxWords: (max: number, message?: string): ValidationRule<string> => ({
+    validate: (value: string) => wordCount(value) <= max,
+    message: message || `Must be no more than ${max} words`
   }),
 
   email: (message = 'Invalid email format'): ValidationRule<string> => ({
@@ -60,6 +73,11 @@ export const validationRules = {
       const trimmed = value.trim();
       return trimmed.length >= 10 && /^[a-zA-Z0-9\-_]+$/.test(trimmed);
     },
+    message
+  }),
+
+  notEmpty: (message = 'Cannot be empty'): ValidationRule<any> => ({
+    validate: (value: any) => !isEmpty(value),
     message
   })
 };
