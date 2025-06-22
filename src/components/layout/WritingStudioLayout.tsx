@@ -1,163 +1,43 @@
 
-import React, { useState, Suspense } from 'react';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { Button } from "@/components/ui/button";
-import { Settings } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import DocumentBinder from './DocumentBinder';
-import InspectorPanel from './InspectorPanel';
-import ViewManager from './ViewManager';
+import React from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { useLazyLoading } from '@/hooks/useLazyLoading';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { useIsMobile } from '@/hooks/use-mobile';
-import AccessibilityMenu from '@/components/accessibility/AccessibilityMenu';
-import OnboardingTour from '@/components/onboarding/OnboardingTour';
+import MobileStudioLayout from './studio/MobileStudioLayout';
+import DesktopStudioLayout from './studio/DesktopStudioLayout';
+import ViewRenderer from './studio/ViewRenderer';
 import type { DocumentView } from '@/types/document';
-import FloatingAISettings from '@/components/ai/FloatingAISettings';
-
-// Import view components
-import EditorView from '../views/EditorView';
-import OutlineView from '../views/OutlineView';
 
 const WritingStudioLayout = () => {
-  const { state } = useProject();
   const { shortcuts } = useKeyboardShortcuts();
-  const LazyComponents = useLazyLoading();
   const { showOnboarding, completeOnboarding } = useOnboarding();
   const isMobile = useIsMobile();
-
-  const renderActiveView = () => {
-    const LoadingFallback = (
-      <div className="h-full flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-
-    switch (state.activeView.type) {
-      case 'editor':
-        return <EditorView />;
-      case 'corkboard':
-        return (
-          <Suspense fallback={LoadingFallback}>
-            <LazyComponents.CorkboardView />
-          </Suspense>
-        );
-      case 'outline':
-        return <OutlineView />;
-      case 'timeline':
-        return (
-          <Suspense fallback={LoadingFallback}>
-            <LazyComponents.TimelineView />
-          </Suspense>
-        );
-      case 'research':
-        return (
-          <Suspense fallback={LoadingFallback}>
-            <LazyComponents.ResearchView />
-          </Suspense>
-        );
-      default:
-        return <EditorView />;
-    }
-  };
 
   const handleViewChange = (view: DocumentView) => {
     console.log('View changed to:', view.type);
   };
 
-  // Mobile layout - stack panels vertically
+  const renderActiveView = () => <ViewRenderer />;
+
   if (isMobile) {
     return (
-      <div className="h-screen flex flex-col">
-        {/* Header */}
-        <div className="h-12 flex items-center justify-between px-4 border-b bg-background">
-          <h1 className="text-lg font-semibold">Manuscript</h1>
-          <Link to="/settings">
-            <Button variant="ghost" size="sm">
-              <Settings className="h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
-
-        <ViewManager 
-          onViewChange={handleViewChange}
-        />
-        
-        <div className="flex-1 overflow-hidden">
-          {renderActiveView()}
-        </div>
-        
-        {showOnboarding && (
-          <OnboardingTour onComplete={completeOnboarding} />
-        )}
-      </div>
+      <MobileStudioLayout
+        renderActiveView={renderActiveView}
+        onViewChange={handleViewChange}
+        showOnboarding={showOnboarding}
+        completeOnboarding={completeOnboarding}
+      />
     );
   }
 
-  // Desktop layout
   return (
-    <div className="h-screen flex flex-col">
-      {/* Header */}
-      <div className="h-12 flex items-center justify-between px-6 border-b bg-background">
-        <h1 className="text-lg font-semibold">Manuscript</h1>
-        <Link to="/settings">
-          <Button variant="ghost" size="sm">
-            <Settings className="h-4 w-4" />
-          </Button>
-        </Link>
-      </div>
-
-      <ViewManager 
-        onViewChange={handleViewChange}
-      />
-      
-      <div className="flex-1 overflow-hidden">
-        <ResizablePanelGroup direction="horizontal">
-          {/* Document Binder */}
-          <ResizablePanel 
-            defaultSize={20} 
-            minSize={15} 
-            maxSize={35}
-            data-tour="binder"
-          >
-            <DocumentBinder />
-          </ResizablePanel>
-          
-          <ResizableHandle />
-          
-          {/* Main Content Area */}
-          <ResizablePanel defaultSize={60} data-tour="editor">
-            <div className="h-full" data-tour="views">
-              {renderActiveView()}
-            </div>
-          </ResizablePanel>
-          
-          <ResizableHandle />
-          
-          {/* Inspector Panel */}
-          <ResizablePanel 
-            defaultSize={20} 
-            minSize={15} 
-            maxSize={30}
-            data-tour="inspector"
-          >
-            <InspectorPanel />
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </div>
-      
-      {/* Floating AI Settings */}
-      <FloatingAISettings 
-        position="bottom-right"
-        showOnlyWhenNotConfigured={false}
-      />
-      
-      {showOnboarding && (
-        <OnboardingTour onComplete={completeOnboarding} />
-      )}
-    </div>
+    <DesktopStudioLayout
+      renderActiveView={renderActiveView}
+      onViewChange={handleViewChange}
+      showOnboarding={showOnboarding}
+      completeOnboarding={completeOnboarding}
+    />
   );
 };
 
