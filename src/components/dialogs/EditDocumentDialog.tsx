@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import type { DocumentNode } from '@/types/document';
@@ -27,16 +26,16 @@ interface FormData {
 const EditDocumentDialog = ({ open, onOpenChange, document, onSave }: EditDocumentDialogProps) => {
   const form = useForm<FormData>({
     defaultValues: {
-      title: document?.title || '',
-      synopsis: document?.synopsis || '',
-      status: document?.status || 'not-started',
-      targetWordCount: document?.targetWordCount || undefined,
+      title: '',
+      synopsis: '',
+      status: 'not-started',
+      targetWordCount: undefined,
     },
   });
 
-  // Reset form when document changes
+  // Reset form when document changes or dialog opens
   React.useEffect(() => {
-    if (document) {
+    if (document && open) {
       form.reset({
         title: document.title,
         synopsis: document.synopsis || '',
@@ -44,19 +43,24 @@ const EditDocumentDialog = ({ open, onOpenChange, document, onSave }: EditDocume
         targetWordCount: document.targetWordCount || undefined,
       });
     }
-  }, [document, form]);
+  }, [document, open, form]);
 
   const onSubmit = (data: FormData) => {
     if (!document) return;
     
     const updates: Partial<DocumentNode> = {
-      title: data.title,
-      synopsis: data.synopsis,
+      title: data.title.trim(),
+      synopsis: data.synopsis.trim() || undefined,
       status: data.status,
       targetWordCount: data.targetWordCount || undefined,
     };
     
     onSave(updates);
+    onOpenChange(false);
+  };
+
+  const handleCancel = () => {
+    form.reset();
     onOpenChange(false);
   };
 
@@ -74,7 +78,10 @@ const EditDocumentDialog = ({ open, onOpenChange, document, onSave }: EditDocume
             <FormField
               control={form.control}
               name="title"
-              rules={{ required: "Title is required" }}
+              rules={{ 
+                required: "Title is required",
+                validate: (value) => value.trim().length > 0 || "Title cannot be empty"
+              }}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Title</FormLabel>
@@ -140,6 +147,7 @@ const EditDocumentDialog = ({ open, onOpenChange, document, onSave }: EditDocume
                       <Input 
                         type="number" 
                         placeholder="Optional target word count..."
+                        min="0"
                         {...field}
                         onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                         value={field.value || ''}
@@ -152,7 +160,7 @@ const EditDocumentDialog = ({ open, onOpenChange, document, onSave }: EditDocume
             )}
 
             <div className="flex justify-end space-x-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={handleCancel}>
                 Cancel
               </Button>
               <Button type="submit">Save Changes</Button>

@@ -85,7 +85,10 @@ function projectReducer(state: ProjectState, action: ProjectAction): ProjectStat
       };
     
     case 'UPDATE_DOCUMENT':
-      const updatedTree = updateDocumentInTree(state.documentTree, action.payload.id, action.payload.updates);
+      const updatedTree = updateDocumentInTree(state.documentTree, action.payload.id, {
+        ...action.payload.updates,
+        lastModified: new Date()
+      });
       return {
         ...state,
         documentTree: updatedTree,
@@ -186,7 +189,7 @@ function insertDocumentInTree(tree: DocumentNode[], newDoc: DocumentNode): Docum
 function updateDocumentInTree(tree: DocumentNode[], docId: string, updates: Partial<DocumentNode>): DocumentNode[] {
   return tree.map(node => {
     if (node.id === docId) {
-      return { ...node, ...updates, lastModified: new Date() };
+      return { ...node, ...updates };
     }
     if (node.children) {
       return {
