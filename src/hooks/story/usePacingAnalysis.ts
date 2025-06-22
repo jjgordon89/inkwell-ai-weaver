@@ -1,15 +1,15 @@
+
 import { useState } from 'react';
 import { useAI } from '@/hooks/useAI';
+import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 import type { Scene, PacingAnalysis } from './types';
 
 export const usePacingAnalysis = () => {
-  const { processText, isProcessing } = useAI();
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const { processText } = useAI();
+  const { execute, isLoading, error } = useAsyncOperation();
 
-  const analyzePacing = async (scenes: Scene[], content: string): Promise<PacingAnalysis> => {
-    setIsAnalyzing(true);
-    
-    try {
+  const analyzePacing = async (scenes: Scene[], content: string): Promise<PacingAnalysis | null> => {
+    return execute(async () => {
       const sceneInfo = scenes.map(scene => 
         `Act ${scene.act}, Scene: ${scene.title} - Pace: ${scene.paceType}, Tension: ${scene.tensionLevel}/10`
       ).join('\n');
@@ -68,16 +68,12 @@ Recommendations:
           'Allow for breathing room after intense scenes'
         ]
       };
-    } catch (error) {
-      console.error('Failed to analyze pacing:', error);
-      throw new Error('Failed to analyze story pacing');
-    } finally {
-      setIsAnalyzing(false);
-    }
+    }, 'analyze pacing');
   };
 
   return {
     analyzePacing,
-    isAnalyzing: isAnalyzing || isProcessing
+    isAnalyzing: isLoading,
+    error
   };
 };

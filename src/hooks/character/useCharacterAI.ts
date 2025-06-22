@@ -1,20 +1,18 @@
-
 import { useState } from 'react';
 import { useWriting } from '@/contexts/WritingContext';
 import { useAI } from '../useAI';
+import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 import { validateAIInput, handleAIError, parseAIResponse } from '../ai/aiUtils';
 import { InteractionSuggestion, VoiceConsistencyCheck } from './types';
 
 export const useCharacterAI = () => {
   const { state } = useWriting();
-  const { processText, isProcessing } = useAI();
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const { processText } = useAI();
+  const { execute: executeGeneration, isLoading: isGenerating } = useAsyncOperation();
+  const { execute: executeAnalysis, isLoading: isAnalyzing } = useAsyncOperation();
 
-  const generateInteractionSuggestions = async (): Promise<InteractionSuggestion[]> => {
-    setIsGenerating(true);
-    
-    try {
+  const generateInteractionSuggestions = async (): Promise<InteractionSuggestion[] | null> => {
+    return executeGeneration(async () => {
       if (state.characters.length < 2) {
         throw new Error('Need at least 2 characters to generate interaction suggestions');
       }
@@ -53,7 +51,6 @@ Context: [why this would be compelling]
 
       const result = await processText(prompt, 'improve');
       
-      // Parse the AI response into interaction suggestions
       const suggestions: InteractionSuggestion[] = [];
       const sections = result.split('---').filter(s => s.trim());
       
@@ -83,17 +80,11 @@ Context: [why this would be compelling]
       });
 
       return suggestions;
-    } catch (error) {
-      throw handleAIError(error, 'generate interaction suggestions');
-    } finally {
-      setIsGenerating(false);
-    }
+    }, 'generate interaction suggestions');
   };
 
-  const checkVoiceConsistency = async (characterId: string): Promise<VoiceConsistencyCheck> => {
-    setIsAnalyzing(true);
-    
-    try {
+  const checkVoiceConsistency = async (characterId: string): Promise<VoiceConsistencyCheck | null> => {
+    return executeAnalysis(async () => {
       const character = state.characters.find(c => c.id === characterId);
       if (!character) {
         throw new Error('Character not found');
@@ -142,17 +133,13 @@ Suggestions: [bullet points of suggestions]`;
           (parsed.suggestions as string).split('\n').filter(s => s.trim().length > 0) : 
           []
       };
-    } catch (error) {
-      throw handleAIError(error, 'check voice consistency');
-    } finally {
-      setIsAnalyzing(false);
-    }
+    }, 'check voice consistency');
   };
 
   return {
     generateInteractionSuggestions,
     checkVoiceConsistency,
-    isAnalyzing: isAnalyzing || isProcessing,
-    isGenerating: isGenerating || isProcessing
+    isAnalyzing,
+    isGenerating
   };
 };
