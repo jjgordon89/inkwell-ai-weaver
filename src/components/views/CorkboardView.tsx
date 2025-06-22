@@ -14,10 +14,16 @@ const CorkboardView = () => {
   );
 
   const handleAddScene = () => {
+    // Find the Manuscript folder
+    const manuscriptFolder = state.flatDocuments.find(doc => 
+      doc.title === 'Manuscript' && doc.type === 'folder'
+    );
+    
     const newChapter = {
       id: crypto.randomUUID(),
       title: 'New Chapter',
       type: 'chapter' as const,
+      parentId: manuscriptFolder?.id, // Set parent to Manuscript folder
       status: 'not-started' as const,
       wordCount: 0,
       labels: [],
