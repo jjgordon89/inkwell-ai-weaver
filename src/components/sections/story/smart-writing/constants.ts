@@ -1,7 +1,7 @@
 
 export const SMART_WRITING_DEFAULTS = {
-  AUTO_SUGGESTIONS: [],
-  NEXT_WORD_PREDICTIONS: [],
+  AUTO_SUGGESTIONS: [] as string[],
+  NEXT_WORD_PREDICTIONS: [] as string[],
   METRICS: null,
   TOAST_DURATION: 3000
 } as const;

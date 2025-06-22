@@ -1,5 +1,6 @@
 
 import { WritingMetrics } from '@/hooks/ai/types';
+import { AIAction } from '@/hooks/useAI';
 
 export interface SmartWritingHandlers {
   onAnalyze: () => Promise<void>;
@@ -88,7 +89,7 @@ export const createPredictWordsHandler = (
 };
 
 export const createGrammarCheckHandler = (
-  processText: (content: string, action: string) => Promise<string>,
+  processText: (content: string, action: AIAction) => Promise<string>,
   currentDocument: any,
   dispatch: (action: any) => void,
   toast: (options: any) => void
