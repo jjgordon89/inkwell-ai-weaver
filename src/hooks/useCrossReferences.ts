@@ -2,6 +2,13 @@
 import { useState } from 'react';
 import { useWriting } from '@/contexts/WritingContext';
 
+interface Connection {
+  type: 'character-arc' | 'character-world' | 'arc-world';
+  from: any;
+  to: any;
+  relationship: string;
+}
+
 export const useCrossReferences = () => {
   const { state } = useWriting();
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,8 +24,8 @@ export const useCrossReferences = () => {
   };
 
   // Helper function to find connections between story elements
-  const findConnections = () => {
-    const connections = [];
+  const findConnections = (): Connection[] => {
+    const connections: Connection[] = [];
 
     // Characters mentioned in story arcs
     state.storyArcs.forEach(arc => {

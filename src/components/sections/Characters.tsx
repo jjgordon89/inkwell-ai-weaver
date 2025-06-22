@@ -2,194 +2,178 @@
 import React, { useState, useMemo } from 'react';
 import { Plus, User } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWriting } from '@/contexts/WritingContext';
-import { Character } from '@/contexts/WritingContext';
-import CharacterSearch from './characters/CharacterSearch';
 import CharacterForm from './characters/CharacterForm';
 import CharacterCard from './characters/CharacterCard';
-import EnhancedCharacterPanel from './characters/EnhancedCharacterPanel';
+import type { Character } from '@/contexts/WritingContext';
 
 const Characters = () => {
   const { state, dispatch } = useWriting();
-  const [isAddingCharacter, setIsAddingCharacter] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [filterTag, setFilterTag] = useState('');
 
-  // Get all available tags from characters
-  const availableTags = useMemo(() => {
-    const allTags = state.characters.flatMap(char => char.tags || []);
-    return Array.from(new Set(allTags)).sort();
-  }, [state.characters]);
-
-  // Filter characters based on search and tags
   const filteredCharacters = useMemo(() => {
     return state.characters.filter(character => {
-      const matchesSearch = searchTerm === '' || 
-        character.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        character.occupation?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        character.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        character.personality?.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchesTags = selectedTags.length === 0 || 
-        selectedTags.every(tag => character.tags?.includes(tag));
-
-      return matchesSearch && matchesTags;
+      const matchesSearch = character.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           character.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesTag = !filterTag || character.tags.includes(filterTag);
+      return matchesSearch && matchesTag;
     });
-  }, [state.characters, searchTerm, selectedTags]);
+  }, [state.characters, searchTerm, filterTag]);
 
-  const resetForm = () => {
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    state.characters.forEach(character => {
+      character.tags.forEach(tag => tags.add(tag));
+    });
+    return Array.from(tags);
+  }, [state.characters]);
+
+  const handleAddCharacter = () => {
     setEditingCharacter(null);
-    setIsAddingCharacter(false);
+    setShowForm(true);
   };
 
-  const handleSubmit = (formData: Partial<Character>) => {
-    if (!formData.name?.trim()) return;
+  const handleEditCharacter = (character: Character) => {
+    setEditingCharacter(character);
+    setShowForm(true);
+  };
 
-    const characterData = {
-      ...formData,
-      name: formData.name,
-      description: formData.description || '',
-      notes: formData.notes || '',
-      tags: formData.tags || [],
-      relationships: formData.relationships || []
-    } as Character;
+  const handleDeleteCharacter = (characterId: string) => {
+    dispatch({ type: 'DELETE_CHARACTER', payload: characterId });
+  };
 
+  const handleFormSubmit = (characterData: Omit<Character, 'id'>) => {
     if (editingCharacter) {
       dispatch({
         type: 'UPDATE_CHARACTER',
-        payload: {
-          ...editingCharacter,
-          ...characterData
-        }
+        payload: { ...characterData, id: editingCharacter.id }
       });
     } else {
-      dispatch({
-        type: 'ADD_CHARACTER',
-        payload: {
-          id: Date.now().toString(),
-          ...characterData
-        }
-      });
+      const newCharacter: Character = {
+        ...characterData,
+        id: crypto.randomUUID()
+      };
+      dispatch({ type: 'ADD_CHARACTER', payload: newCharacter });
     }
-    
-    resetForm();
+    setShowForm(false);
+    setEditingCharacter(null);
   };
 
-  const handleEdit = (character: Character) => {
-    setEditingCharacter(character);
-    setIsAddingCharacter(true);
+  const handleFormCancel = () => {
+    setShowForm(false);
+    setEditingCharacter(null);
   };
 
-  const handleDelete = (characterId: string) => {
-    dispatch({
-      type: 'DELETE_CHARACTER',
-      payload: characterId
-    });
-  };
-
-  const handleTagToggle = (tag: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tag) 
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag]
+  if (showForm) {
+    return (
+      <CharacterForm
+        character={editingCharacter}
+        onSubmit={handleFormSubmit}
+        onCancel={handleFormCancel}
+      />
     );
-  };
-
-  const handleClearFilters = () => {
-    setSearchTerm('');
-    setSelectedTags([]);
-  };
+  }
 
   return (
-    <div className="h-full p-6 bg-background">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold">Characters</h2>
-          <p className="text-muted-foreground">Manage your story's characters with AI assistance</p>
-        </div>
-        <Sheet open={isAddingCharacter} onOpenChange={setIsAddingCharacter}>
-          <SheetTrigger asChild>
-            <Button onClick={() => setIsAddingCharacter(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Character
+    <div className="h-full flex flex-col space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Characters</h2>
+        <Button onClick={handleAddCharacter}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Character
+        </Button>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-4">
+        <Input
+          placeholder="Search characters..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="flex-1"
+        />
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant={filterTag === '' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilterTag('')}
+          >
+            All
+          </Button>
+          {allTags.map(tag => (
+            <Button
+              key={tag}
+              variant={filterTag === tag ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilterTag(tag)}
+            >
+              {tag}
             </Button>
-          </SheetTrigger>
-          <SheetContent className="w-[600px] sm:max-w-[600px] overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle>
-                {editingCharacter ? 'Edit Character' : 'Add New Character'}
-              </SheetTitle>
-              <SheetDescription>
-                {editingCharacter ? 'Update character details' : 'Create a new character for your story with AI assistance'}
-              </SheetDescription>
-            </SheetHeader>
-            <div className="mt-6">
-              <CharacterForm
-                character={editingCharacter}
-                onSubmit={handleSubmit}
-                onCancel={resetForm}
-              />
-            </div>
-          </SheetContent>
-        </Sheet>
+          ))}
+        </div>
       </div>
 
-      {/* Enhanced Character Tools */}
-      <div className="mb-6">
-        <EnhancedCharacterPanel />
-      </div>
-
-      {/* Search and Filter */}
-      {state.characters.length > 0 && (
-        <div className="mb-6">
-          <CharacterSearch
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            selectedTags={selectedTags}
-            onTagToggle={handleTagToggle}
-            availableTags={availableTags}
-            onClearFilters={handleClearFilters}
-          />
-        </div>
-      )}
-
-      {state.characters.length === 0 ? (
-        <div className="text-center py-12">
-          <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">No characters yet</h3>
-          <p className="text-muted-foreground mb-4">
-            Start by adding your first character. Use AI assistance to generate detailed characters quickly!
-          </p>
-          <Button onClick={() => setIsAddingCharacter(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Your First Character
-          </Button>
-        </div>
-      ) : filteredCharacters.length === 0 ? (
-        <div className="text-center py-12">
-          <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">No characters match your filters</h3>
-          <p className="text-muted-foreground mb-4">
-            Try adjusting your search terms or clearing the filters.
-          </p>
-          <Button variant="outline" onClick={handleClearFilters}>
-            Clear Filters
-          </Button>
-        </div>
+      {filteredCharacters.length === 0 ? (
+        <Card className="text-center py-8">
+          <CardContent>
+            <User className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground mb-4">
+              {state.characters.length === 0 
+                ? "No characters created yet. Add your first character to get started!"
+                : "No characters match your search criteria."
+              }
+            </p>
+            {state.characters.length === 0 && (
+              <Button onClick={handleAddCharacter}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create First Character
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredCharacters.map((character) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredCharacters.map(character => (
             <CharacterCard
               key={character.id}
               character={character}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
+              onEdit={handleEditCharacter}
+              onDelete={handleDeleteCharacter}
             />
           ))}
         </div>
       )}
+
+      <div className="mt-8 p-4 bg-muted/50 rounded-lg">
+        <h3 className="font-semibold mb-2">Character Statistics</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div>
+            <span className="text-muted-foreground">Total Characters:</span>
+            <span className="ml-2 font-semibold">{state.characters.length}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">With Descriptions:</span>
+            <span className="ml-2 font-semibold">
+              {state.characters.filter(c => c.description.length > 0).length}
+            </span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Tagged:</span>
+            <span className="ml-2 font-semibold">
+              {state.characters.filter(c => c.tags.length > 0).length}
+            </span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Total Tags:</span>
+            <span className="ml-2 font-semibold">{allTags.length}</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
