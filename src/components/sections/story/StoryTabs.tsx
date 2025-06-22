@@ -32,7 +32,8 @@ const StoryTabs = () => {
   const stats = getWritingStats();
 
   return (
-    <div className="space-y-6">      <Tabs defaultValue="overview" className="w-full">
+    <div className="space-y-6">
+      <Tabs defaultValue="overview" className="w-full">
         <TabsList className="grid w-full grid-cols-5 h-12 bg-muted/30 p-1 rounded-lg">
           <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <BookOpen className="h-4 w-4" />
@@ -58,7 +59,6 @@ const StoryTabs = () => {
 
         <TabsContent value="overview" className="mt-6">
           <div className="space-y-6">
-            {/* Document Info */}
             <SectionCard
               title="Current Document"
               description="Document information and writing progress"
@@ -92,7 +92,8 @@ const StoryTabs = () => {
                     Last modified: {state.currentDocument.lastModified.toLocaleString()}
                   </div>
                 </div>
-              )}            </SectionCard>
+              )}
+            </SectionCard>
           </div>
         </TabsContent>
 
@@ -101,7 +102,9 @@ const StoryTabs = () => {
             <ChapterManagement />
             <DocumentOutline />
           </div>
-        </TabsContent>        <TabsContent value="ai-tools" className="mt-6">
+        </TabsContent>
+
+        <TabsContent value="ai-tools" className="mt-6">
           <div className="space-y-6">
             <div className="flex justify-end">
               <QuickAISettings showLabel={false} variant="outline" size="sm" />
