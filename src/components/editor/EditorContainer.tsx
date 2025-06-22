@@ -64,7 +64,7 @@ const EditorContainer = () => {
   // Enable auto-save
   useAutoSave();
 
-  // Handle contextual AI suggestions
+  // Handle contextual AI suggestions with improved UX
   const handleContextualSuggestion = useCallback((message: string, type: string) => {
     const suggestion: ContextualSuggestion = {
       id: `contextual-${Date.now()}-${Math.random()}`,
@@ -78,9 +78,16 @@ const EditorContainer = () => {
     
     setContextualSuggestions(prev => {
       // Remove duplicates and keep only recent suggestions
-      const filtered = prev.filter(s => s.message !== message);
-      return [...filtered, suggestion].slice(-5);
+      const filtered = prev.filter(s => s.message !== message && s.type !== suggestion.type);
+      return [...filtered, suggestion].slice(-3); // Keep only 3 suggestions max
     });
+
+    // Auto-dismiss low priority suggestions after 15 seconds
+    if (suggestion.priority !== 'high') {
+      setTimeout(() => {
+        setContextualSuggestions(prev => prev.filter(s => s.id !== suggestion.id));
+      }, 15000);
+    }
   }, []);
 
   // Initialize contextual AI triggers
@@ -178,17 +185,16 @@ const EditorContainer = () => {
     }
   }, [redo, enhancedContentChangeHandler]);
 
-  const handleTextSelectionWrapper = useCallback(() => {
-    if (!textareaRef.current) return;
-    const textarea = {
-      value: textareaRef.current.value,
-      selectionStart: textareaRef.current.selectionStart,
-      selectionEnd: textareaRef.current.selectionEnd,
-      getBoundingClientRect: () => textareaRef.current!.getBoundingClientRect()
-    } as HTMLTextAreaElement;
-    
-    handleTextSelection(textarea, setCursorPosition, setShowFloatingActions);
-  }, [handleTextSelection, setCursorPosition, setShowFloatingActions]);
+  // Improved floating actions auto-hide
+  useEffect(() => {
+    if (showFloatingActions) {
+      const timer = setTimeout(() => {
+        setShowFloatingActions(false);
+      }, 4000); // Hide after 4 seconds of inactivity
+      
+      return () => clearTimeout(timer);
+    }
+  }, [showFloatingActions, setShowFloatingActions]);
 
   // Update cursor position on scroll or resize
   useEffect(() => {
@@ -253,7 +259,7 @@ const EditorContainer = () => {
         <EditorFooter wordCount={currentDocument.wordCount || 0} />
       </div>
 
-      {/* Contextual AI Suggestions */}
+      {/* Contextual AI Suggestions - Now less intrusive */}
       <ContextualSuggestions
         suggestions={contextualSuggestions}
         onDismiss={dismissContextualSuggestion}

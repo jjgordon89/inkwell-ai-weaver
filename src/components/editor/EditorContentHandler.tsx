@@ -14,6 +14,37 @@ export const useEditorContentHandler = ({ onAddToHistory, textareaRef }: EditorC
   const { currentDocument } = state;
   const { handleContentChange } = useEditorState();
   const { updateContext } = useCollaborativeAI();
+  const pendingCursorPosition = useRef<number | null>(null);
+
+  const smoothCursorTransition = useCallback((targetPosition: number) => {
+    if (!textareaRef.current) return;
+    
+    // Store the target position
+    pendingCursorPosition.current = targetPosition;
+    
+    // Use requestAnimationFrame for smooth cursor positioning
+    requestAnimationFrame(() => {
+      if (textareaRef.current && pendingCursorPosition.current !== null) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(pendingCursorPosition.current, pendingCursorPosition.current);
+        
+        // Smooth scroll to cursor position if needed
+        const textarea = textareaRef.current;
+        const lineHeight = parseInt(getComputedStyle(textarea).lineHeight) || 24;
+        const cursorLine = textarea.value.substring(0, pendingCursorPosition.current).split('\n').length;
+        const scrollTop = Math.max(0, (cursorLine - 5) * lineHeight);
+        
+        if (Math.abs(textarea.scrollTop - scrollTop) > lineHeight * 3) {
+          textarea.scrollTo({
+            top: scrollTop,
+            behavior: 'smooth'
+          });
+        }
+        
+        pendingCursorPosition.current = null;
+      }
+    });
+  }, [textareaRef]);
 
   const handleContentChangeWithHistory = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const cursorPos = e.target.selectionStart || 0;
@@ -27,27 +58,35 @@ export const useEditorContentHandler = ({ onAddToHistory, textareaRef }: EditorC
     handleContentChange(e);
   }, [handleContentChange, onAddToHistory, currentDocument]);
 
-  const handleApplyAISuggestion = useCallback((newText: string) => {
+  const handleApplyAISuggestion = useCallback((newText: string, replaceSelection = false) => {
     if (!textareaRef.current || !currentDocument) return;
     
     const start = textareaRef.current.selectionStart;
     const end = textareaRef.current.selectionEnd;
     const currentContent = currentDocument.content || '';
     
-    const newContent = currentContent.substring(0, start) + newText + currentContent.substring(end);
+    let newContent = '';
+    let newCursorPosition = 0;
     
-    // Update content directly using the change handler
+    if (replaceSelection && start !== end) {
+      // Replace selected text
+      newContent = currentContent.substring(0, start) + newText + currentContent.substring(end);
+      newCursorPosition = start + newText.length;
+    } else {
+      // Insert at cursor position
+      newContent = currentContent.substring(0, start) + newText + currentContent.substring(start);
+      newCursorPosition = start + newText.length;
+    }
+    
+    // Update content with smooth transition
     const syntheticEvent = {
-      target: { value: newContent, selectionStart: start + newText.length }
+      target: { value: newContent, selectionStart: newCursorPosition }
     } as React.ChangeEvent<HTMLTextAreaElement>;
     handleContentChangeWithHistory(syntheticEvent);
     
-    // Focus back to textarea and set cursor position
-    setTimeout(() => {
-      textareaRef.current?.focus();
-      textareaRef.current?.setSelectionRange(start + newText.length, start + newText.length);
-    }, 0);
-  }, [currentDocument, handleContentChangeWithHistory, textareaRef]);
+    // Apply smooth cursor positioning
+    setTimeout(() => smoothCursorTransition(newCursorPosition), 50);
+  }, [currentDocument, handleContentChangeWithHistory, textareaRef, smoothCursorTransition]);
 
   const handleTextCompletion = useCallback((completion: string) => {
     if (!textareaRef.current || !currentDocument) return;
@@ -55,19 +94,22 @@ export const useEditorContentHandler = ({ onAddToHistory, textareaRef }: EditorC
     const cursorPos = textareaRef.current.selectionStart;
     const currentContent = currentDocument.content || '';
     
-    const newContent = currentContent.slice(0, cursorPos) + completion + currentContent.slice(cursorPos);
+    // Smart completion - add space if needed
+    const textBefore = currentContent.slice(Math.max(0, cursorPos - 1), cursorPos);
+    const needsSpace = textBefore && !textBefore.match(/\s$/) && !completion.startsWith(' ');
+    const finalCompletion = needsSpace ? ' ' + completion : completion;
+    
+    const newContent = currentContent.slice(0, cursorPos) + finalCompletion + currentContent.slice(cursorPos);
+    const newCursorPosition = cursorPos + finalCompletion.length;
     
     const syntheticEvent = {
-      target: { value: newContent, selectionStart: cursorPos + completion.length }
+      target: { value: newContent, selectionStart: newCursorPosition }
     } as React.ChangeEvent<HTMLTextAreaElement>;
     handleContentChangeWithHistory(syntheticEvent);
     
-    // Set cursor after the completion
-    setTimeout(() => {
-      textareaRef.current?.focus();
-      textareaRef.current?.setSelectionRange(cursorPos + completion.length, cursorPos + completion.length);
-    }, 0);
-  }, [currentDocument, handleContentChangeWithHistory, textareaRef]);
+    // Smooth cursor positioning with slight delay for natural feel
+    setTimeout(() => smoothCursorTransition(newCursorPosition), 100);
+  }, [currentDocument, handleContentChangeWithHistory, textareaRef, smoothCursorTransition]);
 
   return {
     handleContentChangeWithHistory,
