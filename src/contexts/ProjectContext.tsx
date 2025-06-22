@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import { Project, DocumentNode, DocumentView } from '@/types/document';
 
@@ -222,8 +223,8 @@ function moveDocumentInTree(
   
   if (!documentToMove) return tree;
   
-  // Update the document's parentId
-  const updatedDocument = {
+  // Update the document's parentId - fix the TypeScript error here
+  const updatedDocument: DocumentNode = {
     ...documentToMove,
     parentId: newParentId,
     lastModified: new Date()
