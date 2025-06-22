@@ -1,4 +1,3 @@
-
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useEditorState } from '@/hooks/useEditorState';
@@ -50,12 +49,15 @@ const EditorContainer = () => {
   // Enable auto-save
   useAutoSave();
 
-  // Initialize contextual AI triggers
+  // Enhanced contextual AI triggers with intelligent assistance
   const {
-    writingBlocks,
+    activeTriggers,
     dialogueContext,
+    writingBlocks,
+    userActivity,
     isTyping,
-    handleTypingActivity
+    handleTypingActivity,
+    dismissTrigger
   } = useContextualAITriggers(textareaRef, handleContextualSuggestion);
 
   // Content handlers
@@ -109,17 +111,23 @@ const EditorContainer = () => {
     }
   }, [handleTextSelection, setCursorPosition, setShowFloatingActions]);
 
-  // Handle contextual suggestion actions
+  // Enhanced contextual suggestion handler with intelligent triggers
   const handleApplyContextualSuggestion = useCallback(async (suggestion: any) => {
     if (suggestion.type === 'writing_block' && suggestion.message.includes('continue')) {
       await handleQuickAIAction('continue');
-    } else if (suggestion.type === 'character_dialogue') {
-      // Focus on the current character's voice
+    } else if (suggestion.type === 'character_dialogue' || suggestion.type === 'smart_dialogue_character') {
+      // Enhanced character-aware dialogue assistance
       const character = dialogueContext.currentCharacter;
       if (character && textareaRef.current) {
         const prompt = `Continue this dialogue in ${character}'s distinctive voice and personality`;
         handleApplyAISuggestion(prompt);
       }
+    } else if (suggestion.type === 'intelligent_incomplete_thought') {
+      // Help complete incomplete thoughts
+      await handleQuickAIAction('continue');
+    } else if (suggestion.type === 'intelligent_writing_pause') {
+      // Proactive assistance during long pauses
+      await handleQuickAIAction('continue');
     }
     
     // Dismiss the suggestion after applying
@@ -188,7 +196,7 @@ const EditorContainer = () => {
         onQuickAIAction={handleQuickAIAction}
       />
 
-      {/* AI Panels and Overlays */}
+      {/* Enhanced AI Panels with intelligent contextual awareness */}
       <EditorAIPanels
         contextualSuggestions={contextualSuggestions}
         cursorPosition={cursorPosition}

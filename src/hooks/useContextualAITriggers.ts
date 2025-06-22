@@ -3,9 +3,7 @@ import { useEffect } from 'react';
 import { useWriting } from '@/contexts/WritingContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useTypingActivityTracker } from './contextual-ai/useTypingActivityTracker';
-import { useWritingBlockDetector } from './contextual-ai/useWritingBlockDetector';
-import { useDialogueContextDetector } from './contextual-ai/useDialogueContextDetector';
-import { useDocumentStructureAnalyzer } from './contextual-ai/useDocumentStructureAnalyzer';
+import { useContextualWritingAssistant } from './contextual-ai/useContextualWritingAssistant';
 
 export const useContextualAITriggers = (
   textareaRef: React.RefObject<any>,
@@ -24,34 +22,36 @@ export const useContextualAITriggers = (
   } = useTypingActivityTracker();
 
   const {
-    writingBlocks,
-    detectWritingBlocks
-  } = useWritingBlockDetector(onTriggerSuggestion);
-
-  const {
+    activeTriggers,
     dialogueContext,
-    detectDialogueContext
-  } = useDialogueContextDetector(state.characters, onTriggerSuggestion);
+    writingBlocks,
+    userActivity,
+    processAllContextualTriggers,
+    dismissTrigger
+  } = useContextualWritingAssistant(state.characters, onTriggerSuggestion);
 
-  const {
-    analyzeDocumentStructure
-  } = useDocumentStructureAnalyzer(onTriggerSuggestion);
-
-  // Main effect to trigger analysis
+  // Enhanced contextual analysis with intelligent triggers
   useEffect(() => {
     if (!textareaRef.current || !debouncedContent) return;
     
     const cursorPos = textareaRef.current.selectionStart || 0;
     
-    detectWritingBlocks(debouncedContent, cursorPos, isTyping, lastTypingTime);
-    detectDialogueContext(debouncedContent, cursorPos);
-    analyzeDocumentStructure(debouncedContent);
-  }, [debouncedContent, detectWritingBlocks, detectDialogueContext, analyzeDocumentStructure, isTyping, lastTypingTime]);
+    // Process all contextual triggers with enhanced intelligence
+    processAllContextualTriggers(debouncedContent, cursorPos, isTyping, lastTypingTime);
+  }, [debouncedContent, processAllContextualTriggers, isTyping, lastTypingTime]);
 
   return {
-    writingBlocks,
+    // Enhanced triggers
+    activeTriggers,
     dialogueContext,
+    writingBlocks,
+    userActivity,
+    
+    // Activity tracking
     isTyping,
-    handleTypingActivity
+    handleTypingActivity,
+    
+    // Controls
+    dismissTrigger
   };
 };
