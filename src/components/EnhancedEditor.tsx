@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useWriting } from '@/contexts/WritingContext';
 import { useAutoSave } from '@/hooks/useAutoSave';
@@ -6,8 +5,10 @@ import { useCollaborativeAI } from '@/hooks/useCollaborativeAI';
 import SmartTextCompletion from '@/components/ai/SmartTextCompletion';
 import InlineAISuggestions from '@/components/ai/InlineAISuggestions';
 import AIAssistantOverlay from '@/components/ai/AIAssistantOverlay';
+import ProactiveWritingSupport from '@/components/ai/ProactiveWritingSupport';
 import { Button } from '@/components/ui/button';
-import { Wand2, Brain, Zap, Check } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Wand2, Brain, Zap, Check, Sidebar } from 'lucide-react';
 
 interface CursorPosition {
   x: number;
@@ -25,6 +26,8 @@ const EnhancedEditor = () => {
   const [showFloatingActions, setShowFloatingActions] = useState(false);
   const [textBeforeCursor, setTextBeforeCursor] = useState('');
   const [textAfterCursor, setTextAfterCursor] = useState('');
+  const [showProactivePanel, setShowProactivePanel] = useState(false);
+  const [proactiveEnabled, setProactiveEnabled] = useState(true);
 
   const {
     suggestions,
@@ -264,80 +267,104 @@ const EnhancedEditor = () => {
   }
 
   return (
-    <div className="h-full flex flex-col bg-background relative">
-      <div className="p-4 border-b flex justify-between items-center">
-        <h2 className="text-xl font-bold">{currentDocument.title}</h2>
-        <div className="text-xs text-muted-foreground flex items-center gap-4">
-          <span>Auto-save enabled</span>
-          {suggestions.length > 0 && (
-            <span className="flex items-center gap-1">
-              <Brain className="h-3 w-3" />
-              {suggestions.length} AI suggestions
-            </span>
-          )}
-        </div>
-      </div>
-      
-      <div className="flex-grow p-8 md:p-12 lg:p-16 relative">
-        <textarea
-          ref={textareaRef}
-          value={currentDocument.content || ''}
-          onChange={handleContentChange}
-          onMouseUp={handleTextSelection}
-          onKeyUp={handleTextSelection}
-          onSelect={handleTextSelection}
-          className="w-full max-w-3xl mx-auto h-full resize-none bg-transparent focus:outline-none font-serif text-lg leading-relaxed text-foreground"
-          placeholder="Start writing your story... (AI assistance is active)"
-        />
-        
-        {/* Smart Text Completion */}
-        {textBeforeCursor && (
-          <SmartTextCompletion
-            textBefore={textBeforeCursor}
-            textAfter={textAfterCursor}
-            cursorPosition={textareaRef.current?.selectionStart || 0}
-            onAccept={handleTextCompletion}
-            onDismiss={() => {}}
-            isEnabled={true}
-          />
-        )}
-        
-        {/* Floating Action Buttons */}
-        {showFloatingActions && (
-          <div
-            className="absolute z-40 flex items-center gap-1 bg-background/90 backdrop-blur-sm border rounded-lg p-1 shadow-lg"
-            style={{
-              left: Math.min(cursorPosition.x, window.innerWidth - 200),
-              top: Math.max(cursorPosition.y - 40, 10)
-            }}
-          >
+    <div className="h-full flex bg-background relative">
+      {/* Main Editor Area */}
+      <div className="flex-1 flex flex-col">
+        <div className="p-4 border-b flex justify-between items-center">
+          <h2 className="text-xl font-bold">{currentDocument.title}</h2>
+          <div className="text-xs text-muted-foreground flex items-center gap-4">
+            <span>Auto-save enabled</span>
+            {suggestions.length > 0 && (
+              <span className="flex items-center gap-1">
+                <Brain className="h-3 w-3" />
+                {suggestions.length} AI suggestions
+              </span>
+            )}
             <Button
-              size="sm"
               variant="ghost"
-              onClick={() => handleQuickAIAction('continue')}
-              className="h-6 px-2 text-xs"
-              title="Continue writing"
-            >
-              <Zap className="h-3 w-3 mr-1" />
-              Continue
-            </Button>
-            <Button
               size="sm"
-              variant="ghost"
-              onClick={() => handleQuickAIAction('improve')}
-              className="h-6 px-2 text-xs"
-              title="Improve previous text"
+              onClick={() => setShowProactivePanel(!showProactivePanel)}
+              className="flex items-center gap-1"
             >
-              <Wand2 className="h-3 w-3 mr-1" />
-              Improve
+              <Sidebar className="h-3 w-3" />
+              Writing Assistant
             </Button>
           </div>
-        )}
+        </div>
+        
+        <div className="flex-grow p-8 md:p-12 lg:p-16 relative">
+          <textarea
+            ref={textareaRef}
+            value={currentDocument.content || ''}
+            onChange={handleContentChange}
+            onMouseUp={handleTextSelection}
+            onKeyUp={handleTextSelection}
+            onSelect={handleTextSelection}
+            className="w-full max-w-3xl mx-auto h-full resize-none bg-transparent focus:outline-none font-serif text-lg leading-relaxed text-foreground"
+            placeholder="Start writing your story... (AI assistance is active)"
+          />
+          
+          {/* Smart Text Completion */}
+          {textBeforeCursor && (
+            <SmartTextCompletion
+              textBefore={textBeforeCursor}
+              textAfter={textAfterCursor}
+              cursorPosition={textareaRef.current?.selectionStart || 0}
+              onAccept={handleTextCompletion}
+              onDismiss={() => {}}
+              isEnabled={true}
+            />
+          )}
+          
+          {/* Floating Action Buttons */}
+          {showFloatingActions && (
+            <div
+              className="absolute z-40 flex items-center gap-1 bg-background/90 backdrop-blur-sm border rounded-lg p-1 shadow-lg"
+              style={{
+                left: Math.min(cursorPosition.x, window.innerWidth - 200),
+                top: Math.max(cursorPosition.y - 40, 10)
+              }}
+            >
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleQuickAIAction('continue')}
+                className="h-6 px-2 text-xs"
+                title="Continue writing"
+              >
+                <Zap className="h-3 w-3 mr-1" />
+                Continue
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleQuickAIAction('improve')}
+                className="h-6 px-2 text-xs"
+                title="Improve previous text"
+              >
+                <Wand2 className="h-3 w-3 mr-1" />
+                Improve
+              </Button>
+            </div>
+          )}
+        </div>
+        
+        <div className="p-4 border-t text-right text-sm text-muted-foreground">
+          {currentDocument.wordCount || 0} Words
+        </div>
       </div>
-      
-      <div className="p-4 border-t text-right text-sm text-muted-foreground">
-        {currentDocument.wordCount || 0} Words
-      </div>
+
+      {/* Proactive Writing Support Panel */}
+      {showProactivePanel && (
+        <div className="w-80 border-l bg-background/50 backdrop-blur-sm overflow-y-auto">
+          <div className="p-4">
+            <ProactiveWritingSupport
+              isEnabled={proactiveEnabled}
+              onToggle={() => setProactiveEnabled(!proactiveEnabled)}
+            />
+          </div>
+        </div>
+      )}
       
       {/* Inline AI Suggestions for Selected Text */}
       {showInlineSuggestions && selectedText && (
