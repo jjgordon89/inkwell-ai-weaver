@@ -86,11 +86,11 @@ export const useAutoLinking = (documentId?: string) => {
     const relatedScenes = projectState.flatDocuments
       .filter(doc => doc.id !== currentDocument.id && doc.content && doc.type === 'scene')
       .map(doc => {
-        const currentWords = content.toLowerCase().match(/\b\w+\b/g) || [];
-        const docWords = doc.content!.toLowerCase().match(/\b\w+\b/g) || [];
+        const currentWords: string[] = content.toLowerCase().match(/\b\w+\b/g) || [];
+        const docWords: string[] = doc.content!.toLowerCase().match(/\b\w+\b/g) || [];
         
         // Calculate similarity based on common words
-        const commonWords = currentWords.filter(word => 
+        const commonWords: string[] = currentWords.filter(word => 
           word.length > 3 && docWords.includes(word)
         );
         
