@@ -13,7 +13,7 @@ export interface Project {
 export interface DocumentNode {
   id: string;
   title: string;
-  type: 'folder' | 'document' | 'chapter' | 'scene' | 'character-sheet' | 'research-note';
+  type: 'folder' | 'document' | 'chapter' | 'scene' | 'character-sheet' | 'research-note' | 'timeline-event';
   parentId?: string;
   children?: DocumentNode[];
   content?: string;
@@ -31,6 +31,8 @@ export interface DocumentNode {
     characters?: string[];
     keywords?: string[];
     notes?: string;
+    eventDate?: Date;
+    importance?: 'low' | 'medium' | 'high';
   };
 }
 

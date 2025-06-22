@@ -1,18 +1,9 @@
 
 import React from 'react';
-import { FileText, Grid3X3, List, Calendar, Search, Eye } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Edit3, Grid3X3, List, Clock, Search } from 'lucide-react';
 import { useProject } from '@/contexts/ProjectContext';
 import type { DocumentView } from '@/types/document';
-
-const viewTypes = [
-  { id: 'editor', name: 'Editor', icon: FileText, description: 'Write and edit documents' },
-  { id: 'corkboard', name: 'Corkboard', icon: Grid3X3, description: 'Visual overview of scenes' },
-  { id: 'outline', name: 'Outline', icon: List, description: 'Hierarchical document structure' },
-  { id: 'timeline', name: 'Timeline', icon: Calendar, description: 'Chronological view' },
-  { id: 'research', name: 'Research', icon: Search, description: 'Research materials and notes' }
-];
 
 interface ViewManagerProps {
   onViewChange?: (view: DocumentView) => void;
@@ -21,54 +12,52 @@ interface ViewManagerProps {
 const ViewManager = ({ onViewChange }: ViewManagerProps) => {
   const { state, dispatch } = useProject();
 
+  const views: DocumentView[] = [
+    { id: 'editor', name: 'Editor', type: 'editor' },
+    { id: 'corkboard', name: 'Corkboard', type: 'corkboard' },
+    { id: 'outline', name: 'Outline', type: 'outline' },
+    { id: 'timeline', name: 'Timeline', type: 'timeline' },
+    { id: 'research', name: 'Research', type: 'research' }
+  ];
+
+  const getViewIcon = (type: string) => {
+    switch (type) {
+      case 'editor': return Edit3;
+      case 'corkboard': return Grid3X3;
+      case 'outline': return List;
+      case 'timeline': return Clock;
+      case 'research': return Search;
+      default: return Edit3;
+    }
+  };
+
   const handleViewChange = (viewId: string) => {
-    const viewType = viewTypes.find(v => v.id === viewId);
-    if (!viewType) return;
-
-    const newView: DocumentView = {
-      id: crypto.randomUUID(),
-      name: viewType.name,
-      type: viewType.id as DocumentView['type'],
-      activeDocumentId: state.activeDocumentId || undefined
-    };
-
-    dispatch({ type: 'SET_ACTIVE_VIEW', payload: newView });
-    onViewChange?.(newView);
+    const view = views.find(v => v.id === viewId);
+    if (view) {
+      dispatch({ type: 'SET_ACTIVE_VIEW', payload: view });
+      onViewChange?.(view);
+    }
   };
 
   return (
-    <div className="flex items-center gap-4 p-4 border-b bg-muted/30">
-      <div className="flex items-center gap-2">
-        <Eye className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium">View:</span>
-      </div>
-      
-      <ToggleGroup 
-        type="single" 
-        value={state.activeView.type}
-        onValueChange={handleViewChange}
-        className="gap-1"
-      >
-        {viewTypes.map((view) => {
-          const Icon = view.icon;
-          return (
-            <ToggleGroupItem
-              key={view.id}
-              value={view.id}
-              aria-label={view.description}
-              className="px-3 py-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-            >
-              <Icon className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">{view.name}</span>
-            </ToggleGroupItem>
-          );
-        })}
-      </ToggleGroup>
-
-      <div className="ml-auto text-sm text-muted-foreground">
-        {state.activeView.name}
-        {state.activeDocumentId && ` • ${state.flatDocuments.find(d => d.id === state.activeDocumentId)?.title || 'Untitled'}`}
-      </div>
+    <div className="border-b bg-muted/30 px-4 py-2">
+      <Tabs value={state.activeView.id} onValueChange={handleViewChange}>
+        <TabsList className="bg-background">
+          {views.map((view) => {
+            const Icon = getViewIcon(view.type);
+            return (
+              <TabsTrigger 
+                key={view.id} 
+                value={view.id}
+                className="flex items-center gap-2 px-3"
+              >
+                <Icon className="h-4 w-4" />
+                <span className="hidden sm:inline">{view.name}</span>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+      </Tabs>
     </div>
   );
 };

@@ -16,7 +16,6 @@ import ResearchView from '../views/ResearchView';
 
 const WritingStudioLayout = () => {
   const { state } = useProject();
-  const [showInspector, setShowInspector] = useState(true);
 
   const renderActiveView = () => {
     switch (state.activeView.type) {
@@ -36,7 +35,6 @@ const WritingStudioLayout = () => {
   };
 
   const handleViewChange = (view: DocumentView) => {
-    // Handle any additional view change logic here
     console.log('View changed to:', view.type);
   };
 
@@ -54,22 +52,18 @@ const WritingStudioLayout = () => {
           <ResizableHandle />
           
           {/* Main Content Area */}
-          <ResizablePanel defaultSize={showInspector ? 60 : 80}>
+          <ResizablePanel defaultSize={60}>
             <div className="h-full">
               {renderActiveView()}
             </div>
           </ResizablePanel>
           
-          {showInspector && (
-            <>
-              <ResizableHandle />
-              
-              {/* Inspector Panel */}
-              <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
-                <InspectorPanel />
-              </ResizablePanel>
-            </>
-          )}
+          <ResizableHandle />
+          
+          {/* Inspector Panel */}
+          <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
+            <InspectorPanel />
+          </ResizablePanel>
         </ResizablePanelGroup>
       </div>
     </div>
