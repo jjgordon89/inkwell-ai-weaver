@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,7 +62,7 @@ const ProactiveWritingSupport: React.FC<ProactiveWritingSupportProps> = ({
     // Detect transition gaps (abrupt scene changes)
     const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0);
     const timeWords = ['suddenly', 'meanwhile', 'later', 'next', 'then'];
-    const abruptTransitions = sentences.filter(s => 
+    const abruptTransitions = sentences.filter((s: string) => 
       timeWords.some(word => s.toLowerCase().includes(word))
     );
 
@@ -116,7 +115,7 @@ const ProactiveWritingSupport: React.FC<ProactiveWritingSupportProps> = ({
       );
       
       // Extract summary-like suggestions
-      const summaryLines = suggestions.filter(s => 
+      const summaryLines = suggestions.filter((s: string) => 
         s.toLowerCase().includes('summary') || 
         s.toLowerCase().includes('chapter') ||
         s.toLowerCase().includes('key events')

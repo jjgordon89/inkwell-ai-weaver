@@ -128,6 +128,35 @@ Provide a natural completion (2-10 words) that bridges the text smoothly:`;
     }
   }, [processText]);
 
+  const generateContextualSuggestions = useCallback(async (
+    documentContent: string,
+    selectedText?: string,
+    characters?: Array<{ id: string; name: string }>,
+    storyArcs?: Array<{ id: string; title: string }>
+  ): Promise<string[]> => {
+    if (!documentContent || documentContent.length < 50) return [];
+
+    try {
+      const prompt = `Based on this story context:
+Content: "${documentContent.substring(0, 1000)}"
+${selectedText ? `Selected text: "${selectedText}"` : ''}
+Characters: ${characters?.map(c => c.name).join(', ') || 'None'}
+Story arcs: ${storyArcs?.map(a => a.title).join(', ') || 'None'}
+
+Provide 3-5 contextual writing suggestions that enhance the narrative.
+
+Format as a simple list, one suggestion per line.`;
+
+      const result = await processText(prompt, 'context-suggestion');
+      return result.split('\n')
+        .map(line => line.trim().replace(/^[-*]\s*/, ''))
+        .filter(line => line.length > 0);
+    } catch (error) {
+      console.error('Contextual suggestions failed:', error);
+      return [];
+    }
+  }, [processText]);
+
   // Auto-analyze when text changes
   useEffect(() => {
     if (debouncedText) {
@@ -160,6 +189,7 @@ Provide a natural completion (2-10 words) that bridges the text smoothly:`;
     writingContext,
     generateTextCompletion,
     improveSelectedText,
+    generateContextualSuggestions,
     dismissSuggestion,
     clearAllSuggestions,
     updateContext: setWritingContext

@@ -41,7 +41,8 @@ const SmartTextCompletion: React.FC<SmartTextCompletionProps> = ({
         });
 
         const results = await Promise.all(completionPromises);
-        const validCompletions = results.filter(r => r && r.length > 0 && r.length < 100);
+        const validCompletions = results
+          .filter((r): r is string => r !== null && r.length > 0 && r.length < 100);
         
         if (validCompletions.length > 0) {
           setCompletions(validCompletions);
