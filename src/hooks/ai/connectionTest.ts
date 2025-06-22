@@ -2,6 +2,11 @@
 import { AIProvider } from './types';
 
 const testGeminiConnection = async (provider: AIProvider, apiKey: string): Promise<boolean> => {
+  if (!provider.apiEndpoint) {
+    console.error(`No API endpoint configured for ${provider.name}`);
+    return false;
+  }
+
   const testPayload = {
     contents: [{
       parts: [{
@@ -38,6 +43,11 @@ const testGeminiConnection = async (provider: AIProvider, apiKey: string): Promi
 };
 
 const testOpenAICompatibleConnection = async (provider: AIProvider, apiKey: string): Promise<boolean> => {
+  if (!provider.apiEndpoint) {
+    console.error(`No API endpoint configured for ${provider.name}`);
+    return false;
+  }
+
   const testPayload = {
     model: provider.models[0],
     messages: [
@@ -85,6 +95,11 @@ const testOpenAICompatibleConnection = async (provider: AIProvider, apiKey: stri
 };
 
 const testOllamaConnection = async (provider: AIProvider, apiKey: string): Promise<boolean> => {
+  if (!provider.apiEndpoint) {
+    console.error(`No API endpoint configured for ${provider.name}`);
+    return false;
+  }
+
   try {
     // First check if Ollama is running by getting available models
     const response = await fetch(`${provider.apiEndpoint}/api/tags`, {
@@ -114,6 +129,11 @@ const testOllamaConnection = async (provider: AIProvider, apiKey: string): Promi
 };
 
 const testLMStudioConnection = async (provider: AIProvider, apiKey: string): Promise<boolean> => {
+  if (!provider.apiEndpoint) {
+    console.error(`No API endpoint configured for ${provider.name}`);
+    return false;
+  }
+
   try {
     // Check if LM Studio server is running
     const response = await fetch(`${provider.apiEndpoint}/v1/models`, {

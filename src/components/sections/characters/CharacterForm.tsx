@@ -13,7 +13,7 @@ import { validationRules } from '@/utils/validation';
 
 interface CharacterFormProps {
   character?: Character | null;
-  onSubmit: (data: Partial<Character>) => void;
+  onSubmit: (data: Omit<Character, 'id'>) => void;
   onCancel: () => void;
 }
 
@@ -93,17 +93,20 @@ const CharacterForm = ({ character, onSubmit, onCancel }: CharacterFormProps) =>
       return;
     }
     
-    const submitData = {
-      name: fields.name.value,
-      description: fields.description.value,
-      notes: fields.notes.value,
+    const submitData: Omit<Character, 'id'> = {
+      name: String(fields.name.value),
+      description: String(fields.description.value),
+      notes: String(fields.notes.value),
       age: fields.age.value ? Number(fields.age.value) : undefined,
-      occupation: fields.occupation.value || undefined,
-      appearance: fields.appearance.value || undefined,
-      personality: fields.personality.value || undefined,
-      backstory: fields.backstory.value || undefined,
+      occupation: fields.occupation.value ? String(fields.occupation.value) : undefined,
+      appearance: fields.appearance.value ? String(fields.appearance.value) : undefined,
+      personality: fields.personality.value ? String(fields.personality.value) : undefined,
+      backstory: fields.backstory.value ? String(fields.backstory.value) : undefined,
       tags,
-      relationships: character?.relationships || []
+      relationships: character?.relationships || [],
+      createdWith: character?.createdWith || 'manual',
+      voiceNotes: character?.voiceNotes,
+      arcProgress: character?.arcProgress
     };
     
     onSubmit(submitData);
@@ -186,7 +189,7 @@ const CharacterForm = ({ character, onSubmit, onCancel }: CharacterFormProps) =>
           </label>
           <Input
             id="name"
-            value={fields.name.value}
+            value={String(fields.name.value)}
             onChange={(e) => setField('name', e.target.value)}
             onBlur={() => setFieldTouched('name')}
             placeholder="Character name"
@@ -206,7 +209,7 @@ const CharacterForm = ({ character, onSubmit, onCancel }: CharacterFormProps) =>
             type="number"
             min="0"
             max="200"
-            value={fields.age.value}
+            value={String(fields.age.value)}
             onChange={(e) => setField('age', e.target.value)}
             onBlur={() => setFieldTouched('age')}
             placeholder="Age"
@@ -224,7 +227,7 @@ const CharacterForm = ({ character, onSubmit, onCancel }: CharacterFormProps) =>
         </label>
         <Input
           id="occupation"
-          value={fields.occupation.value}
+          value={String(fields.occupation.value)}
           onChange={(e) => setField('occupation', e.target.value)}
           onBlur={() => setFieldTouched('occupation')}
           placeholder="What does this character do?"
@@ -242,7 +245,7 @@ const CharacterForm = ({ character, onSubmit, onCancel }: CharacterFormProps) =>
         </label>
         <Textarea
           id="appearance"
-          value={fields.appearance.value}
+          value={String(fields.appearance.value)}
           onChange={(e) => setField('appearance', e.target.value)}
           onBlur={() => setFieldTouched('appearance')}
           placeholder="Physical description, clothing style, distinguishing features..."
@@ -261,7 +264,7 @@ const CharacterForm = ({ character, onSubmit, onCancel }: CharacterFormProps) =>
         </label>
         <Textarea
           id="personality"
-          value={fields.personality.value}
+          value={String(fields.personality.value)}
           onChange={(e) => setField('personality', e.target.value)}
           onBlur={() => setFieldTouched('personality')}
           placeholder="Personality traits, quirks, behavioral patterns..."
@@ -280,7 +283,7 @@ const CharacterForm = ({ character, onSubmit, onCancel }: CharacterFormProps) =>
         </label>
         <Textarea
           id="description"
-          value={fields.description.value}
+          value={String(fields.description.value)}
           onChange={(e) => setField('description', e.target.value)}
           onBlur={() => setFieldTouched('description')}
           placeholder="Overall character description..."
@@ -300,7 +303,7 @@ const CharacterForm = ({ character, onSubmit, onCancel }: CharacterFormProps) =>
         </label>
         <Textarea
           id="backstory"
-          value={fields.backstory.value}
+          value={String(fields.backstory.value)}
           onChange={(e) => setField('backstory', e.target.value)}
           onBlur={() => setFieldTouched('backstory')}
           placeholder="Character's history, important events, motivations..."
@@ -319,7 +322,7 @@ const CharacterForm = ({ character, onSubmit, onCancel }: CharacterFormProps) =>
         </label>
         <Textarea
           id="notes"
-          value={fields.notes.value}
+          value={String(fields.notes.value)}
           onChange={(e) => setField('notes', e.target.value)}
           onBlur={() => setFieldTouched('notes')}
           placeholder="Additional notes, plot relevance, development ideas..."
