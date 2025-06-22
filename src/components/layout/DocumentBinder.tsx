@@ -190,12 +190,12 @@ const DocumentBinder = () => {
 
   const handleAddChild = (parentId: string) => {
     const parent = state.flatDocuments.find(doc => doc.id === parentId);
-    const childType = parent?.type === 'folder' ? 'chapter' : 'scene';
+    const childType: 'chapter' | 'scene' = parent?.type === 'folder' ? 'chapter' : 'scene';
     
     const newDoc = {
       id: crypto.randomUUID(),
       title: childType === 'chapter' ? 'New Chapter' : 'New Scene',
-      type: childType as const,
+      type: childType,
       parentId,
       status: 'not-started' as const,
       wordCount: 0,
