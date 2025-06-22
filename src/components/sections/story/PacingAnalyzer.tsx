@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,11 +29,19 @@ const PacingAnalyzer = () => {
 
     try {
       const result = await analyzePacing(storyStructure.scenes, state.currentDocument.content);
-      setAnalysis(result);
-      toast({
-        title: "Pacing Analysis Complete",
-        description: `Overall pacing assessed as ${result.overallPace}`,
-      });
+      if (result) {
+        setAnalysis(result);
+        toast({
+          title: "Pacing Analysis Complete",
+          description: `Overall pacing assessed as ${result.overallPace}`,
+        });
+      } else {
+        toast({
+          title: "Analysis Failed",
+          description: "Failed to analyze story pacing. Please try again.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('Failed to analyze pacing:', error);
       toast({

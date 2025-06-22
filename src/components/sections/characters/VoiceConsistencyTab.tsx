@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,21 +15,29 @@ const VoiceConsistencyTab = () => {
   const handleVoiceCheck = async (characterId: string) => {
     try {
       const check = await checkVoiceConsistency(characterId);
-      setVoiceChecks(prev => {
-        const existing = prev.findIndex(v => v.characterId === characterId);
-        if (existing >= 0) {
-          const updated = [...prev];
-          updated[existing] = check;
-          return updated;
-        }
-        return [...prev, check];
-      });
-      
-      const character = state.characters.find(c => c.id === characterId);
-      toast({
-        title: "Voice Analysis Complete",
-        description: `${character?.name}'s voice consistency: ${check.consistency}%`,
-      });
+      if (check) {
+        setVoiceChecks(prev => {
+          const existing = prev.findIndex(v => v.characterId === characterId);
+          if (existing >= 0) {
+            const updated = [...prev];
+            updated[existing] = check;
+            return updated;
+          }
+          return [...prev, check];
+        });
+        
+        const character = state.characters.find(c => c.id === characterId);
+        toast({
+          title: "Voice Analysis Complete",
+          description: `${character?.name}'s voice consistency: ${check.consistency}%`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to analyze voice consistency.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('Failed to check voice consistency:', error);
       toast({

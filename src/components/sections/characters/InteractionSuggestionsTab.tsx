@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,11 +16,19 @@ const InteractionSuggestionsTab = () => {
   const handleGenerateInteractions = async () => {
     try {
       const suggestions = await generateInteractionSuggestions();
-      setInteractionSuggestions(suggestions);
-      toast({
-        title: "Interaction Suggestions Generated",
-        description: `Created ${suggestions.length} character interaction ideas`,
-      });
+      if (suggestions) {
+        setInteractionSuggestions(suggestions);
+        toast({
+          title: "Interaction Suggestions Generated",
+          description: `Created ${suggestions.length} character interaction ideas`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to generate interaction suggestions.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('Failed to generate interactions:', error);
       toast({
