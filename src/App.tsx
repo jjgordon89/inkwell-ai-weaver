@@ -1,43 +1,31 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import LandingPage from '@/pages/LandingPage';
+import WritingStudioLayout from '@/components/layout/WritingStudioLayout';
+import { ProjectProvider } from '@/contexts/ProjectContext';
+import { WritingProvider } from '@/contexts/WritingContext';
+import { AISettingsProvider } from '@/contexts/AISettingsContext';
+import { AIContextProvider } from '@/contexts/AIContext';
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter } from "react-router-dom";
-import { Routes, Route, Navigate } from "react-router-dom";
-import Index from "./pages/Index";
-import WritingStudio from "./pages/WritingStudio";
-import { ProjectProvider } from "@/contexts/ProjectContext";
-import { WritingProvider } from "@/contexts/WritingContext";
-import { AIContextProvider } from "@/contexts/AIContext";
-import { AISettingsProvider } from "@/contexts/AISettingsContext";
-import AISettingsDialog from "@/components/dialogs/AISettingsDialog";
-
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+function App() {
+  return (
+    <BrowserRouter>
       <AIContextProvider>
         <AISettingsProvider>
           <ProjectProvider>
             <WritingProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
+              <div className="app">
                 <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/studio" element={<WritingStudio />} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/studio" element={<WritingStudioLayout />} />
                 </Routes>
-                <AISettingsDialog />
-              </BrowserRouter>
+              </div>
             </WritingProvider>
           </ProjectProvider>
         </AISettingsProvider>
       </AIContextProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </BrowserRouter>
+  );
+}
 
 export default App;
