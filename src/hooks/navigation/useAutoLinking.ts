@@ -99,7 +99,7 @@ export const useAutoLinking = (documentId?: string) => {
         return {
           document: doc,
           similarity,
-          commonWords: [...new Set(commonWords)].slice(0, 5)
+          commonWords: Array.from(new Set(commonWords)).slice(0, 5)
         };
       })
       .filter(item => item.similarity > 0.1)
