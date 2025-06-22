@@ -1,27 +1,16 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Brain, 
-  Zap, 
-  Target, 
-  BookOpen, 
-  Lightbulb,
-  CheckCircle,
-  Clock,
-  TrendingUp,
-  Eye,
-  Loader2
-} from 'lucide-react';
+import { Brain } from 'lucide-react';
 import { useWriting } from '@/contexts/WritingContext';
 import { useToast } from "@/hooks/use-toast";
 import { useEnhancedAI } from '@/hooks/useEnhancedAI';
 import { useAI } from '@/hooks/useAI';
 import { WritingMetrics } from '@/hooks/ai/types';
+import WritingAnalysisTab from './smart-writing/WritingAnalysisTab';
+import SmartSuggestionsTab from './smart-writing/SmartSuggestionsTab';
+import WritingAssistanceTab from './smart-writing/WritingAssistanceTab';
 
 const SmartWritingFeatures = () => {
   const { state, dispatch } = useWriting();
@@ -126,18 +115,6 @@ const SmartWritingFeatures = () => {
     }
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const getScoreBadgeVariant = (score: number): "default" | "secondary" | "destructive" => {
-    if (score >= 80) return 'default';
-    if (score >= 60) return 'secondary';
-    return 'destructive';
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -158,187 +135,33 @@ const SmartWritingFeatures = () => {
           </TabsList>
 
           <TabsContent value="analysis" className="space-y-4">
-            <div className="space-y-3">
-              <Button 
-                onClick={analyzeText}
-                disabled={isAnalyzing || !state.currentDocument?.content}
-                className="w-full"
-              >
-                {isAnalyzing ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Target className="h-4 w-4 mr-2" />
-                )}
-                {isAnalyzing ? 'Analyzing...' : 'Analyze Writing Quality'}
-              </Button>
-              
-              {metrics && (
-                <div className="space-y-4">
-                  {/* Readability Score */}
-                  <div className="p-4 rounded-lg bg-muted/50 border">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium flex items-center gap-2">
-                        <Eye className="h-4 w-4" />
-                        Readability
-                      </h4>
-                      <Badge variant={getScoreBadgeVariant(metrics.readability.score)}>
-                        {metrics.readability.score}/100
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Level: {metrics.readability.level}
-                    </p>
-                    <div className="space-y-1">
-                      {metrics.readability.suggestions.map((suggestion, index) => (
-                        <p key={index} className="text-xs text-muted-foreground">
-                          • {suggestion}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Other Metrics */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 rounded-lg bg-muted/50 border text-center">
-                      <div className={`text-xl font-bold ${getScoreColor(metrics.sentenceVariety)}`}>
-                        {metrics.sentenceVariety}%
-                      </div>
-                      <div className="text-xs text-muted-foreground">Sentence Variety</div>
-                    </div>
-                    <div className="p-3 rounded-lg bg-muted/50 border text-center">
-                      <div className={`text-xl font-bold ${getScoreColor(metrics.vocabularyRichness)}`}>
-                        {metrics.vocabularyRichness}%
-                      </div>
-                      <div className="text-xs text-muted-foreground">Vocabulary Richness</div>
-                    </div>
-                    <div className="p-3 rounded-lg bg-muted/50 border text-center">
-                      <div className="text-xl font-bold text-primary">
-                        {metrics.pacing}
-                      </div>
-                      <div className="text-xs text-muted-foreground">Pacing</div>
-                    </div>
-                    <div className="p-3 rounded-lg bg-muted/50 border text-center">
-                      <div className={`text-xl font-bold ${getScoreColor(metrics.engagement)}`}>
-                        {metrics.engagement}%
-                      </div>
-                      <div className="text-xs text-muted-foreground">Engagement</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            <WritingAnalysisTab
+              onAnalyze={analyzeText}
+              isAnalyzing={isAnalyzing}
+              hasContent={!!state.currentDocument?.content}
+              metrics={metrics}
+            />
           </TabsContent>
 
           <TabsContent value="suggestions" className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium">Real-time Suggestions</h4>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleGenerateAutoSuggestions}
-                  disabled={isGenerating || isAnalyzing}
-                >
-                  {isGenerating ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Zap className="h-3 w-3 mr-1" />}
-                  Refresh
-                </Button>
-              </div>
-              
-              {autoSuggestions.length > 0 ? (
-                <div className="space-y-2">
-                  {autoSuggestions.map((suggestion, index) => (
-                    <div 
-                      key={index}
-                      className="p-3 rounded-lg bg-muted/50 border-l-2 border-blue-500/30 hover:bg-muted/70 transition-colors"
-                    >
-                      <div className="flex items-start gap-2">
-                        <Lightbulb className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                        <p className="text-sm flex-1">{suggestion}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <Alert>
-                  <AlertDescription>
-                    Click "Refresh" to get AI-powered suggestions for your text.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
+            <SmartSuggestionsTab
+              suggestions={autoSuggestions}
+              onRefresh={handleGenerateAutoSuggestions}
+              isGenerating={isGenerating}
+              isAnalyzing={isAnalyzing}
+            />
           </TabsContent>
 
           <TabsContent value="assistance" className="space-y-4">
-            <div className="space-y-4">
-              {/* Word Predictions */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                   <h4 className="text-sm font-medium flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    Next Word Predictions
-                  </h4>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handlePredictNextWords}
-                    disabled={isGenerating || isAnalyzing}
-                  >
-                    {isGenerating ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Zap className="h-3 w-3 mr-1" />}
-                    Predict
-                  </Button>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {nextWordPredictions.length > 0 ? nextWordPredictions.map((word, index) => (
-                    <Badge 
-                      key={index}
-                      variant="outline" 
-                      className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-                      onClick={() => {
-                        toast({
-                          title: "Word Suggestion",
-                          description: `You can add logic to insert "${word}" into your text.`,
-                        });
-                      }}
-                    >
-                      {word}
-                    </Badge>
-                  )) : (
-                    <p className="text-sm text-muted-foreground">Click "Predict" to see next word suggestions.</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Writing Tools */}
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Quick Writing Tools</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" size="sm" className="justify-start" onClick={handleGrammarCheck} disabled={isAIToolProcessing || !state.currentDocument?.content}>
-                     {isAIToolProcessing ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <CheckCircle className="h-3 w-3 mr-2" />}
-                    Grammar Check
-                  </Button>
-                  <Button variant="outline" size="sm" className="justify-start" disabled>
-                    <BookOpen className="h-3 w-3 mr-2" />
-                    Style Guide
-                  </Button>
-                  <Button variant="outline" size="sm" className="justify-start" disabled>
-                    <Target className="h-3 w-3 mr-2" />
-                    Clarity Score
-                  </Button>
-                  <Button variant="outline" size="sm" className="justify-start" disabled>
-                    <Brain className="h-3 w-3 mr-2" />
-                    Tone Detector
-                  </Button>
-                </div>
-              </div>
-
-              <Alert>
-                <Brain className="h-4 w-4" />
-                <AlertDescription>
-                  Smart features learn from your writing style to provide personalized assistance.
-                </AlertDescription>
-              </Alert>
-            </div>
+            <WritingAssistanceTab
+              nextWordPredictions={nextWordPredictions}
+              onPredictWords={handlePredictNextWords}
+              onGrammarCheck={handleGrammarCheck}
+              isGenerating={isGenerating}
+              isAnalyzing={isAnalyzing}
+              isAIProcessing={isAIToolProcessing}
+              hasContent={!!state.currentDocument?.content}
+            />
           </TabsContent>
         </Tabs>
       </CardContent>
