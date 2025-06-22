@@ -11,6 +11,16 @@ import { WritingMetrics } from '@/hooks/ai/types';
 import WritingAnalysisTab from './smart-writing/WritingAnalysisTab';
 import SmartSuggestionsTab from './smart-writing/SmartSuggestionsTab';
 import WritingAssistanceTab from './smart-writing/WritingAssistanceTab';
+import { 
+  SMART_WRITING_DEFAULTS, 
+  TAB_CONFIG 
+} from './smart-writing/constants';
+import {
+  createAnalyzeHandler,
+  createSuggestionsHandler,
+  createPredictWordsHandler,
+  createGrammarCheckHandler
+} from './smart-writing/smartWritingUtils';
 
 const SmartWritingFeatures = () => {
   const { state, dispatch } = useWriting();
@@ -24,96 +34,38 @@ const SmartWritingFeatures = () => {
   } = useEnhancedAI();
   const { processText, isProcessing: isAIToolProcessing } = useAI();
   
-  const [metrics, setMetrics] = useState<WritingMetrics | null>(null);
-  const [autoSuggestions, setAutoSuggestions] = useState<string[]>([]);
-  const [nextWordPredictions, setNextWordPredictions] = useState<string[]>([]);
+  const [metrics, setMetrics] = useState<WritingMetrics | null>(SMART_WRITING_DEFAULTS.METRICS);
+  const [autoSuggestions, setAutoSuggestions] = useState<string[]>(SMART_WRITING_DEFAULTS.AUTO_SUGGESTIONS);
+  const [nextWordPredictions, setNextWordPredictions] = useState<string[]>(SMART_WRITING_DEFAULTS.NEXT_WORD_PREDICTIONS);
 
-  const analyzeText = async () => {
-    if (!state.currentDocument?.content) return;
-    
-    try {
-      const result = await analyzeWritingQuality(state.currentDocument.content);
-      setMetrics(result);
-      toast({
-        title: "Analysis Complete",
-        description: `Text analyzed with ${result.readability.level.toLowerCase()} readability.`,
-      });
-    } catch (error) {
-      console.error("Failed to analyze text:", error);
-      toast({
-        title: "Error",
-        description: "Failed to analyze writing quality.",
-        variant: "destructive",
-      });
-    }
-  };
+  // Create handlers using utility functions
+  const analyzeText = createAnalyzeHandler(
+    analyzeWritingQuality,
+    state.currentDocument?.content,
+    setMetrics,
+    toast
+  );
 
-  const handleGenerateAutoSuggestions = async () => {
-    if (!state.currentDocument?.content) return;
-    try {
-      const suggestions = await generateContextualSuggestions(state.currentDocument.content);
-      setAutoSuggestions(suggestions);
-      if (suggestions.length > 0) {
-        toast({ title: "Suggestions refreshed!" });
-      }
-    } catch (error) {
-      console.error("Failed to generate suggestions:", error);
-      toast({
-        title: "Error",
-        description: "Failed to generate suggestions.",
-        variant: "destructive",
-      });
-    }
-  };
+  const handleGenerateAutoSuggestions = createSuggestionsHandler(
+    generateContextualSuggestions,
+    state.currentDocument?.content,
+    setAutoSuggestions,
+    toast
+  );
 
-  const handlePredictNextWords = async () => {
-    if (!state.currentDocument?.content) return;
-    try {
-      const words = await predictNextWords(state.currentDocument.content);
-      setNextWordPredictions(words);
-      if (words.length > 0) {
-        toast({ title: "Next word predictions updated." });
-      }
-    } catch(error) {
-      console.error("Failed to predict next words:", error);
-      toast({
-        title: "Error",
-        description: "Failed to predict next words.",
-        variant: "destructive",
-      });
-    }
-  };
+  const handlePredictNextWords = createPredictWordsHandler(
+    predictNextWords,
+    state.currentDocument?.content,
+    setNextWordPredictions,
+    toast
+  );
 
-  const handleGrammarCheck = async () => {
-    if (!state.currentDocument || !state.currentDocument.content) return;
-    const originalContent = state.currentDocument.content;
-    toast({ title: "Checking grammar..." });
-    try {
-      const fixedContent = await processText(originalContent, 'fix-grammar');
-      if (fixedContent !== originalContent) {
-        dispatch({ 
-            type: 'UPDATE_DOCUMENT_CONTENT', 
-            payload: { id: state.currentDocument.id, content: fixedContent }
-        });
-        toast({
-            title: "Grammar Check Complete",
-            description: "Grammar and spelling have been corrected.",
-        });
-      } else {
-        toast({
-            title: "Grammar Check Complete",
-            description: "No errors found.",
-        });
-      }
-    } catch(error) {
-      console.error("Grammar check failed:", error);
-      toast({
-        title: "Error",
-        description: "Failed to perform grammar check.",
-        variant: "destructive",
-      });
-    }
-  };
+  const handleGrammarCheck = createGrammarCheckHandler(
+    processText,
+    state.currentDocument,
+    dispatch,
+    toast
+  );
 
   return (
     <Card>
@@ -127,14 +79,14 @@ const SmartWritingFeatures = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="analysis" className="w-full">
+        <Tabs defaultValue={TAB_CONFIG.DEFAULT_TAB} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="analysis">Analysis</TabsTrigger>
-            <TabsTrigger value="suggestions">Smart Suggestions</TabsTrigger>
-            <TabsTrigger value="assistance">Writing Aid</TabsTrigger>
+            <TabsTrigger value={TAB_CONFIG.TABS.ANALYSIS}>Analysis</TabsTrigger>
+            <TabsTrigger value={TAB_CONFIG.TABS.SUGGESTIONS}>Smart Suggestions</TabsTrigger>
+            <TabsTrigger value={TAB_CONFIG.TABS.ASSISTANCE}>Writing Aid</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="analysis" className="space-y-4">
+          <TabsContent value={TAB_CONFIG.TABS.ANALYSIS} className="space-y-4">
             <WritingAnalysisTab
               onAnalyze={analyzeText}
               isAnalyzing={isAnalyzing}
@@ -143,7 +95,7 @@ const SmartWritingFeatures = () => {
             />
           </TabsContent>
 
-          <TabsContent value="suggestions" className="space-y-4">
+          <TabsContent value={TAB_CONFIG.TABS.SUGGESTIONS} className="space-y-4">
             <SmartSuggestionsTab
               suggestions={autoSuggestions}
               onRefresh={handleGenerateAutoSuggestions}
@@ -152,7 +104,7 @@ const SmartWritingFeatures = () => {
             />
           </TabsContent>
 
-          <TabsContent value="assistance" className="space-y-4">
+          <TabsContent value={TAB_CONFIG.TABS.ASSISTANCE} className="space-y-4">
             <WritingAssistanceTab
               nextWordPredictions={nextWordPredictions}
               onPredictWords={handlePredictNextWords}
