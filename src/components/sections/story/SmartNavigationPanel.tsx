@@ -1,79 +1,43 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Brain, Link, Map, Zap, BookOpen } from 'lucide-react';
-import { useSemanticSearch } from '@/hooks/search/useSemanticSearch';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Navigation, Search, Link, Map } from 'lucide-react';
 import { useAutoLinking } from '@/hooks/navigation/useAutoLinking';
+import { useSemanticSearch } from '@/hooks/search/useSemanticSearch';
 import { useDynamicOutline } from '@/hooks/outline/useDynamicOutline';
+import { useWriting } from '@/contexts/WritingContext';
 
 const SmartNavigationPanel = () => {
+  const { state } = useWriting();
+  const { autoLinks, getLinksByType } = useAutoLinking();
+  const { searchResults, isSearching, performSemanticSearch, clearSearch } = useSemanticSearch();
+  const { dynamicOutline, outlineStats, isGenerating, generateDynamicOutline } = useDynamicOutline();
   const [searchQuery, setSearchQuery] = useState('');
-  const { 
-    searchResults, 
-    isSearching, 
-    performSemanticSearch, 
-    clearSearch,
-    searchIndex 
-  } = useSemanticSearch();
-  
-  const { 
-    autoLinks, 
-    getLinksByType, 
-    getHighConfidenceLinks 
-  } = useAutoLinking();
-  
-  const {
-    dynamicOutline,
-    outlineStats,
-    isGenerating,
-    generateDynamicOutline,
-    acceptSuggestion,
-    rejectSuggestion
-  } = useDynamicOutline();
 
-  const handleSearch = async () => {
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (searchQuery.trim()) {
       await performSemanticSearch(searchQuery);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'character': return '👤';
-      case 'location': return '📍';
-      case 'scene': return '🎬';
-      case 'plot-point': return '⚡';
-      default: return '📄';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'in-progress': return 'bg-blue-100 text-blue-800';
-      case 'planned': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
+  const characterLinks = getLinksByType('character');
+  const locationLinks = getLinksByType('location');
+  const sceneLinks = getLinksByType('scene');
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Brain className="h-5 w-5 text-primary" />
-          Smart Navigation
+          <Navigation className="h-5 w-5 text-primary" />
+          Smart Navigation & Story Map
         </CardTitle>
         <CardDescription>
-          AI-powered document search, auto-linking, and dynamic outlines
+          AI-powered content discovery and visual story connections
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -89,63 +53,50 @@ const SmartNavigationPanel = () => {
             </TabsTrigger>
             <TabsTrigger value="outline" className="flex items-center gap-1">
               <Map className="h-4 w-4" />
-              Dynamic Outline
+              Outline
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="search" className="space-y-4">
-            <div className="flex gap-2">
+            <form onSubmit={handleSearch} className="flex gap-2">
               <Input
-                placeholder="Search across all content..."
+                placeholder="Search characters, scenes, plot points..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={handleKeyPress}
                 className="flex-1"
               />
-              <Button 
-                onClick={handleSearch}
-                disabled={isSearching || !searchQuery.trim()}
-              >
-                {isSearching ? (
-                  <Zap className="h-4 w-4 animate-pulse" />
-                ) : (
-                  <Search className="h-4 w-4" />
-                )}
+              <Button type="submit" disabled={isSearching}>
+                {isSearching ? 'Searching...' : 'Search'}
               </Button>
-            </div>
-
-            <div className="text-sm text-muted-foreground">
-              Searching across {searchIndex} indexed items
-            </div>
+            </form>
 
             {searchResults.length > 0 && (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {searchResults.map((result) => (
-                  <div key={result.id} className="p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h4 className="font-medium text-sm flex items-center gap-2">
-                        <span>{getTypeIcon(result.type)}</span>
-                        {result.title}
-                      </h4>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Search Results</h4>
+                  <Button variant="ghost" size="sm" onClick={clearSearch}>
+                    Clear
+                  </Button>
+                </div>
+                {searchResults.slice(0, 10).map((result) => (
+                  <div key={result.id} className="p-3 border rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="font-medium">{result.title}</h5>
                       <Badge variant="outline" className="text-xs">
-                        {Math.round(result.relevanceScore)}% match
+                        {result.type}
                       </Badge>
                     </div>
-                    
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {result.context}
+                    </p>
                     {result.matchedPhrases.length > 0 && (
-                      <div className="mb-2">
+                      <div className="flex flex-wrap gap-1">
                         {result.matchedPhrases.map((phrase, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs mr-1 mb-1">
-                            {phrase.length > 30 ? phrase.slice(0, 30) + '...' : phrase}
+                          <Badge key={index} variant="secondary" className="text-xs">
+                            {phrase.slice(0, 30)}...
                           </Badge>
                         ))}
                       </div>
-                    )}
-                    
-                    {result.context && (
-                      <p className="text-xs text-muted-foreground">
-                        ...{result.context}...
-                      </p>
                     )}
                   </div>
                 ))}
@@ -161,132 +112,157 @@ const SmartNavigationPanel = () => {
           </TabsContent>
 
           <TabsContent value="links" className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              Found {autoLinks.length} potential connections in current document
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium">Auto-Detected Connections</h4>
+              <Badge variant="outline" className="text-xs">
+                {autoLinks.length} found
+              </Badge>
             </div>
 
-            {autoLinks.length > 0 ? (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {getHighConfidenceLinks().map((link) => (
-                  <div key={link.id} className="p-3 border rounded-lg">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2">
-                        <span>{getTypeIcon(link.type)}</span>
-                        <span className="font-medium text-sm">{link.text}</span>
-                      </div>
+            {characterLinks.length > 0 && (
+              <div className="space-y-2">
+                <h5 className="font-medium text-sm flex items-center gap-2">
+                  Characters
+                  <Badge variant="secondary" className="text-xs">
+                    {characterLinks.length}
+                  </Badge>
+                </h5>
+                <div className="space-y-2">
+                  {characterLinks.slice(0, 5).map((link) => (
+                    <div key={link.id} className="p-2 bg-muted/50 rounded flex items-center justify-between">
+                      <span className="text-sm font-medium">{link.text}</span>
                       <Badge variant="outline" className="text-xs">
-                        {Math.round(link.confidence * 100)}% confidence
+                        {Math.round(link.confidence * 100)}%
                       </Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {link.context}
-                    </p>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            ) : (
+            )}
+
+            {locationLinks.length > 0 && (
+              <div className="space-y-2">
+                <h5 className="font-medium text-sm flex items-center gap-2">
+                  Locations
+                  <Badge variant="secondary" className="text-xs">
+                    {locationLinks.length}
+                  </Badge>
+                </h5>
+                <div className="space-y-2">
+                  {locationLinks.slice(0, 5).map((link) => (
+                    <div key={link.id} className="p-2 bg-muted/50 rounded flex items-center justify-between">
+                      <span className="text-sm font-medium">{link.text}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {Math.round(link.confidence * 100)}%
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {sceneLinks.length > 0 && (
+              <div className="space-y-2">
+                <h5 className="font-medium text-sm flex items-center gap-2">
+                  Related Scenes
+                  <Badge variant="secondary" className="text-xs">
+                    {sceneLinks.length}
+                  </Badge>
+                </h5>
+                <div className="space-y-2">
+                  {sceneLinks.map((link) => (
+                    <div key={link.id} className="p-2 bg-muted/50 rounded">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium">{link.text}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {Math.round(link.confidence * 100)}%
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{link.context}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {autoLinks.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <Link className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>No auto-links detected in current document</p>
+                <p>No connections found in current document</p>
               </div>
             )}
           </TabsContent>
 
           <TabsContent value="outline" className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                {outlineStats.total} items • {outlineStats.aiSuggestions} AI suggestions
-              </div>
+              <h4 className="font-medium">Dynamic Story Outline</h4>
               <Button 
                 size="sm" 
                 onClick={generateDynamicOutline}
                 disabled={isGenerating}
               >
-                {isGenerating ? (
-                  <Zap className="h-4 w-4 mr-2 animate-pulse" />
-                ) : (
-                  <BookOpen className="h-4 w-4 mr-2" />
-                )}
-                {isGenerating ? 'Analyzing...' : 'Regenerate'}
+                {isGenerating ? 'Generating...' : 'Refresh'}
               </Button>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="p-2 bg-green-50 rounded">
-                <div className="text-lg font-bold text-green-700">{outlineStats.completed}</div>
-                <div className="text-xs text-green-600">Completed</div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <div className="text-sm text-muted-foreground">Completion</div>
+                <div className="text-2xl font-bold">
+                  {Math.round(outlineStats.completionPercentage)}%
+                </div>
               </div>
-              <div className="p-2 bg-blue-50 rounded">
-                <div className="text-lg font-bold text-blue-700">{outlineStats.inProgress}</div>
-                <div className="text-xs text-blue-600">In Progress</div>
-              </div>
-              <div className="p-2 bg-gray-50 rounded">
-                <div className="text-lg font-bold text-gray-700">{outlineStats.planned}</div>
-                <div className="text-xs text-gray-600">Planned</div>
+              <div className="space-y-1">
+                <div className="text-sm text-muted-foreground">AI Suggestions</div>
+                <div className="text-2xl font-bold">
+                  {outlineStats.aiSuggestions}
+                </div>
               </div>
             </div>
 
-            {dynamicOutline.length > 0 ? (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {dynamicOutline.map((item) => (
+            {dynamicOutline.length > 0 && (
+              <div className="space-y-3">
+                {dynamicOutline.slice(0, 8).map((item) => (
                   <div key={item.id} className="p-3 border rounded-lg">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2">
-                        <span>{getTypeIcon(item.type)}</span>
-                        <div>
-                          <div className="font-medium text-sm">{item.title}</div>
-                          {item.wordCount > 0 && (
-                            <div className="text-xs text-muted-foreground">
-                              {item.wordCount.toLocaleString()} words
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className={getStatusColor(item.status)}>
-                          {item.status}
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="font-medium">{item.title}</h5>
+                      <div className="flex gap-1">
+                        <Badge variant="outline" className="text-xs">
+                          {item.type}
                         </Badge>
                         {item.aiGenerated && (
-                          <Badge variant="outline" className="text-xs">
-                            AI Suggestion
+                          <Badge variant="secondary" className="text-xs">
+                            AI
                           </Badge>
                         )}
                       </div>
                     </div>
-                    
                     {item.summary && (
-                      <p className="text-xs text-muted-foreground mb-2">
+                      <p className="text-sm text-muted-foreground mb-2">
                         {item.summary}
                       </p>
                     )}
-
-                    {item.aiGenerated && (
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => acceptSuggestion(item.id)}
-                          className="text-xs"
-                        >
-                          Accept
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          onClick={() => rejectSuggestion(item.id)}
-                          className="text-xs"
-                        >
-                          Dismiss
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{item.wordCount} words</span>
+                      <Badge 
+                        variant={
+                          item.status === 'completed' ? 'default' :
+                          item.status === 'in-progress' ? 'secondary' : 'outline'
+                        }
+                        className="text-xs"
+                      >
+                        {item.status}
+                      </Badge>
+                    </div>
                   </div>
                 ))}
               </div>
-            ) : (
+            )}
+
+            {dynamicOutline.length === 0 && !isGenerating && (
               <div className="text-center py-8 text-muted-foreground">
                 <Map className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>Generate a dynamic outline to see AI-powered structure analysis</p>
+                <p>Click "Refresh" to generate a dynamic outline</p>
               </div>
             )}
           </TabsContent>
