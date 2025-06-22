@@ -1,25 +1,18 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Lightbulb, 
-  Wand2, 
-  BarChart3, 
-  BookOpen, 
-  PenTool, 
-  Loader2,
-  Target,
-  Zap,
-  ArrowRight,
-  Plus
-} from 'lucide-react';
+import { Wand2 } from 'lucide-react';
 import { useWriting } from '@/contexts/WritingContext';
 import { useEnhancedAI } from '@/hooks/useEnhancedAI';
 import { useToast } from "@/hooks/use-toast";
 import { ToneAnalysis, PlotElement, WritingPrompt } from '@/hooks/ai/types';
+import ContextSuggestionsTab from './enhanced-ai/ContextSuggestionsTab';
+import ToneAnalysisTab from './enhanced-ai/ToneAnalysisTab';
+import PlotDevelopmentTab from './enhanced-ai/PlotDevelopmentTab';
+import WritingPromptsTab from './enhanced-ai/WritingPromptsTab';
+import { applySuggestionAsNote, applyStoryContinuation } from './enhanced-ai/enhancedAIUtils';
+import { ENHANCED_AI_TABS, ENHANCED_AI_DEFAULTS } from './enhanced-ai/constants';
 
 const EnhancedAIPanel = () => {
   const { state, dispatch } = useWriting();
@@ -35,11 +28,11 @@ const EnhancedAIPanel = () => {
   
   const { toast } = useToast();
   
-  const [contextSuggestions, setContextSuggestions] = useState<string[]>([]);
-  const [toneAnalysis, setToneAnalysis] = useState<ToneAnalysis | null>(null);
-  const [plotElements, setPlotElements] = useState<PlotElement[]>([]);
-  const [writingPrompts, setWritingPrompts] = useState<WritingPrompt[]>([]);
-  const [storyContinuation, setStoryContinuation] = useState<string>('');
+  const [contextSuggestions, setContextSuggestions] = useState<string[]>(ENHANCED_AI_DEFAULTS.CONTEXT_SUGGESTIONS);
+  const [toneAnalysis, setToneAnalysis] = useState<ToneAnalysis | null>(ENHANCED_AI_DEFAULTS.TONE_ANALYSIS);
+  const [plotElements, setPlotElements] = useState<PlotElement[]>(ENHANCED_AI_DEFAULTS.PLOT_ELEMENTS);
+  const [writingPrompts, setWritingPrompts] = useState<WritingPrompt[]>(ENHANCED_AI_DEFAULTS.WRITING_PROMPTS);
+  const [storyContinuation, setStoryContinuation] = useState<string>(ENHANCED_AI_DEFAULTS.STORY_CONTINUATION);
 
   const handleContextSuggestions = async () => {
     if (!state.currentDocument) return;
@@ -64,49 +57,6 @@ const EnhancedAIPanel = () => {
         variant: "destructive",
       });
     }
-  };
-
-  const applySuggestionAsNote = (suggestion: string) => {
-    if (!state.currentDocument) return;
-
-    // Add suggestion as a comment or note in the text
-    const noteText = `\n\n[AI Suggestion: ${suggestion}]\n\n`;
-    const cursorPosition = state.currentDocument.content.length;
-    const newContent = state.currentDocument.content + noteText;
-    
-    dispatch({
-      type: 'UPDATE_DOCUMENT_CONTENT',
-      payload: {
-        id: state.currentDocument.id,
-        content: newContent
-      }
-    });
-    
-    toast({
-      title: "Suggestion Added",
-      description: "AI suggestion added as a note to your document",
-    });
-  };
-
-  const applyContinuation = () => {
-    if (!state.currentDocument || !storyContinuation) return;
-
-    const newContent = state.currentDocument.content + '\n\n' + storyContinuation;
-    
-    dispatch({
-      type: 'UPDATE_DOCUMENT_CONTENT',
-      payload: {
-        id: state.currentDocument.id,
-        content: newContent
-      }
-    });
-    
-    toast({
-      title: "Story Continuation Applied",
-      description: "AI continuation added to your document",
-    });
-    
-    setStoryContinuation('');
   };
 
   const handleToneAnalysis = async () => {
@@ -188,7 +138,17 @@ const EnhancedAIPanel = () => {
     }
   };
 
+  const handleApplySuggestion = (suggestion: string) => {
+    applySuggestionAsNote(suggestion, state.currentDocument, dispatch, toast);
+  };
+
+  const handleApplyContinuation = () => {
+    applyStoryContinuation(storyContinuation, state.currentDocument, dispatch, toast, () => setStoryContinuation(''));
+  };
+
   const isProcessing = isAnalyzing || isGenerating;
+  const hasDocument = !!state.currentDocument;
+  const hasContent = !!(state.selectedText || state.currentDocument?.content);
 
   return (
     <Card>
@@ -202,222 +162,54 @@ const EnhancedAIPanel = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="context" className="w-full">
+        <Tabs defaultValue={ENHANCED_AI_TABS.CONTEXT} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="context">Context</TabsTrigger>
-            <TabsTrigger value="analysis">Analysis</TabsTrigger>
-            <TabsTrigger value="plot">Plot</TabsTrigger>
-            <TabsTrigger value="prompts">Prompts</TabsTrigger>
+            <TabsTrigger value={ENHANCED_AI_TABS.CONTEXT}>Context</TabsTrigger>
+            <TabsTrigger value={ENHANCED_AI_TABS.ANALYSIS}>Analysis</TabsTrigger>
+            <TabsTrigger value={ENHANCED_AI_TABS.PLOT}>Plot</TabsTrigger>
+            <TabsTrigger value={ENHANCED_AI_TABS.PROMPTS}>Prompts</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="context" className="space-y-4">
-            <div className="space-y-3">
-              <Button 
-                onClick={handleContextSuggestions}
-                disabled={isProcessing || !state.currentDocument}
-                className="w-full"
-              >
-                {isProcessing ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Target className="h-4 w-4 mr-2" />
-                )}
-                Generate Context-Aware Suggestions
-              </Button>
-              
-              {contextSuggestions.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Context-Aware Suggestions</h4>
-                  {contextSuggestions.map((suggestion, index) => (
-                    <div 
-                      key={index}
-                      className="p-3 rounded-lg bg-muted/50 border-l-2 border-blue-500/30 group hover:bg-muted/70 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm flex-1">{suggestion}</p>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => applySuggestionAsNote(suggestion)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+          <TabsContent value={ENHANCED_AI_TABS.CONTEXT} className="space-y-4">
+            <ContextSuggestionsTab
+              suggestions={contextSuggestions}
+              onGenerateSuggestions={handleContextSuggestions}
+              onApplySuggestion={handleApplySuggestion}
+              isProcessing={isProcessing}
+              hasDocument={hasDocument}
+            />
           </TabsContent>
 
-          <TabsContent value="analysis" className="space-y-4">
-            <div className="space-y-3">
-              <Button 
-                onClick={handleToneAnalysis}
-                disabled={isProcessing || (!state.selectedText && !state.currentDocument)}
-                className="w-full"
-              >
-                {isProcessing ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                )}
-                Analyze Tone & Style
-              </Button>
-              
-              {toneAnalysis && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{toneAnalysis.tone}</Badge>
-                    <Badge variant="secondary">{toneAnalysis.confidence}% confidence</Badge>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Style Suggestions</h4>
-                    {toneAnalysis.suggestions.map((suggestion, index) => (
-                      <div 
-                        key={index}
-                        className="flex items-start justify-between gap-2 group hover:bg-muted/30 p-2 rounded transition-colors"
-                      >
-                        <p className="text-sm text-muted-foreground flex-1">• {suggestion}</p>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => applySuggestionAsNote(suggestion)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+          <TabsContent value={ENHANCED_AI_TABS.ANALYSIS} className="space-y-4">
+            <ToneAnalysisTab
+              toneAnalysis={toneAnalysis}
+              onAnalyzeTone={handleToneAnalysis}
+              onApplySuggestion={handleApplySuggestion}
+              isProcessing={isProcessing}
+              hasContent={hasContent}
+            />
           </TabsContent>
 
-          <TabsContent value="plot" className="space-y-4">
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                <Button 
-                  onClick={handlePlotGeneration}
-                  disabled={isProcessing || !state.currentDocument}
-                  variant="outline"
-                >
-                  {isProcessing ? (
-                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                  ) : (
-                    <Lightbulb className="h-3 w-3 mr-1" />
-                  )}
-                  Plot Elements
-                </Button>
-                <Button 
-                  onClick={handleStoryContinuation}
-                  disabled={isProcessing || !state.currentDocument}
-                  variant="outline"
-                >
-                  {isProcessing ? (
-                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                  ) : (
-                    <BookOpen className="h-3 w-3 mr-1" />
-                  )}
-                  Continue Story
-                </Button>
-              </div>
-              
-              {plotElements.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Plot Suggestions</h4>
-                  {plotElements.map((element, index) => (
-                    <div 
-                      key={index}
-                      className="p-3 rounded-lg bg-muted/50 border-l-2 border-green-500/30 group hover:bg-muted/70 transition-colors"
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge variant="outline" className="text-xs">{element.type}</Badge>
-                        <Badge variant="secondary" className="text-xs">{element.placement}</Badge>
-                      </div>
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm flex-1">{element.description}</p>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => applySuggestionAsNote(element.description)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              
-              {storyContinuation && (
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Story Continuation</h4>
-                  <div className="p-3 rounded-lg bg-muted/50 border-l-2 border-purple-500/30">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <p className="text-sm flex-1">{storyContinuation}</p>
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={applyContinuation}
-                      className="w-full"
-                    >
-                      <ArrowRight className="h-3 w-3 mr-1" />
-                      Add to Document
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
+          <TabsContent value={ENHANCED_AI_TABS.PLOT} className="space-y-4">
+            <PlotDevelopmentTab
+              plotElements={plotElements}
+              storyContinuation={storyContinuation}
+              onGeneratePlotElements={handlePlotGeneration}
+              onGenerateStoryContinuation={handleStoryContinuation}
+              onApplySuggestion={handleApplySuggestion}
+              onApplyContinuation={handleApplyContinuation}
+              isProcessing={isProcessing}
+              hasDocument={hasDocument}
+            />
           </TabsContent>
 
-          <TabsContent value="prompts" className="space-y-4">
-            <div className="space-y-3">
-              <Button 
-                onClick={handleWritingPrompt}
-                disabled={isProcessing}
-                className="w-full"
-              >
-                {isProcessing ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <PenTool className="h-4 w-4 mr-2" />
-                )}
-                Generate Writing Prompt
-              </Button>
-              
-              {writingPrompts.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="text-sm font-medium">Writing Prompts</h4>
-                  {writingPrompts.map((prompt) => (
-                    <div 
-                      key={prompt.id}
-                      className="p-4 rounded-lg bg-muted/50 border-l-2 border-orange-500/30 group hover:bg-muted/70 transition-colors"
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <h5 className="font-medium text-sm">{prompt.title}</h5>
-                        <Badge variant="outline" className="text-xs">{prompt.genre}</Badge>
-                        <Badge variant="secondary" className="text-xs">{prompt.difficulty}</Badge>
-                      </div>
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm text-muted-foreground flex-1">{prompt.prompt}</p>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => applySuggestionAsNote(`Writing Prompt: ${prompt.prompt}`)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+          <TabsContent value={ENHANCED_AI_TABS.PROMPTS} className="space-y-4">
+            <WritingPromptsTab
+              writingPrompts={writingPrompts}
+              onGeneratePrompt={handleWritingPrompt}
+              onApplySuggestion={handleApplySuggestion}
+              isProcessing={isProcessing}
+            />
           </TabsContent>
         </Tabs>
       </CardContent>
