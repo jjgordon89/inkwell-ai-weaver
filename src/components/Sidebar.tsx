@@ -1,4 +1,3 @@
-
 import { Book, Users, GitMerge, Globe, Link as LinkIcon, Bot, List, Layers, Plus, Search, Settings, Folder, Pen, Sparkles, Wrench } from 'lucide-react';
 import { useWriting } from '@/contexts/WritingContext';
 import { Button } from "@/components/ui/button";
@@ -162,6 +161,12 @@ const Sidebar = () => {
       {/* Footer */}
       <div className="mt-auto pt-6 border-t border-border/20 space-y-3">
         <AISettingsMenu />
+        <Link to="/settings" className="block">
+          <Button variant="ghost" className="w-full justify-start">
+            <Settings className="h-4 w-4 mr-2" />
+            Settings
+          </Button>
+        </Link>
       </div>
     </div>
   );
