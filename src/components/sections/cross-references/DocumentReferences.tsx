@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users } from 'lucide-react';
@@ -10,7 +11,11 @@ interface DocumentReferencesProps {
   findCharacterReferences: (characterName: string) => number;
 }
 
-const DocumentReferences = ({ characters, currentDocument, findCharacterReferences }: DocumentReferencesProps) => {
+const DocumentReferences: React.FC<DocumentReferencesProps> = ({ 
+  characters, 
+  currentDocument, 
+  findCharacterReferences 
+}) => {
   if (!currentDocument) return null;
 
   return (
@@ -32,7 +37,9 @@ const DocumentReferences = ({ characters, currentDocument, findCharacterReferenc
           ) : null;
         })}
         {characters.every(char => findCharacterReferences(char.name) === 0) && (
-          <p className="text-sm text-muted-foreground">No character references found in current document.</p>
+          <p className="text-sm text-muted-foreground">
+            No character references found in current document.
+          </p>
         )}
       </CardContent>
     </Card>

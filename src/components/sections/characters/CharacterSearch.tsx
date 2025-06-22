@@ -14,14 +14,14 @@ interface CharacterSearchProps {
   onClearFilters: () => void;
 }
 
-const CharacterSearch = ({
+const CharacterSearch: React.FC<CharacterSearchProps> = ({
   searchTerm,
   onSearchChange,
   selectedTags,
   onTagToggle,
   availableTags,
   onClearFilters
-}: CharacterSearchProps) => {
+}) => {
   return (
     <div className="space-y-4">
       <div className="relative">

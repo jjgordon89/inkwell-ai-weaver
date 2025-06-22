@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus } from 'lucide-react';
@@ -11,7 +12,12 @@ interface QuickStatsProps {
   connectionsCount: number;
 }
 
-const QuickStats = ({ characters, storyArcs, worldElements, connectionsCount }: QuickStatsProps) => {
+const QuickStats: React.FC<QuickStatsProps> = ({ 
+  characters, 
+  storyArcs, 
+  worldElements, 
+  connectionsCount 
+}) => {
   return (
     <Card>
       <CardHeader>

@@ -12,12 +12,12 @@ interface WorldElementItemProps {
   getTypeColor: (type: WorldElement['type']) => string;
 }
 
-const WorldElementItem = ({
+const WorldElementItem: React.FC<WorldElementItemProps> = ({
   element,
   onEdit,
   onDelete,
   getTypeColor
-}: WorldElementItemProps) => {
+}) => {
   return (
     <Card className="hover:bg-muted/50 transition-colors">
       <CardHeader className="pb-2">

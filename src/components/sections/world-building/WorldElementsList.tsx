@@ -24,7 +24,7 @@ interface WorldElementsListProps {
   onCancel: () => void;
 }
 
-const WorldElementsList = ({
+const WorldElementsList: React.FC<WorldElementsListProps> = ({
   groupedElements,
   editingId,
   formData,
@@ -33,7 +33,7 @@ const WorldElementsList = ({
   onSaveEdit,
   onDelete,
   onCancel
-}: WorldElementsListProps) => {
+}) => {
   const getIcon = (type: WorldElement['type']) => {
     switch (type) {
       case 'location':

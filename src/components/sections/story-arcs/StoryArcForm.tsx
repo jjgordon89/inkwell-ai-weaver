@@ -16,7 +16,7 @@ interface StoryArcFormProps {
   onCancel: () => void;
 }
 
-const StoryArcForm = ({
+const StoryArcForm: React.FC<StoryArcFormProps> = ({
   title,
   description,
   isEditing,
@@ -24,7 +24,7 @@ const StoryArcForm = ({
   onDescriptionChange,
   onSubmit,
   onCancel
-}: StoryArcFormProps) => {
+}) => {
   const {
     setField,
     setFieldTouched,

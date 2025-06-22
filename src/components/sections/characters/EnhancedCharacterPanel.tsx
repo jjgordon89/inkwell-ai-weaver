@@ -9,7 +9,7 @@ import InteractionSuggestionsTab from './InteractionSuggestionsTab';
 import VoiceConsistencyTab from './VoiceConsistencyTab';
 import CharacterArcsTab from './CharacterArcsTab';
 
-const EnhancedCharacterPanel = () => {
+const EnhancedCharacterPanel: React.FC = () => {
   const { relationshipNetwork } = useCharacterRelationships();
 
   return (

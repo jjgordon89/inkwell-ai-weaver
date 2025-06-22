@@ -10,7 +10,11 @@ interface StoryArcItemProps {
   onToggleComplete: (storyArc: StoryArc) => void;
 }
 
-const StoryArcItem = ({ storyArc, onEdit, onToggleComplete }: StoryArcItemProps) => {
+const StoryArcItem: React.FC<StoryArcItemProps> = ({ 
+  storyArc, 
+  onEdit, 
+  onToggleComplete 
+}) => {
   return (
     <div
       className={`p-4 border rounded-lg transition-colors ${

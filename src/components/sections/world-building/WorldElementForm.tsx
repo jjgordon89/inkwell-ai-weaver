@@ -20,13 +20,13 @@ interface WorldElementFormProps {
   onCancel: () => void;
 }
 
-const WorldElementForm = ({
+const WorldElementForm: React.FC<WorldElementFormProps> = ({
   formData,
   isEditing,
   onFormDataChange,
   onSubmit,
   onCancel
-}: WorldElementFormProps) => {
+}) => {
   const {
     setField,
     setFieldTouched,

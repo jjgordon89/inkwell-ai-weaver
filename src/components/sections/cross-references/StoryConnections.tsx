@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link, GitMerge, Globe } from 'lucide-react';
@@ -14,7 +15,7 @@ interface StoryConnectionsProps {
   filteredConnections: Connection[];
 }
 
-const StoryConnections = ({ filteredConnections }: StoryConnectionsProps) => {
+const StoryConnections: React.FC<StoryConnectionsProps> = ({ filteredConnections }) => {
   const getIcon = (type: string) => {
     switch (type) {
       case 'character-arc':

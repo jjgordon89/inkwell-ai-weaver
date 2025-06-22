@@ -15,7 +15,7 @@ interface StoryArcsListProps {
   onToggleComplete: (storyArc: StoryArc) => void;
 }
 
-const StoryArcsList = ({
+const StoryArcsList: React.FC<StoryArcsListProps> = ({
   storyArcs,
   editingId,
   formData,
@@ -24,7 +24,7 @@ const StoryArcsList = ({
   onSaveEdit,
   onCancel,
   onToggleComplete
-}: StoryArcsListProps) => {
+}) => {
   if (storyArcs.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-12">
