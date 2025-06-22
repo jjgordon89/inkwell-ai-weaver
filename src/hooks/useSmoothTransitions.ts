@@ -3,93 +3,62 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 
 interface TransitionState {
   isVisible: boolean;
-  isAnimating: boolean;
   opacity: number;
+  scale: number;
+  translateY: number;
 }
 
-export const useSmoothTransitions = (initialVisible = false) => {
+export const useSmoothTransitions = (duration: number = 300) => {
   const [state, setState] = useState<TransitionState>({
-    isVisible: initialVisible,
-    isAnimating: false,
-    opacity: initialVisible ? 1 : 0
+    isVisible: false,
+    opacity: 0,
+    scale: 0.95,
+    translateY: 10
   });
   
   const timeoutRef = useRef<NodeJS.Timeout>();
-  const animationRef = useRef<number>();
 
-  const show = useCallback((delay = 0) => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    if (animationRef.current) cancelAnimationFrame(animationRef.current);
-
-    const startAnimation = () => {
-      setState(prev => ({ ...prev, isVisible: true, isAnimating: true }));
-      
-      const animate = (startTime: number) => {
-        const progress = Math.min((Date.now() - startTime) / 200, 1);
-        const opacity = progress;
-        
-        setState(prev => ({ ...prev, opacity }));
-        
-        if (progress < 1) {
-          animationRef.current = requestAnimationFrame(() => animate(startTime));
-        } else {
-          setState(prev => ({ ...prev, isAnimating: false }));
-        }
-      };
-      
-      animationRef.current = requestAnimationFrame(() => animate(Date.now()));
-    };
-
-    if (delay > 0) {
-      timeoutRef.current = setTimeout(startAnimation, delay);
-    } else {
-      startAnimation();
+  const show = useCallback((delay: number = 0) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
+
+    timeoutRef.current = setTimeout(() => {
+      setState({
+        isVisible: true,
+        opacity: 1,
+        scale: 1,
+        translateY: 0
+      });
+    }, delay);
   }, []);
 
-  const hide = useCallback((delay = 0) => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    if (animationRef.current) cancelAnimationFrame(animationRef.current);
-
-    const startAnimation = () => {
-      setState(prev => ({ ...prev, isAnimating: true }));
-      
-      const animate = (startTime: number) => {
-        const progress = Math.min((Date.now() - startTime) / 150, 1);
-        const opacity = 1 - progress;
-        
-        setState(prev => ({ ...prev, opacity }));
-        
-        if (progress < 1) {
-          animationRef.current = requestAnimationFrame(() => animate(startTime));
-        } else {
-          setState(prev => ({ ...prev, isVisible: false, isAnimating: false, opacity: 0 }));
-        }
-      };
-      
-      animationRef.current = requestAnimationFrame(() => animate(Date.now()));
-    };
-
-    if (delay > 0) {
-      timeoutRef.current = setTimeout(startAnimation, delay);
-    } else {
-      startAnimation();
+  const hide = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
+
+    setState({
+      isVisible: false,
+      opacity: 0,
+      scale: 0.95,
+      translateY: 10
+    });
   }, []);
 
-  const toggle = useCallback((forceState?: boolean) => {
-    const newVisible = forceState !== undefined ? forceState : !state.isVisible;
-    if (newVisible) {
-      show();
-    } else {
+  const toggle = useCallback(() => {
+    if (state.isVisible) {
       hide();
+    } else {
+      show();
     }
   }, [state.isVisible, show, hide]);
 
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     };
   }, []);
 
@@ -97,6 +66,11 @@ export const useSmoothTransitions = (initialVisible = false) => {
     ...state,
     show,
     hide,
-    toggle
+    toggle,
+    style: {
+      opacity: state.opacity,
+      transform: `scale(${state.scale}) translateY(${state.translateY}px)`,
+      transition: `all ${duration}ms ease-out`
+    }
   };
 };
