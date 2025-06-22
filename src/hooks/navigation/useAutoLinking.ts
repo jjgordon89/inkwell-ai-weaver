@@ -33,19 +33,24 @@ export const useAutoLinking = (documentId?: string) => {
       const matches = content.match(regex);
       
       if (matches) {
+        let lastIndex = 0;
         matches.forEach((match, index) => {
-          const matchIndex = content.toLowerCase().indexOf(match.toLowerCase(), index > 0 ? content.toLowerCase().indexOf(matches[index - 1].toLowerCase()) + matches[index - 1].length : 0);
-          const contextStart = Math.max(0, matchIndex - 50);
-          const contextEnd = Math.min(content.length, matchIndex + match.length + 50);
-          
-          links.push({
-            id: `char-${character.id}-${index}`,
-            text: match,
-            type: 'character',
-            targetId: character.id,
-            confidence: 0.9,
-            context: content.slice(contextStart, contextEnd)
-          });
+          const matchIndex = content.toLowerCase().indexOf(match.toLowerCase(), lastIndex);
+          if (matchIndex !== -1) {
+            const contextStart = Math.max(0, matchIndex - 50);
+            const contextEnd = Math.min(content.length, matchIndex + match.length + 50);
+            
+            links.push({
+              id: `char-${character.id}-${index}`,
+              text: match,
+              type: 'character',
+              targetId: character.id,
+              confidence: 0.9,
+              context: content.slice(contextStart, contextEnd)
+            });
+            
+            lastIndex = matchIndex + match.length;
+          }
         });
       }
     });
@@ -60,17 +65,19 @@ export const useAutoLinking = (documentId?: string) => {
         if (matches) {
           matches.forEach((match, index) => {
             const matchIndex = content.indexOf(match);
-            const contextStart = Math.max(0, matchIndex - 50);
-            const contextEnd = Math.min(content.length, matchIndex + match.length + 50);
-            
-            links.push({
-              id: `loc-${location.id}-${index}`,
-              text: match,
-              type: 'location',
-              targetId: location.id,
-              confidence: 0.8,
-              context: content.slice(contextStart, contextEnd)
-            });
+            if (matchIndex !== -1) {
+              const contextStart = Math.max(0, matchIndex - 50);
+              const contextEnd = Math.min(content.length, matchIndex + match.length + 50);
+              
+              links.push({
+                id: `loc-${location.id}-${index}`,
+                text: match,
+                type: 'location',
+                targetId: location.id,
+                confidence: 0.8,
+                context: content.slice(contextStart, contextEnd)
+              });
+            }
           });
         }
       });

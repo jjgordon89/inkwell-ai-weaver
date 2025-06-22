@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { search, Brain, Link, Map, Zap, BookOpen } from 'lucide-react';
+import { Search, Brain, Link, Map, Zap, BookOpen } from 'lucide-react';
 import { useSemanticSearch } from '@/hooks/search/useSemanticSearch';
 import { useAutoLinking } from '@/hooks/navigation/useAutoLinking';
 import { useDynamicOutline } from '@/hooks/outline/useDynamicOutline';
@@ -81,7 +80,7 @@ const SmartNavigationPanel = () => {
         <Tabs defaultValue="search" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="search" className="flex items-center gap-1">
-              <search className="h-4 w-4" />
+              <Search className="h-4 w-4" />
               Search
             </TabsTrigger>
             <TabsTrigger value="links" className="flex items-center gap-1">
@@ -110,7 +109,7 @@ const SmartNavigationPanel = () => {
                 {isSearching ? (
                   <Zap className="h-4 w-4 animate-pulse" />
                 ) : (
-                  <search className="h-4 w-4" />
+                  <Search className="h-4 w-4" />
                 )}
               </Button>
             </div>
@@ -155,7 +154,7 @@ const SmartNavigationPanel = () => {
 
             {searchQuery && searchResults.length === 0 && !isSearching && (
               <div className="text-center py-8 text-muted-foreground">
-                <search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>No results found for "{searchQuery}"</p>
               </div>
             )}
