@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import type { DocumentNode } from '@/types/document';
@@ -53,6 +52,22 @@ const DocumentBinder = () => {
     };
     
     dispatch({ type: 'ADD_DOCUMENT', payload: newDoc });
+  };
+
+  const handleAddFolder = () => {
+    const newFolder = {
+      id: crypto.randomUUID(),
+      title: 'New Folder',
+      type: 'folder' as const,
+      status: 'not-started' as const,
+      wordCount: 0,
+      labels: [],
+      createdAt: new Date(),
+      lastModified: new Date(),
+      position: state.documentTree.length
+    };
+    
+    dispatch({ type: 'ADD_DOCUMENT', payload: newFolder });
   };
 
   const handleAddChild = (parentId: string) => {
@@ -132,6 +147,7 @@ const DocumentBinder = () => {
         onStatusFilterChange={setStatusFilter}
         onTemplateClick={() => setShowTemplateDialog(true)}
         onAddDocument={handleAddDocument}
+        onAddFolder={handleAddFolder}
         onImportClick={() => setShowImportDialog(true)}
         onExportClick={() => setShowExportDialog(true)}
       />

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Search, Plus, FileText, Upload, Download } from 'lucide-react';
+import { Search, Plus, FileText, Upload, Download, Folder } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,6 +13,7 @@ interface BinderHeaderProps {
   onStatusFilterChange: (status: string) => void;
   onTemplateClick: () => void;
   onAddDocument: () => void;
+  onAddFolder: () => void;
   onImportClick: () => void;
   onExportClick: () => void;
 }
@@ -24,6 +25,7 @@ const BinderHeader = ({
   onStatusFilterChange,
   onTemplateClick,
   onAddDocument,
+  onAddFolder,
   onImportClick,
   onExportClick
 }: BinderHeaderProps) => {
@@ -38,6 +40,10 @@ const BinderHeader = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onAddFolder}>
+              <Folder className="h-4 w-4 mr-2" />
+              New Folder
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={onTemplateClick}>
               <FileText className="h-4 w-4 mr-2" />
               New from Template
