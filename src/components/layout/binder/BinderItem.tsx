@@ -16,6 +16,7 @@ interface BinderItemProps {
   selectedId?: string;
   onDelete: (nodeId: string) => void;
   onAddChild: (parentId: string) => void;
+  onEdit: (node: DocumentNode) => void;
 }
 
 const BinderItem = ({ 
@@ -27,7 +28,8 @@ const BinderItem = ({
   expandedNodes, 
   selectedId, 
   onDelete, 
-  onAddChild 
+  onAddChild,
+  onEdit
 }: BinderItemProps) => {
   const hasChildren = node.children && node.children.length > 0;
   const isExpanded = expandedNodes.has(node.id);
@@ -130,7 +132,7 @@ const BinderItem = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onSelect(node)}>
+                <DropdownMenuItem onClick={() => onEdit(node)}>
                   <Edit3 className="h-4 w-4 mr-2" />
                   Edit
                 </DropdownMenuItem>
@@ -178,6 +180,7 @@ const BinderItem = ({
                       selectedId={selectedId}
                       onDelete={onDelete}
                       onAddChild={onAddChild}
+                      onEdit={onEdit}
                     />
                   ))}
                   {provided.placeholder}

@@ -14,6 +14,7 @@ interface BinderTreeProps {
   onToggle: (nodeId: string) => void;
   onDelete: (nodeId: string) => void;
   onAddChild: (parentId: string) => void;
+  onEdit: (node: DocumentNode) => void;
   searchQuery: string;
   statusFilter: string;
   onClearFilters: () => void;
@@ -27,6 +28,7 @@ const BinderTree = ({
   onToggle,
   onDelete,
   onAddChild,
+  onEdit,
   searchQuery,
   statusFilter,
   onClearFilters
@@ -72,6 +74,7 @@ const BinderTree = ({
               selectedId={selectedId}
               onDelete={onDelete}
               onAddChild={onAddChild}
+              onEdit={onEdit}
             />
           ))}
           {provided.placeholder}

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { useProject } from '@/contexts/ProjectContext';
@@ -9,6 +8,7 @@ import BinderTree from './binder/BinderTree';
 import TemplateDialog from '../dialogs/TemplateDialog';
 import ImportDialog from '../dialogs/ImportDialog';
 import ExportDialog from '../dialogs/ExportDialog';
+import EditDocumentDialog from '../dialogs/EditDocumentDialog';
 
 const DocumentBinder = () => {
   const { state, dispatch } = useProject();
@@ -18,6 +18,8 @@ const DocumentBinder = () => {
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingDocument, setEditingDocument] = useState<DocumentNode | null>(null);
 
   const handleDocumentSelect = (node: DocumentNode) => {
     dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: node.id });
@@ -38,6 +40,23 @@ const DocumentBinder = () => {
       newExpanded.add(nodeId);
     }
     setExpandedNodes(newExpanded);
+  };
+
+  const handleEditDocument = (node: DocumentNode) => {
+    setEditingDocument(node);
+    setShowEditDialog(true);
+  };
+
+  const handleSaveDocument = (updates: Partial<DocumentNode>) => {
+    if (!editingDocument) return;
+    
+    dispatch({
+      type: 'UPDATE_DOCUMENT',
+      payload: {
+        id: editingDocument.id,
+        updates
+      }
+    });
   };
 
   const handleAddDocument = () => {
@@ -202,6 +221,7 @@ const DocumentBinder = () => {
             onToggle={handleNodeToggle}
             onDelete={handleDeleteDocument}
             onAddChild={handleAddChild}
+            onEdit={handleEditDocument}
             searchQuery={searchQuery}
             statusFilter={statusFilter}
             onClearFilters={handleClearFilters}
@@ -221,6 +241,12 @@ const DocumentBinder = () => {
       <ExportDialog 
         open={showExportDialog} 
         onOpenChange={setShowExportDialog} 
+      />
+      <EditDocumentDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        document={editingDocument}
+        onSave={handleSaveDocument}
       />
     </div>
   );
