@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +29,7 @@ import {
   Globe,
   Brain
 } from "lucide-react";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from "@/components/ui/command";
+import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -45,7 +46,7 @@ import FloatingAISettings from '@/components/ai/FloatingAISettings';
 
 const WritingStudio = () => {
   const { state, dispatch } = useWriting();
-  const { state: projectState } = useProject();
+  const { state: projectState, dispatch: projectDispatch } = useProject();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isCommandOpen, setIsCommandOpen] = useState(false);
@@ -61,10 +62,11 @@ const WritingStudio = () => {
       // Load the manuscript root document if no document is selected
       const manuscriptRoot = projectState.flatDocuments.find(doc => doc.id === 'manuscript-root');
       if (manuscriptRoot) {
-        dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: manuscriptRoot.id });
+        projectDispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: manuscriptRoot.id });
+        dispatch({ type: 'SET_CURRENT_DOCUMENT', payload: manuscriptRoot.id });
       }
     }
-  }, [projectState.currentProject?.id, projectState.flatDocuments, state.currentDocument, dispatch]);
+  }, [projectState.currentProject?.id, projectState.flatDocuments, state.currentDocument, dispatch, projectDispatch]);
 
   const handleCreateDocument = () => {
     if (!projectState.currentProject) return;
@@ -74,14 +76,17 @@ const WritingStudio = () => {
       projectId: projectState.currentProject.id,
       parentId: 'manuscript-root',
       title: 'New Document',
-      type: 'document',
+      type: 'document' as const,
       content: '',
       createdAt: new Date(),
       lastModified: new Date(),
-      status: 'not-started'
+      status: 'not-started' as const,
+      wordCount: 0,
+      labels: [],
+      position: 0
     };
 
-    dispatch({ type: 'ADD_DOCUMENT', payload: newDocument });
+    projectDispatch({ type: 'ADD_DOCUMENT', payload: newDocument });
     toast({
       title: "Document Created",
       description: "Your new document has been created.",
@@ -96,13 +101,16 @@ const WritingStudio = () => {
       projectId: projectState.currentProject.id,
       parentId: 'manuscript-root',
       title: 'New Folder',
-      type: 'folder',
+      type: 'folder' as const,
       createdAt: new Date(),
       lastModified: new Date(),
-      status: 'not-started'
+      status: 'not-started' as const,
+      wordCount: 0,
+      labels: [],
+      position: 0
     };
 
-    dispatch({ type: 'ADD_DOCUMENT', payload: newFolder });
+    projectDispatch({ type: 'ADD_DOCUMENT', payload: newFolder });
     toast({
       title: "Folder Created",
       description: "Your new folder has been created.",
@@ -159,7 +167,8 @@ const WritingStudio = () => {
             <span className="sr-only">Open command menu</span>
           </Button>
         </div>
-        <Command open={isCommandOpen} onOpenChange={setIsCommandOpen}>
+        
+        <CommandDialog open={isCommandOpen} onOpenChange={setIsCommandOpen}>
           <CommandInput placeholder="Type a command or search..." />
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
@@ -200,7 +209,7 @@ const WritingStudio = () => {
               </CommandItem>
             </CommandGroup>
           </CommandList>
-        </Command>
+        </CommandDialog>
       </div>
 
       <div className="flex h-full">
