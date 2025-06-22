@@ -33,6 +33,10 @@ const BinderItem = ({
   const isExpanded = expandedNodes.has(node.id);
   const isSelected = selectedId === node.id;
   const canHaveChildren = node.type === 'folder' || node.type === 'chapter';
+  
+  // Check if this is the permanent Manuscript folder
+  const isPermanentManuscript = node.id === 'manuscript-root' || 
+    (node.title === 'Manuscript' && node.type === 'folder' && node.labels?.includes('permanent'));
 
   const getTypeIcon = () => {
     switch (node.type) {
@@ -54,7 +58,11 @@ const BinderItem = ({
   };
 
   return (
-    <Draggable draggableId={node.id} index={index}>
+    <Draggable 
+      draggableId={node.id} 
+      index={index}
+      isDragDisabled={isPermanentManuscript}
+    >
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
@@ -64,14 +72,20 @@ const BinderItem = ({
           <div
             className={`group flex items-center gap-2 px-2 py-1.5 hover:bg-muted/50 cursor-pointer rounded-sm transition-colors ${
               isSelected ? 'bg-muted border-l-2 border-l-primary' : ''
-            } ${snapshot.isDragging ? 'bg-accent' : ''}`}
+            } ${snapshot.isDragging ? 'bg-accent' : ''} ${
+              isPermanentManuscript ? 'border-l-2 border-l-blue-500' : ''
+            }`}
             style={{ paddingLeft: `${level * 16 + 8}px` }}
             onClick={() => onSelect(node)}
           >
-            {/* Drag handle */}
+            {/* Drag handle - disabled for permanent manuscript */}
             <div
-              {...provided.dragHandleProps}
-              className="opacity-0 group-hover:opacity-100 p-0 h-4 w-4 flex items-center justify-center hover:bg-accent rounded cursor-grab active:cursor-grabbing"
+              {...(!isPermanentManuscript ? provided.dragHandleProps : {})}
+              className={`opacity-0 group-hover:opacity-100 p-0 h-4 w-4 flex items-center justify-center rounded ${
+                isPermanentManuscript 
+                  ? 'cursor-not-allowed opacity-30' 
+                  : 'hover:bg-accent cursor-grab active:cursor-grabbing'
+              }`}
             >
               <GripVertical className="h-3 w-3 text-muted-foreground" />
             </div>
@@ -126,14 +140,18 @@ const BinderItem = ({
                     Add Child
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={() => onDelete(node.id)}
-                  className="text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </DropdownMenuItem>
+                {!isPermanentManuscript && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => onDelete(node.id)}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

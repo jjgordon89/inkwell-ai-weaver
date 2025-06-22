@@ -93,6 +93,20 @@ function projectReducer(state: ProjectState, action: ProjectAction): ProjectStat
       };
     
     case 'DELETE_DOCUMENT':
+      // Prevent deletion of permanent Manuscript folder
+      const documentToDelete = state.flatDocuments.find(doc => doc.id === action.payload);
+      const isPermanentManuscript = documentToDelete && (
+        documentToDelete.id === 'manuscript-root' || 
+        (documentToDelete.title === 'Manuscript' && 
+         documentToDelete.type === 'folder' && 
+         documentToDelete.labels?.includes('permanent'))
+      );
+      
+      if (isPermanentManuscript) {
+        console.warn('Cannot delete permanent Manuscript folder');
+        return state;
+      }
+      
       const treeAfterDelete = deleteDocumentFromTree(state.documentTree, action.payload);
       return {
         ...state,
