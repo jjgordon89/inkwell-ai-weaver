@@ -1,4 +1,3 @@
-
 import React, { useState, Suspense } from 'react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import DocumentBinder from './DocumentBinder';
@@ -15,6 +14,7 @@ import type { DocumentView } from '@/types/document';
 
 // Import view components
 import EditorView from '../views/EditorView';
+import OutlineView from '../views/OutlineView';
 
 const WritingStudioLayout = () => {
   const { state } = useProject();
