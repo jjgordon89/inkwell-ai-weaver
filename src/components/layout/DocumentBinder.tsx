@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Plus, ChevronRight, ChevronDown, FileText, Folder, BookOpen, MoreHorizontal, Trash2, Edit3, Upload, Download, FileTemplate } from 'lucide-react';
+import { Search, Plus, ChevronRight, ChevronDown, FileText, Folder, BookOpen, MoreHorizontal, Trash2, Edit3, Upload, Download } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -269,7 +269,7 @@ const DocumentBinder = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => setShowTemplateDialog(true)}>
-                <FileTemplate className="h-4 w-4 mr-2" />
+                <FileText className="h-4 w-4 mr-2" />
                 New from Template
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleAddDocument}>

@@ -239,7 +239,7 @@ export const useDocumentTemplates = () => {
     const convertToTemplateStructure = (node: DocumentNode): TemplateStructure => ({
       id: node.id,
       title: node.title,
-      type: node.type,
+      type: node.type === 'timeline-event' ? 'research-note' : node.type, // Convert timeline-event to research-note
       content: node.content,
       synopsis: node.synopsis,
       position: node.position,

@@ -3,7 +3,7 @@ import React from 'react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Edit3, Grid3X3, List, Clock, Search, FileTemplate, Upload, Download, MoreHorizontal } from 'lucide-react';
+import { Edit3, Grid3X3, List, Clock, Search, FileText, Upload, Download, MoreHorizontal } from 'lucide-react';
 import { useProject } from '@/contexts/ProjectContext';
 import type { DocumentView } from '@/types/document';
 
@@ -74,7 +74,7 @@ const ViewManager = ({ onViewChange, onTemplateClick, onImportClick, onExportCli
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={onTemplateClick}>
-                <FileTemplate className="h-4 w-4 mr-2" />
+                <FileText className="h-4 w-4 mr-2" />
                 Templates
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onImportClick}>
