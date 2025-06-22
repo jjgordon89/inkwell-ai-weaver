@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Grid3X3, Plus, Edit3, FileText, BookOpen } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -15,20 +14,20 @@ const CorkboardView = () => {
   );
 
   const handleAddScene = () => {
-    const newScene = {
+    const newChapter = {
       id: crypto.randomUUID(),
-      title: 'New Scene',
-      type: 'scene' as const,
+      title: 'New Chapter',
+      type: 'chapter' as const,
       status: 'not-started' as const,
       wordCount: 0,
       labels: [],
       createdAt: new Date(),
       lastModified: new Date(),
       position: corkboardItems.length,
-      synopsis: 'Brief scene description...'
+      synopsis: 'Brief chapter description...'
     };
     
-    dispatch({ type: 'ADD_DOCUMENT', payload: newScene });
+    dispatch({ type: 'ADD_DOCUMENT', payload: newChapter });
   };
 
   const handleDocumentSelect = (docId: string) => {
@@ -63,7 +62,7 @@ const CorkboardView = () => {
           </div>
           <Button size="sm" onClick={handleAddScene}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Scene
+            Add Chapter
           </Button>
         </div>
       </div>
@@ -72,11 +71,11 @@ const CorkboardView = () => {
         {corkboardItems.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
             <Grid3X3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-semibold mb-2">No Scenes Yet</h3>
-            <p className="mb-4">Create your first scene to get started</p>
+            <h3 className="text-lg font-semibold mb-2">No Chapters Yet</h3>
+            <p className="mb-4">Create your first chapter to get started</p>
             <Button onClick={handleAddScene}>
               <Plus className="h-4 w-4 mr-2" />
-              Add First Scene
+              Add First Chapter
             </Button>
           </div>
         ) : (
