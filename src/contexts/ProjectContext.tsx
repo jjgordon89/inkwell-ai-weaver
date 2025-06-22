@@ -93,6 +93,15 @@ function projectReducer(state: ProjectState, action: ProjectAction): ProjectStat
         flatDocuments: flattenDocumentTree(updatedTree)
       };
     
+    case 'DELETE_DOCUMENT':
+      const treeAfterDelete = deleteDocumentFromTree(state.documentTree, action.payload);
+      return {
+        ...state,
+        documentTree: treeAfterDelete,
+        flatDocuments: flattenDocumentTree(treeAfterDelete),
+        activeDocumentId: state.activeDocumentId === action.payload ? null : state.activeDocumentId
+      };
+    
     case 'SET_ACTIVE_DOCUMENT':
       return { ...state, activeDocumentId: action.payload };
     
@@ -161,6 +170,18 @@ function updateDocumentInTree(tree: DocumentNode[], docId: string, updates: Part
       return {
         ...node,
         children: updateDocumentInTree(node.children, docId, updates)
+      };
+    }
+    return node;
+  });
+}
+
+function deleteDocumentFromTree(tree: DocumentNode[], docId: string): DocumentNode[] {
+  return tree.filter(node => node.id !== docId).map(node => {
+    if (node.children) {
+      return {
+        ...node,
+        children: deleteDocumentFromTree(node.children, docId)
       };
     }
     return node;
