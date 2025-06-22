@@ -1,5 +1,4 @@
-
-import React, { useRef, useCallback, useEffect } from 'react';
+import React, { useRef, useCallback, useEffect, useState } from 'react';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useCollaborativeAI } from '@/hooks/useCollaborativeAI';
 import { useEditorState } from '@/hooks/useEditorState';
@@ -7,6 +6,7 @@ import { useTextSelection } from '@/hooks/useTextSelection';
 import InlineAISuggestions from '@/components/ai/InlineAISuggestions';
 import AIAssistantOverlay from '@/components/ai/AIAssistantOverlay';
 import ProactiveWritingSupport from '@/components/ai/ProactiveWritingSupport';
+import SuggestionsPanel from '@/components/ai/SuggestionsPanel';
 import EditorHeader from '@/components/editor/EditorHeader';
 import EditorTextarea, { EditorTextareaRef } from '@/components/editor/EditorTextarea';
 import EditorFooter from '@/components/editor/EditorFooter';
@@ -14,6 +14,8 @@ import FloatingActionButtons from '@/components/editor/FloatingActionButtons';
 
 const EnhancedEditor = () => {
   const textareaRef = useRef<EditorTextareaRef>(null);
+  const [showSuggestionsPanel, setShowSuggestionsPanel] = useState(false);
+
   const {
     currentDocument,
     showProactivePanel,
@@ -41,7 +43,8 @@ const EnhancedEditor = () => {
   const {
     suggestions,
     improveSelectedText,
-    generateTextCompletion
+    generateTextCompletion,
+    dismissSuggestion
   } = useCollaborativeAI();
 
   // Enable auto-save
@@ -141,6 +144,35 @@ const EnhancedEditor = () => {
     setShowFloatingActions(false);
   }, [currentDocument, generateTextCompletion, textAfterCursor, improveSelectedText, handleContentChange, handleTextCompletion, setShowFloatingActions]);
 
+  const handleApplySuggestionFromPanel = useCallback((suggestion: any) => {
+    // Apply the suggestion text at the current cursor position
+    if (!textareaRef.current || !currentDocument) return;
+    
+    const cursorPos = textareaRef.current.selectionStart;
+    const currentContent = currentDocument.content || '';
+    
+    let newContent = '';
+    if (suggestion.original) {
+      // Replace original text with suggested text
+      newContent = currentContent.replace(suggestion.original, suggestion.text);
+    } else {
+      // Insert suggestion at cursor position
+      newContent = currentContent.slice(0, cursorPos) + suggestion.text + currentContent.slice(cursorPos);
+    }
+    
+    const syntheticEvent = {
+      target: { value: newContent, selectionStart: cursorPos + suggestion.text.length }
+    } as React.ChangeEvent<HTMLTextAreaElement>;
+    handleContentChange(syntheticEvent);
+    
+    // Dismiss the suggestion after applying
+    dismissSuggestion(suggestion.id);
+    
+    setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 0);
+  }, [currentDocument, handleContentChange, dismissSuggestion]);
+
   // Update cursor position on scroll or resize
   useEffect(() => {
     const handleUpdate = () => {
@@ -175,6 +207,7 @@ const EnhancedEditor = () => {
           suggestionsCount={suggestions.length}
           showProactivePanel={showProactivePanel}
           onToggleProactivePanel={() => setShowProactivePanel(!showProactivePanel)}
+          onToggleSuggestions={() => setShowSuggestionsPanel(!showSuggestionsPanel)}
         />
         
         <EditorTextarea
@@ -196,6 +229,15 @@ const EnhancedEditor = () => {
         
         <EditorFooter wordCount={currentDocument.wordCount || 0} />
       </div>
+
+      {/* AI Suggestions Panel */}
+      <SuggestionsPanel
+        suggestions={suggestions}
+        isVisible={showSuggestionsPanel}
+        onClose={() => setShowSuggestionsPanel(false)}
+        onApplySuggestion={handleApplySuggestionFromPanel}
+        onDismissSuggestion={dismissSuggestion}
+      />
 
       {/* Proactive Writing Support Panel */}
       {showProactivePanel && (
