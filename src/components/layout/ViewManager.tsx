@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Edit3, Grid3X3, List, Clock, Search, FileText, Upload, Download, MoreHorizontal } from 'lucide-react';
 import { useProject } from '@/contexts/ProjectContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { DocumentView } from '@/types/document';
 
 interface ViewManagerProps {
@@ -16,6 +17,7 @@ interface ViewManagerProps {
 
 const ViewManager = ({ onViewChange, onTemplateClick, onImportClick, onExportClick }: ViewManagerProps) => {
   const { state, dispatch } = useProject();
+  const isMobile = useIsMobile();
 
   const views: DocumentView[] = [
     { id: 'editor', name: 'Editor', type: 'editor' },
@@ -58,36 +60,38 @@ const ViewManager = ({ onViewChange, onTemplateClick, onImportClick, onExportCli
                   className="flex items-center gap-2 px-3"
                 >
                   <Icon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{view.name}</span>
+                  {!isMobile && <span>{view.name}</span>}
                 </TabsTrigger>
               );
             })}
           </TabsList>
         </Tabs>
 
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onTemplateClick}>
-                <FileText className="h-4 w-4 mr-2" />
-                Templates
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onImportClick}>
-                <Upload className="h-4 w-4 mr-2" />
-                Import
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onExportClick}>
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        {!isMobile && (
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onTemplateClick}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Templates
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onImportClick}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onExportClick}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
       </div>
     </div>
   );

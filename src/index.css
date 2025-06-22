@@ -34,6 +34,10 @@
     --ring: 217 91% 60%;
 
     --radius: 0.5rem;
+    
+    /* Accessibility and performance variables */
+    --base-font-size: 1rem;
+    --animation-duration: 0.2s;
   }
 
   .dark {
@@ -65,6 +69,23 @@
     --input: 224 10% 20%;
     --ring: 217 91% 60%;
   }
+
+  /* High contrast mode */
+  .high-contrast {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    --border: 0 0% 0%;
+    --primary: 0 0% 0%;
+    --primary-foreground: 0 0% 100%;
+  }
+
+  .high-contrast.dark {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --border: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+  }
 }
 
 @layer base {
@@ -73,5 +94,69 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    font-size: var(--base-font-size);
+  }
+  
+  /* Screen reader only content */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+  
+  /* Improved focus indicators */
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Reduce motion for users who prefer it */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Mobile-first responsive utilities */
+  .mobile-hide {
+    @apply hidden sm:block;
+  }
+  
+  .mobile-show {
+    @apply block sm:hidden;
+  }
+  
+  /* Touch-friendly sizing */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* Performance optimizations */
+  .will-change-transform {
+    will-change: transform;
+  }
+  
+  .hardware-accelerated {
+    transform: translateZ(0);
   }
 }
