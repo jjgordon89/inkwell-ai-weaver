@@ -1,6 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { useWriting } from '@/contexts/WritingContext';
+import type { EditorTextareaRef } from '@/components/editor/EditorTextarea';
 
 interface CursorPosition {
   x: number;
@@ -13,53 +14,28 @@ export const useTextSelection = () => {
   const [selectionPosition, setSelectionPosition] = useState<CursorPosition>({ x: 0, y: 0 });
   const [showInlineSuggestions, setShowInlineSuggestions] = useState(false);
 
-  const getCursorCoordinates = useCallback((textarea: HTMLTextAreaElement, position: number): CursorPosition => {
-    // Create a dummy div to measure text
-    const div = document.createElement('div');
-    const style = window.getComputedStyle(textarea);
+  const getCursorCoordinates = useCallback((textareaRef: EditorTextareaRef, position: number): CursorPosition => {
+    // Get the bounding rect from the ref
+    const rect = textareaRef.getBoundingClientRect();
     
-    // Copy textarea styles to div
-    ['fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'lineHeight', 'padding', 'border'].forEach(prop => {
-      div.style[prop as any] = style[prop as any];
-    });
-    
-    div.style.position = 'absolute';
-    div.style.visibility = 'hidden';
-    div.style.whiteSpace = 'pre-wrap';
-    div.style.wordWrap = 'break-word';
-    div.style.width = textarea.clientWidth + 'px';
-    
-    document.body.appendChild(div);
-    
-    const textBeforePosition = textarea.value.substring(0, position);
-    div.textContent = textBeforePosition;
-    
-    const span = document.createElement('span');
-    span.textContent = '|';
-    div.appendChild(span);
-    
-    const rect = textarea.getBoundingClientRect();
-    const spanRect = span.getBoundingClientRect();
-    
-    document.body.removeChild(div);
-    
+    // For now, return a basic position - this could be enhanced with more precise positioning
     return {
-      x: spanRect.left - rect.left + textarea.scrollLeft,
-      y: spanRect.top - rect.top + textarea.scrollTop
+      x: rect.left + 10, // Basic offset
+      y: rect.top + 20   // Basic offset
     };
   }, []);
 
-  const handleTextSelection = useCallback((textarea: HTMLTextAreaElement, onCursorPositionChange: (pos: CursorPosition) => void, onShowFloatingActions: (show: boolean) => void) => {
-    const selection = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
+  const handleTextSelection = useCallback((textareaRef: EditorTextareaRef, onCursorPositionChange: (pos: CursorPosition) => void, onShowFloatingActions: (show: boolean) => void) => {
+    const selection = textareaRef.value.substring(textareaRef.selectionStart, textareaRef.selectionEnd);
     const hasSelection = selection.trim().length > 0;
     
     setSelectedText(hasSelection ? selection.trim() : '');
     
     if (hasSelection) {
-      const position = getCursorCoordinates(textarea, textarea.selectionStart);
+      const position = getCursorCoordinates(textareaRef, textareaRef.selectionStart);
       setSelectionPosition({
-        x: position.x + textarea.getBoundingClientRect().left,
-        y: position.y + textarea.getBoundingClientRect().top - 60
+        x: position.x,
+        y: position.y - 60
       });
       setShowInlineSuggestions(true);
       onShowFloatingActions(false);
@@ -67,15 +43,15 @@ export const useTextSelection = () => {
       setShowInlineSuggestions(false);
       
       // Show floating actions for cursor position if there's content around
-      const cursorPos = textarea.selectionStart;
-      const textBefore = textarea.value.slice(Math.max(0, cursorPos - 50), cursorPos);
-      const textAfter = textarea.value.slice(cursorPos, cursorPos + 50);
+      const cursorPos = textareaRef.selectionStart;
+      const textBefore = textareaRef.value.slice(Math.max(0, cursorPos - 50), cursorPos);
+      const textAfter = textareaRef.value.slice(cursorPos, cursorPos + 50);
       
       if (textBefore.trim() || textAfter.trim()) {
-        const position = getCursorCoordinates(textarea, cursorPos);
+        const position = getCursorCoordinates(textareaRef, cursorPos);
         onCursorPositionChange({
-          x: position.x + textarea.getBoundingClientRect().left,
-          y: position.y + textarea.getBoundingClientRect().top - 40
+          x: position.x,
+          y: position.y - 40
         });
         onShowFloatingActions(true);
         
