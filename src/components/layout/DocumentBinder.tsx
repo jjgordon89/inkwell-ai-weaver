@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import type { DocumentNode } from '@/types/document';
@@ -64,7 +65,9 @@ const DocumentBinder = () => {
       labels: [],
       createdAt: new Date(),
       lastModified: new Date(),
-      position: state.documentTree.length
+      position: state.documentTree.length,
+      // Explicitly ensure no parentId to place at root
+      parentId: undefined
     };
     
     dispatch({ type: 'ADD_DOCUMENT', payload: newFolder });
