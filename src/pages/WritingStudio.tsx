@@ -80,7 +80,10 @@ const WritingStudio = () => {
       content: '',
       createdAt: new Date(),
       lastModified: new Date(),
-      status: 'not-started' as const
+      status: 'not-started' as const,
+      wordCount: 0,
+      labels: [],
+      position: 0
     };
 
     projectDispatch({ type: 'ADD_DOCUMENT', payload: newDocument });
@@ -101,7 +104,10 @@ const WritingStudio = () => {
       type: 'folder' as const,
       createdAt: new Date(),
       lastModified: new Date(),
-      status: 'not-started' as const
+      status: 'not-started' as const,
+      wordCount: 0,
+      labels: [],
+      position: 0
     };
 
     projectDispatch({ type: 'ADD_DOCUMENT', payload: newFolder });
