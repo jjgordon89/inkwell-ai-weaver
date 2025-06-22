@@ -1,11 +1,12 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Editor from '@/components/Editor';
-import StructurePanel from '@/components/sections/story/StructurePanel';
+import StoryStructureTools from '@/components/sections/story/StoryStructureTools';
 import SmartWritingFeatures from '@/components/sections/story/SmartWritingFeatures';
 import EnhancedAIPanel from '@/components/sections/story/EnhancedAIPanel';
-import StoryOutline from '@/components/sections/story/StoryOutline';
-import ChapterList from '@/components/sections/story/ChapterList';
+import DocumentOutline from '@/components/sections/story/DocumentOutline';
+import ChapterManagement from '@/components/sections/story/ChapterManagement';
 import SmartNavigationPanel from './SmartNavigationPanel';
 import AdaptiveLearningPanel from './AdaptiveLearningPanel';
 
@@ -31,7 +32,7 @@ const StoryTabs = () => {
         </TabsContent>
 
         <TabsContent value="structure" className="mt-0 h-full">
-          <StructurePanel />
+          <StoryStructureTools />
         </TabsContent>
 
         <TabsContent value="ai-writing" className="mt-0 h-full">
@@ -51,11 +52,11 @@ const StoryTabs = () => {
         </TabsContent>
 
         <TabsContent value="outline" className="mt-0 h-full">
-          <StoryOutline />
+          <DocumentOutline />
         </TabsContent>
 
         <TabsContent value="chapters" className="mt-0 h-full">
-          <ChapterList />
+          <ChapterManagement />
         </TabsContent>
       </div>
     </Tabs>
