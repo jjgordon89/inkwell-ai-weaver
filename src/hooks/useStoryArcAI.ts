@@ -1,8 +1,7 @@
 
 import { useState } from 'react';
-import { useAI } from './useAI';
+import { useAI } from '@/hooks/useAI';
 import { StoryArc } from '@/contexts/WritingContext';
-import { parseAIResponse, handleAIError, validateAIInput, createSuggestionsList } from './ai/aiUtils';
 
 export const useStoryArcAI = () => {
   const { processText, isProcessing } = useAI();
@@ -10,28 +9,36 @@ export const useStoryArcAI = () => {
 
   const generateStoryArc = async (prompt: string): Promise<Partial<StoryArc>> => {
     setIsGenerating(true);
-    
     try {
-      validateAIInput(prompt, 'story arc generation');
-
-      const enhancedPrompt = `Create a detailed story arc based on this description: "${prompt}". 
-      Please provide the story arc details in the following format:
-      Title: [story arc title]
-      Description: [detailed description of the story arc including key plot points, character development, and narrative progression]
+      const aiPrompt = `Create a story arc based on this description: "${prompt}". 
+        Respond with a JSON object containing:
+        - title: A compelling title for the arc
+        - description: A detailed description of the arc
+        - keyEvents: An array of 3-5 key events in this arc
+        - characterArcs: How main characters develop in this arc
+        - themes: Main themes explored
+        
+        Keep it concise but meaningful for a writer's planning.`;
       
-      Make the story arc engaging and well-structured for a compelling narrative.`;
-
-      const result = await processText(enhancedPrompt, 'improve');
-      const parsedData = parseAIResponse(result);
+      const result = await processText(aiPrompt, 'improve');
       
-      return {
-        id: Date.now().toString(),
-        title: parsedData.title as string,
-        description: parsedData.description as string,
-        completed: false
-      };
+      // Parse AI response or create fallback structure
+      try {
+        const parsed = JSON.parse(result);
+        return parsed;
+      } catch {
+        // Fallback if JSON parsing fails
+        return {
+          title: `Story Arc: ${prompt.substring(0, 30)}...`,
+          description: result,
+          keyEvents: [],
+          characterArcs: {},
+          themes: []
+        };
+      }
     } catch (error) {
-      throw handleAIError(error, 'generate story arc');
+      console.error('Failed to generate story arc:', error);
+      throw error;
     } finally {
       setIsGenerating(false);
     }
@@ -39,25 +46,19 @@ export const useStoryArcAI = () => {
 
   const improveSuggestions = async (currentArcs: StoryArc[]): Promise<string[]> => {
     setIsGenerating(true);
-    
     try {
       const arcsContext = currentArcs.map(arc => `${arc.title}: ${arc.description}`).join('\n');
-      const prompt = `Based on these existing story arcs:
-${arcsContext}
-
-Suggest 3-5 potential improvements or new story arc ideas that would enhance the overall narrative structure. Focus on:
-- Plot progression and pacing
-- Character development opportunities
-- Thematic coherence
-- Conflict escalation
-- Resolution paths
-
-Provide each suggestion as a brief, actionable recommendation.`;
-
-      const result = await processText(prompt, 'improve');
-      return createSuggestionsList(result);
+      const aiPrompt = `Based on these existing story arcs:
+        ${arcsContext}
+        
+        Suggest 3-5 ways to improve the narrative structure, add compelling arcs, or enhance character development. 
+        Each suggestion should be a complete sentence that a writer can immediately act on.`;
+      
+      const result = await processText(aiPrompt, 'improve');
+      return result.split('\n').filter(line => line.trim().length > 10).slice(0, 5);
     } catch (error) {
-      throw handleAIError(error, 'generate improvement suggestions');
+      console.error('Failed to generate improvement suggestions:', error);
+      throw error;
     } finally {
       setIsGenerating(false);
     }
@@ -66,6 +67,6 @@ Provide each suggestion as a brief, actionable recommendation.`;
   return {
     generateStoryArc,
     improveSuggestions,
-    isGenerating: isGenerating || isProcessing
+    isGenerating
   };
 };

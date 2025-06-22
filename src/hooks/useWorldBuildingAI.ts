@@ -1,8 +1,7 @@
 
 import { useState } from 'react';
-import { useAI } from './useAI';
+import { useAI } from '@/hooks/useAI';
 import { WorldElement } from '@/contexts/WritingContext';
-import { parseAIResponse, handleAIError, validateAIInput, createSuggestionsList } from './ai/aiUtils';
 
 export const useWorldBuildingAI = () => {
   const { processText, isProcessing } = useAI();
@@ -10,28 +9,38 @@ export const useWorldBuildingAI = () => {
 
   const generateWorldElement = async (prompt: string, type: WorldElement['type']): Promise<Partial<WorldElement>> => {
     setIsGenerating(true);
-    
     try {
-      validateAIInput(prompt, 'world element generation');
-
-      const enhancedPrompt = `Create a detailed world building element of type "${type}" based on this description: "${prompt}". 
-      Please provide the world element details in the following format:
-      Name: [element name]
-      Description: [detailed description of the ${type} including its significance, characteristics, and role in the world]
+      const aiPrompt = `Create a ${type} for world building based on: "${prompt}".
+        Respond with a JSON object containing:
+        - name: A compelling name
+        - description: Rich, detailed description
+        - significance: Why this is important to the story
+        - connections: How it relates to other world elements
+        - details: Specific interesting details
+        
+        Make it vivid and useful for a writer's world building.`;
       
-      Make the ${type} engaging and well-developed for a compelling fictional world.`;
-
-      const result = await processText(enhancedPrompt, 'improve');
-      const parsedData = parseAIResponse(result);
+      const result = await processText(aiPrompt, 'expand');
       
-      return {
-        type,
-        id: Date.now().toString(),
-        name: parsedData.name as string,
-        description: parsedData.description as string
-      };
+      try {
+        const parsed = JSON.parse(result);
+        return {
+          type,
+          ...parsed
+        };
+      } catch {
+        return {
+          type,
+          name: `${type}: ${prompt.substring(0, 20)}...`,
+          description: result,
+          significance: '',
+          connections: [],
+          details: {}
+        };
+      }
     } catch (error) {
-      throw handleAIError(error, 'generate world element');
+      console.error('Failed to generate world element:', error);
+      throw error;
     } finally {
       setIsGenerating(false);
     }
@@ -39,25 +48,19 @@ export const useWorldBuildingAI = () => {
 
   const improveSuggestions = async (currentElements: WorldElement[]): Promise<string[]> => {
     setIsGenerating(true);
-    
     try {
-      const elementsContext = currentElements.map(element => `${element.type}: ${element.name} - ${element.description}`).join('\n');
-      const prompt = `Based on these existing world building elements:
-${elementsContext}
-
-Suggest 3-5 potential improvements or new world building ideas that would enhance the overall world consistency and depth. Focus on:
-- World consistency and coherence
-- Missing elements that would enrich the world
-- Connections between existing elements
-- Cultural and historical depth
-- Environmental and geographical considerations
-
-Provide each suggestion as a brief, actionable recommendation.`;
-
-      const result = await processText(prompt, 'improve');
-      return createSuggestionsList(result);
+      const elementsContext = currentElements.map(el => `${el.name} (${el.type}): ${el.description}`).join('\n');
+      const aiPrompt = `Based on these world building elements:
+        ${elementsContext}
+        
+        Suggest 3-5 ways to enhance the world building, add depth, or create interesting connections. 
+        Focus on elements that would make the world more immersive and coherent.`;
+      
+      const result = await processText(aiPrompt, 'improve');
+      return result.split('\n').filter(line => line.trim().length > 10).slice(0, 5);
     } catch (error) {
-      throw handleAIError(error, 'generate improvement suggestions');
+      console.error('Failed to generate world building suggestions:', error);
+      throw error;
     } finally {
       setIsGenerating(false);
     }
@@ -66,6 +69,6 @@ Provide each suggestion as a brief, actionable recommendation.`;
   return {
     generateWorldElement,
     improveSuggestions,
-    isGenerating: isGenerating || isProcessing
+    isGenerating
   };
 };

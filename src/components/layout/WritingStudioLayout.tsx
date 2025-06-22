@@ -1,4 +1,3 @@
-
 import React, { useState, Suspense } from 'react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import DocumentBinder from './DocumentBinder';
@@ -12,6 +11,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import AccessibilityMenu from '@/components/accessibility/AccessibilityMenu';
 import OnboardingTour from '@/components/onboarding/OnboardingTour';
 import type { DocumentView } from '@/types/document';
+import FloatingAISettings from '@/components/ai/FloatingAISettings';
 
 // Import view components
 import EditorView from '../views/EditorView';
@@ -123,6 +123,12 @@ const WritingStudioLayout = () => {
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
+      
+      {/* Floating AI Settings */}
+      <FloatingAISettings 
+        position="bottom-right"
+        showOnlyWhenNotConfigured={false}
+      />
       
       {showOnboarding && (
         <OnboardingTour onComplete={completeOnboarding} />

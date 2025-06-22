@@ -1,158 +1,75 @@
-import React, { useEffect, useState } from 'react';
+
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Cpu, Zap, RefreshCw } from 'lucide-react';
+import { Brain, Zap, Crown, Clock } from 'lucide-react';
 import { useAI } from '@/hooks/useAI';
 
 const AIModelSettings = () => {
-  const { selectedProvider, selectedModel, setSelectedModel, availableProviders } = useAI();
-  const [modelJustChanged, setModelJustChanged] = useState(false);
+  const { 
+    selectedProvider, 
+    selectedModel, 
+    setSelectedModel, 
+    availableProviders 
+  } = useAI();
 
   const currentProvider = availableProviders.find(p => p.name === selectedProvider);
   const availableModels = currentProvider?.models || [];
 
-  // Debug logging
-  useEffect(() => {
-    console.log('AIModelSettings - selectedProvider changed:', selectedProvider);
-    console.log('AIModelSettings - currentProvider:', currentProvider);
-    console.log('AIModelSettings - availableModels:', availableModels);
-  }, [selectedProvider, currentProvider, availableModels]);
-
-  useEffect(() => {
-    console.log('AIModelSettings - selectedModel changed:', selectedModel);
-  }, [selectedModel]);
-
-  // Reset model selection when provider changes and current model is not available
-  useEffect(() => {
-    if (availableModels.length > 0 && !availableModels.includes(selectedModel)) {
-      console.log(`AIModelSettings - Auto-switching model to ${availableModels[0]} for provider ${selectedProvider}`);
-      setSelectedModel(availableModels[0]);
-      setModelJustChanged(true);
-      setTimeout(() => setModelJustChanged(false), 2000);
-    }
-  }, [selectedProvider, availableModels, selectedModel, setSelectedModel]);
-
-  const handleModelChange = (newModel: string) => {
-    console.log(`AIModelSettings - Model changing from ${selectedModel} to ${newModel}`);
-    setSelectedModel(newModel);
-    setModelJustChanged(true);
-    setTimeout(() => setModelJustChanged(false), 2000);
-  };
   const getModelIcon = (modelName: string) => {
-    // Local models (Ollama/LM Studio)
-    if (modelName.includes('llama')) return <Zap className="h-4 w-4 text-green-500" />;
-    if (modelName.includes('codellama')) return <Cpu className="h-4 w-4 text-green-600" />;
-    if (modelName.includes('mistral')) return <Brain className="h-4 w-4 text-indigo-500" />;
-    if (modelName.includes('deepseek')) return <Cpu className="h-4 w-4 text-purple-500" />;
-    if (modelName.includes('qwen')) return <Brain className="h-4 w-4 text-red-400" />;
-    if (modelName.includes('phi')) return <Brain className="h-4 w-4 text-orange-500" />;
-    if (modelName.includes('nous-hermes')) return <Brain className="h-4 w-4 text-blue-400" />;
-    if (modelName.includes('starling')) return <Brain className="h-4 w-4 text-yellow-500" />;
-    if (modelName.includes('openchat')) return <Brain className="h-4 w-4 text-teal-500" />;
-    if (modelName.includes('wizard')) return <Brain className="h-4 w-4 text-purple-400" />;
-    if (modelName.includes('vicuna')) return <Brain className="h-4 w-4 text-green-400" />;
-    if (modelName.includes('alpaca')) return <Brain className="h-4 w-4 text-brown-400" />;
-    if (modelName.includes('orca')) return <Brain className="h-4 w-4 text-cyan-400" />;
-    
-    // OpenAI models
-    if (modelName.includes('gpt-4.1')) return <Brain className="h-4 w-4 text-green-600" />;
-    if (modelName.includes('o3-2025')) return <Brain className="h-4 w-4 text-purple-600" />;
-    if (modelName.includes('o4-mini')) return <Zap className="h-4 w-4 text-purple-500" />;
-    if (modelName.includes('gpt-4o')) return <Brain className="h-4 w-4 text-blue-600" />;
-    if (modelName.includes('gpt-4')) return <Brain className="h-4 w-4 text-purple-500" />;
-    if (modelName.includes('gpt-3.5')) return <Cpu className="h-4 w-4 text-blue-500" />;
-    
-    // Google Gemini models
-    if (modelName.includes('gemini-1.5-pro')) return <Brain className="h-4 w-4 text-blue-600" />;
-    if (modelName.includes('gemini-1.5-flash')) return <Zap className="h-4 w-4 text-blue-500" />;
-    if (modelName.includes('gemini-1.0-pro')) return <Brain className="h-4 w-4 text-blue-400" />;
-    
-    // Cloud models
-    if (modelName.includes('mixtral')) return <Brain className="h-4 w-4 text-orange-500" />;
-    if (modelName.includes('gemma')) return <Brain className="h-4 w-4 text-red-500" />;
-    if (modelName.includes('claude')) return <Brain className="h-4 w-4 text-purple-600" />;
-    if (modelName.includes('command')) return <Brain className="h-4 w-4 text-cyan-500" />;
-    
-    return <Brain className="h-4 w-4" />;
+    if (modelName.includes('gpt-4') || modelName.includes('claude-opus') || modelName.includes('o3')) {
+      return <Crown className="h-4 w-4 text-yellow-500" />;
+    }
+    if (modelName.includes('turbo') || modelName.includes('haiku') || modelName.includes('mini')) {
+      return <Zap className="h-4 w-4 text-blue-500" />;
+    }
+    return <Brain className="h-4 w-4 text-gray-500" />;
   };
+
+  const getModelBadge = (modelName: string) => {
+    if (modelName.includes('gpt-4.1') || modelName.includes('claude-opus-4') || modelName.includes('o3')) {
+      return <Badge variant="default" className="bg-yellow-100 text-yellow-800">Premium</Badge>;
+    }
+    if (modelName.includes('turbo') || modelName.includes('haiku') || modelName.includes('mini')) {
+      return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Fast</Badge>;
+    }
+    return <Badge variant="outline">Standard</Badge>;
+  };
+
   const getModelDescription = (modelName: string) => {
-    // Local models - provide helpful descriptions
-    if (modelName.includes('llama-3') || modelName.includes('llama3')) {
-      if (modelName.includes('70b')) return 'Large Llama model with excellent reasoning (requires 40GB+ RAM)';
-      if (modelName.includes('8b')) return 'Efficient Llama model, great for most tasks (requires 8GB+ RAM)';
-      if (modelName.includes('405b')) return 'Massive Llama model with superior capabilities (requires 200GB+ RAM)';
-      return 'Meta\'s Llama language model for local use';
-    }
-    if (modelName.includes('codellama')) return 'Specialized for code generation and programming tasks';
-    if (modelName.includes('mistral')) {
-      if (modelName.includes('7b')) return 'Efficient European model, good balance of speed and quality';
-      return 'High-performance open model from Mistral AI';
-    }
-    if (modelName.includes('deepseek')) return 'Strong coding and reasoning model';
-    if (modelName.includes('qwen')) return 'Alibaba\'s multilingual model with strong reasoning';
-    if (modelName.includes('phi')) return 'Microsoft\'s small but capable model';
-    if (modelName.includes('nous-hermes')) return 'Fine-tuned for helpful and harmless responses';
-    if (modelName.includes('starling')) return 'Optimized for helpfulness and following instructions';
-    if (modelName.includes('openchat')) return 'Conversational model with strong performance';
-    if (modelName.includes('wizard')) return 'Enhanced model for reasoning and problem-solving';
-    if (modelName.includes('vicuna')) return 'ChatGPT-style conversational model';
-    if (modelName.includes('alpaca')) return 'Instruction-following model based on Llama';
-    if (modelName.includes('orca')) return 'Microsoft\'s reasoning-focused model';
-    
-    // OpenAI models
-    if (modelName === 'gpt-4.1-2025-04-14') return 'OpenAI\'s flagship model with superior performance across all tasks';
-    if (modelName === 'o3-2025-04-16') return 'Advanced reasoning model for complex multi-step problems';
-    if (modelName === 'o4-mini-2025-04-16') return 'Fast reasoning model optimized for coding and visual tasks';
-    if (modelName === 'gpt-4.1-mini-2025-04-14') return 'Efficient model with vision capabilities';
-    if (modelName === 'gpt-4o') return 'Multimodal model with vision and advanced reasoning';
-    if (modelName.includes('gpt-4')) return 'Advanced reasoning and complex tasks';
-    if (modelName.includes('gpt-3.5')) return 'Fast and efficient for most tasks';
-    
-    // Google Gemini models
-    if (modelName.includes('gemini-1.5-pro')) return 'Google\'s most capable multimodal model';
-    if (modelName.includes('gemini-1.5-flash')) return 'Fast and efficient multimodal model';
-    if (modelName.includes('gemini-1.0-pro')) return 'Google\'s foundational language model';
-    
-    // Other cloud models
-    if (modelName.includes('llama-3.3-70b')) return 'Latest Llama model with enhanced capabilities';
-    if (modelName.includes('llama-3.1-70b')) return 'Large Llama model with strong performance';
-    if (modelName.includes('llama-3.1-8b')) return 'Fast and efficient Llama model';
-    if (modelName.includes('llama3-70b')) return 'Large model with strong performance';
-    if (modelName.includes('llama3-8b')) return 'Compact but capable model';
-    if (modelName.includes('claude-3.5-sonnet')) return 'Anthropic\'s most capable and balanced model';
-    if (modelName.includes('claude-3-haiku')) return 'Anthropic\'s fastest model for quick tasks';
-    if (modelName.includes('claude-3-opus')) return 'Anthropic\'s most powerful model';
-    if (modelName.includes('mixtral')) return 'Mixture of experts model';
-    if (modelName.includes('gemma2-9b')) return 'Google\'s latest efficient language model';
-    if (modelName.includes('gemma-7b')) return 'Google\'s efficient language model';
-    if (modelName.includes('command-r-plus')) return 'Cohere\'s advanced reasoning model';
-    
-    return 'AI language model';
+    if (modelName.includes('gpt-4.1')) return 'OpenAI\'s flagship model with superior performance';
+    if (modelName.includes('o3')) return 'Advanced reasoning model for complex problems';
+    if (modelName.includes('o4-mini')) return 'Fast reasoning model optimized for efficiency';
+    if (modelName.includes('claude-opus-4')) return 'Anthropic\'s most capable model with superior reasoning';
+    if (modelName.includes('claude-sonnet-4')) return 'High-performance model with exceptional reasoning';
+    if (modelName.includes('haiku')) return 'Fastest Claude model for quick responses';
+    if (modelName.includes('gemini-pro')) return 'Google\'s multimodal AI model';
+    if (modelName.includes('llama')) return 'Meta\'s open-source language model';
+    if (modelName.includes('mixtral')) return 'Mistral\'s mixture of experts model';
+    return 'AI language model for text generation and analysis';
   };
 
   return (
-    <Card className="w-full">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Brain className="h-5 w-5" />
           Model Selection
-          {modelJustChanged && (
-            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-              <RefreshCw className="h-3 w-3 mr-1" />
-              Updated
-            </Badge>
-          )}
         </CardTitle>
         <CardDescription>
-          Choose the specific AI model to use with {selectedProvider}.
+          Choose the AI model that best fits your writing needs and performance requirements.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div>
-          <label className="text-sm font-medium mb-2 block">Available Models</label>
-          <Select value={selectedModel} onValueChange={handleModelChange}>
-            <SelectTrigger className={modelJustChanged ? "ring-2 ring-blue-500 ring-offset-2" : ""}>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Selected Model</label>
+          <Select 
+            value={selectedModel} 
+            onValueChange={setSelectedModel}
+            disabled={availableModels.length === 0}
+          >
+            <SelectTrigger>
               <SelectValue placeholder="Select a model">
                 {selectedModel && (
                   <div className="flex items-center gap-2">
@@ -162,12 +79,15 @@ const AIModelSettings = () => {
                 )}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="bg-white border shadow-lg z-50">
+            <SelectContent className="max-h-60">
               {availableModels.map((model) => (
                 <SelectItem key={model} value={model}>
-                  <div className="flex items-center gap-2">
-                    {getModelIcon(model)}
-                    {model}
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2">
+                      {getModelIcon(model)}
+                      <span>{model}</span>
+                    </div>
+                    {getModelBadge(model)}
                   </div>
                 </SelectItem>
               ))}
@@ -175,26 +95,30 @@ const AIModelSettings = () => {
           </Select>
         </div>
 
-        {/* Model Details */}
-        {selectedModel && availableModels.includes(selectedModel) && (
-          <div className={`space-y-3 p-3 bg-muted/30 rounded-lg transition-all duration-300 ${
-            modelJustChanged ? 'ring-2 ring-blue-500 ring-offset-2 bg-blue-50/50' : ''
-          }`}>
-            <div className="flex items-center gap-2">
-              {getModelIcon(selectedModel)}
-              <span className="font-medium">{selectedModel}</span>
-              <Badge variant="secondary" className="text-xs">
-                {selectedProvider}
-              </Badge>
-              {modelJustChanged && (
-                <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-300">
-                  Selected
-                </Badge>
-              )}
+        {selectedModel && (
+          <div className="p-4 bg-muted/30 rounded-lg space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium flex items-center gap-2">
+                {getModelIcon(selectedModel)}
+                {selectedModel}
+              </h4>
+              {getModelBadge(selectedModel)}
             </div>
+            
             <p className="text-sm text-muted-foreground">
               {getModelDescription(selectedModel)}
             </p>
+            
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                <span>Provider: {selectedProvider}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Brain className="h-3 w-3" />
+                <span>Type: {currentProvider?.type || 'cloud'}</span>
+              </div>
+            </div>
           </div>
         )}
 
@@ -202,6 +126,7 @@ const AIModelSettings = () => {
           <div className="text-center p-4 text-muted-foreground">
             <Brain className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p>No models available for the selected provider.</p>
+            <p className="text-xs">Please select a provider first or check your connection.</p>
           </div>
         )}
       </CardContent>

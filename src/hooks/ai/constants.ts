@@ -1,45 +1,43 @@
 
-import { AIProvider } from './types';
+import type { AIProvider } from './types';
 
 export const AI_PROVIDERS: AIProvider[] = [
   {
     name: 'OpenAI',
     models: [
       'gpt-4.1-2025-04-14',
-      'o3-2025-04-16',
+      'o3-2025-04-16', 
       'o4-mini-2025-04-16',
       'gpt-4.1-mini-2025-04-14',
-      'gpt-4o',
-      'gpt-4-turbo',
-      'gpt-3.5-turbo'
+      'gpt-4o'
     ],
     requiresApiKey: true,
     apiEndpoint: 'https://api.openai.com/v1/chat/completions',
     type: 'cloud'
   },
   {
-    name: 'Google Gemini',
+    name: 'Claude',
     models: [
-      'gemini-1.5-pro',
-      'gemini-1.5-flash',
-      'gemini-1.0-pro'
+      'claude-opus-4-20250514',
+      'claude-sonnet-4-20250514',
+      'claude-3-5-haiku-20241022',
+      'claude-3-7-sonnet-20250219',
+      'claude-3-5-sonnet-20241022'
     ],
+    requiresApiKey: true,
+    apiEndpoint: 'https://api.anthropic.com/v1/messages',
+    type: 'cloud'
+  },
+  {
+    name: 'Google Gemini',
+    models: ['gemini-pro', 'gemini-pro-vision', 'gemini-1.5-pro'],
     requiresApiKey: true,
     apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models',
     type: 'cloud'
   },
   {
     name: 'Groq',
-    models: [
-      'llama-3.3-70b-versatile',
-      'llama-3.1-70b-versatile', 
-      'llama-3.1-8b-instant',
-      'llama3-70b-8192', 
-      'llama3-8b-8192', 
-      'mixtral-8x7b-32768', 
-      'gemma2-9b-it',
-      'gemma-7b-it'
-    ],
+    models: ['llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma-7b-it'],
     requiresApiKey: true,
     apiEndpoint: 'https://api.groq.com/openai/v1/chat/completions',
     type: 'cloud'
@@ -47,40 +45,27 @@ export const AI_PROVIDERS: AIProvider[] = [
   {
     name: 'OpenRouter',
     models: [
-      'anthropic/claude-3.5-sonnet',
-      'anthropic/claude-3-haiku',
-      'openai/gpt-4o',
-      'openai/gpt-4o-mini',
-      'meta-llama/llama-3.1-405b-instruct',
-      'meta-llama/llama-3.1-70b-instruct',
-      'meta-llama/llama-3.1-8b-instruct',
-      'google/gemini-pro-1.5',
-      'mistralai/mixtral-8x7b-instruct',
+      'openai/gpt-4-turbo',
       'anthropic/claude-3-opus',
-      'cohere/command-r-plus',
-      'qwen/qwen-2.5-72b-instruct'
+      'meta-llama/llama-3-70b-instruct',
+      'mistralai/mixtral-8x22b-instruct'
     ],
     requiresApiKey: true,
     apiEndpoint: 'https://openrouter.ai/api/v1/chat/completions',
     type: 'cloud'
-  },  {
+  },
+  {
     name: 'Ollama',
-    models: [], // Will be dynamically loaded
+    models: [], // Will be populated dynamically
     requiresApiKey: false,
     apiEndpoint: 'http://localhost:11434',
-    type: 'local',
-    defaultPort: 11434,
-    description: 'Run large language models locally with Ollama',
-    setupInstructions: 'Install Ollama from https://ollama.ai and ensure it\'s running on localhost:11434'
+    type: 'local'
   },
   {
     name: 'LM Studio',
-    models: [], // Will be dynamically loaded
+    models: [], // Will be populated dynamically
     requiresApiKey: false,
     apiEndpoint: 'http://localhost:1234',
-    type: 'local',
-    defaultPort: 1234,
-    description: 'Run models locally with LM Studio',
-    setupInstructions: 'Install LM Studio from https://lmstudio.ai and start the local server'
+    type: 'local'
   }
 ];
