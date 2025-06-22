@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,14 +26,14 @@ import {
   BookOpenCheck,
   Users,
   Globe,
-  Brain,
-  Calendar as CalendarIcon
+  Brain
 } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { CalendarIcon } from "@radix-ui/react-icons";
 import { DateRange } from "react-day-picker";
 import { addDays } from "date-fns";
 import { Label } from "@/components/ui/label";
@@ -43,11 +42,10 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import QuickAISettings from '@/components/ai/QuickAISettings';
 import FloatingAISettings from '@/components/ai/FloatingAISettings';
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const WritingStudio = () => {
-  const { state: writingState, dispatch: writingDispatch } = useWriting();
-  const { state: projectState, dispatch: projectDispatch } = useProject();
+  const { state, dispatch } = useWriting();
+  const { state: projectState } = useProject();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isCommandOpen, setIsCommandOpen] = useState(false);
@@ -59,14 +57,14 @@ const WritingStudio = () => {
   const [showAISection, setShowAISection] = useState(true);
 
   useEffect(() => {
-    if (projectState.currentProject?.id && !projectState.activeDocumentId) {
+    if (projectState.currentProject?.id && !state.currentDocument) {
       // Load the manuscript root document if no document is selected
       const manuscriptRoot = projectState.flatDocuments.find(doc => doc.id === 'manuscript-root');
       if (manuscriptRoot) {
-        projectDispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: manuscriptRoot.id });
+        dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: manuscriptRoot.id });
       }
     }
-  }, [projectState.currentProject?.id, projectState.flatDocuments, projectState.activeDocumentId, projectDispatch]);
+  }, [projectState.currentProject?.id, projectState.flatDocuments, state.currentDocument, dispatch]);
 
   const handleCreateDocument = () => {
     if (!projectState.currentProject) return;
@@ -76,17 +74,14 @@ const WritingStudio = () => {
       projectId: projectState.currentProject.id,
       parentId: 'manuscript-root',
       title: 'New Document',
-      type: 'document' as const,
+      type: 'document',
       content: '',
       createdAt: new Date(),
       lastModified: new Date(),
-      status: 'not-started' as const,
-      wordCount: 0,
-      labels: [],
-      position: 0
+      status: 'not-started'
     };
 
-    projectDispatch({ type: 'ADD_DOCUMENT', payload: newDocument });
+    dispatch({ type: 'ADD_DOCUMENT', payload: newDocument });
     toast({
       title: "Document Created",
       description: "Your new document has been created.",
@@ -101,16 +96,13 @@ const WritingStudio = () => {
       projectId: projectState.currentProject.id,
       parentId: 'manuscript-root',
       title: 'New Folder',
-      type: 'folder' as const,
+      type: 'folder',
       createdAt: new Date(),
       lastModified: new Date(),
-      status: 'not-started' as const,
-      wordCount: 0,
-      labels: [],
-      position: 0
+      status: 'not-started'
     };
 
-    projectDispatch({ type: 'ADD_DOCUMENT', payload: newFolder });
+    dispatch({ type: 'ADD_DOCUMENT', payload: newFolder });
     toast({
       title: "Folder Created",
       description: "Your new folder has been created.",
@@ -118,21 +110,18 @@ const WritingStudio = () => {
   };
 
   const handleSave = async () => {
-    const activeDocument = projectState.flatDocuments.find(
-      doc => doc.id === projectState.activeDocumentId
-    );
-    
-    if (!activeDocument) return;
+    if (!state.currentDocument) return;
 
     setIsSaving(true);
     // Simulate saving
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    projectDispatch({
+    dispatch({
       type: 'UPDATE_DOCUMENT',
       payload: {
-        id: activeDocument.id,
+        id: state.currentDocument.id,
         updates: {
+          content: state.currentDocument.content,
           lastModified: new Date()
         }
       }
@@ -144,10 +133,6 @@ const WritingStudio = () => {
       description: "Your document has been saved.",
     })
   };
-
-  const activeDocument = projectState.flatDocuments.find(
-    doc => doc.id === projectState.activeDocumentId
-  );
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -174,55 +159,49 @@ const WritingStudio = () => {
             <span className="sr-only">Open command menu</span>
           </Button>
         </div>
+        <Command open={isCommandOpen} onOpenChange={setIsCommandOpen}>
+          <CommandInput placeholder="Type a command or search..." />
+          <CommandList>
+            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandGroup heading="Actions">
+              <CommandItem onSelect={() => {
+                setIsCommandOpen(false)
+                handleCreateDocument()
+              }}>
+                <FileText className="mr-2 h-4 w-4" />
+                Create Document
+              </CommandItem>
+              <CommandItem onSelect={() => {
+                setIsCommandOpen(false)
+                handleCreateFolder()
+              }}>
+                <FolderPlus className="mr-2 h-4 w-4" />
+                Create Folder
+              </CommandItem>
+              <CommandItem onSelect={() => {
+                setIsCommandOpen(false)
+                handleSave()
+              }}>
+                <Save className="mr-2 h-4 w-4" />
+                Save
+              </CommandItem>
+            </CommandGroup>
+            <CommandSeparator />
+            <CommandGroup heading="Settings">
+              <CommandItem>
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                Calendar
+                <CommandShortcut>Ctrl+Shift+C</CommandShortcut>
+              </CommandItem>
+              <CommandItem>
+                <Users className="mr-2 h-4 w-4" />
+                Team
+                <CommandShortcut>Ctrl+Shift+T</CommandShortcut>
+              </CommandItem>
+            </CommandGroup>
+          </CommandList>
+        </Command>
       </div>
-
-      {/* Command Dialog */}
-      <Dialog open={isCommandOpen} onOpenChange={setIsCommandOpen}>
-        <DialogContent className="overflow-hidden p-0 shadow-lg">
-          <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
-            <CommandInput placeholder="Type a command or search..." />
-            <CommandList>
-              <CommandEmpty>No results found.</CommandEmpty>
-              <CommandGroup heading="Actions">
-                <CommandItem onSelect={() => {
-                  setIsCommandOpen(false)
-                  handleCreateDocument()
-                }}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  Create Document
-                </CommandItem>
-                <CommandItem onSelect={() => {
-                  setIsCommandOpen(false)
-                  handleCreateFolder()
-                }}>
-                  <FolderPlus className="mr-2 h-4 w-4" />
-                  Create Folder
-                </CommandItem>
-                <CommandItem onSelect={() => {
-                  setIsCommandOpen(false)
-                  handleSave()
-                }}>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save
-                </CommandItem>
-              </CommandGroup>
-              <CommandSeparator />
-              <CommandGroup heading="Settings">
-                <CommandItem>
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  Calendar
-                  <CommandShortcut>Ctrl+Shift+C</CommandShortcut>
-                </CommandItem>
-                <CommandItem>
-                  <Users className="mr-2 h-4 w-4" />
-                  Team
-                  <CommandShortcut>Ctrl+Shift+T</CommandShortcut>
-                </CommandItem>
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </DialogContent>
-      </Dialog>
 
       <div className="flex h-full">
         {/* Sidebar */}
@@ -246,10 +225,10 @@ const WritingStudio = () => {
 
         {/* Main Content */}
         <main className="flex-1 p-4 h-full flex flex-col">
-          {activeDocument ? (
+          {state.currentDocument ? (
             <>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">{activeDocument.title}</h2>
+                <h2 className="text-2xl font-bold">{state.currentDocument.title}</h2>
               </div>
               <div className="flex-1 relative">
                 <DocumentEditor />
