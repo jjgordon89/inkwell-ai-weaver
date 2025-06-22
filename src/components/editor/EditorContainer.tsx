@@ -1,3 +1,4 @@
+
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useEditorState } from '@/hooks/useEditorState';
@@ -126,6 +127,13 @@ const EditorContainer = () => {
     onShowFloatingActions: setShowFloatingActions,
     textAfterCursor
   });
+
+  // Create wrapper function for text selection handling
+  const handleTextSelectionWrapper = useCallback(() => {
+    if (textareaRef.current) {
+      handleTextSelection(textareaRef.current, setCursorPosition, setShowFloatingActions);
+    }
+  }, [handleTextSelection, setCursorPosition, setShowFloatingActions]);
 
   // Handle contextual suggestion actions
   const handleApplyContextualSuggestion = useCallback(async (suggestion: ContextualSuggestion) => {
