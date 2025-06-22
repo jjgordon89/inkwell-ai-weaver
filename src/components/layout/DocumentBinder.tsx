@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { useProject } from '@/contexts/ProjectContext';
 import type { DocumentNode } from '@/types/document';
 import BinderHeader from './binder/BinderHeader';
@@ -105,6 +106,36 @@ const DocumentBinder = () => {
     setStatusFilter('all');
   };
 
+  const handleDragEnd = (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+
+    // If no destination, or dropped in same position, do nothing
+    if (!destination || 
+        (destination.droppableId === source.droppableId && 
+         destination.index === source.index)) {
+      return;
+    }
+
+    // Parse the droppable IDs to get parent information
+    const sourceParentId = source.droppableId === 'root' ? undefined : source.droppableId;
+    const destParentId = destination.droppableId === 'root' ? undefined : destination.droppableId;
+
+    // Dispatch move action
+    dispatch({
+      type: 'MOVE_DOCUMENT',
+      payload: {
+        documentId: draggableId,
+        newParentId: destParentId,
+        newPosition: destination.index
+      }
+    });
+
+    // If moving into a folder, expand it
+    if (destParentId) {
+      setExpandedNodes(prev => new Set([...prev, destParentId]));
+    }
+  };
+
   // Filter documents based on search and status
   const filteredTree = useMemo(() => {
     if (!searchQuery && statusFilter === 'all') {
@@ -160,20 +191,22 @@ const DocumentBinder = () => {
         <BinderStats totalWords={stats.totalWords} totalDocs={stats.totalDocs} />
       </div>
       
-      {/* Document Tree */}
+      {/* Document Tree with Drag and Drop */}
       <div className="flex-1 overflow-auto p-2">
-        <BinderTree
-          filteredTree={filteredTree}
-          expandedNodes={expandedNodes}
-          selectedId={state.activeDocumentId || undefined}
-          onSelect={handleDocumentSelect}
-          onToggle={handleNodeToggle}
-          onDelete={handleDeleteDocument}
-          onAddChild={handleAddChild}
-          searchQuery={searchQuery}
-          statusFilter={statusFilter}
-          onClearFilters={handleClearFilters}
-        />
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <BinderTree
+            filteredTree={filteredTree}
+            expandedNodes={expandedNodes}
+            selectedId={state.activeDocumentId || undefined}
+            onSelect={handleDocumentSelect}
+            onToggle={handleNodeToggle}
+            onDelete={handleDeleteDocument}
+            onAddChild={handleAddChild}
+            searchQuery={searchQuery}
+            statusFilter={statusFilter}
+            onClearFilters={handleClearFilters}
+          />
+        </DragDropContext>
       </div>
 
       {/* Dialogs */}

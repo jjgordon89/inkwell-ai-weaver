@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { FileText } from 'lucide-react';
+import { Droppable } from 'react-beautiful-dnd';
 import { Button } from "@/components/ui/button";
 import BinderItem from './BinderItem';
 import type { DocumentNode } from '@/types/document';
@@ -50,21 +51,33 @@ const BinderTree = ({
   }
 
   return (
-    <div className="space-y-1">
-      {filteredTree.map((node) => (
-        <BinderItem
-          key={node.id}
-          node={node}
-          level={0}
-          onSelect={onSelect}
-          onToggle={onToggle}
-          expandedNodes={expandedNodes}
-          selectedId={selectedId}
-          onDelete={onDelete}
-          onAddChild={onAddChild}
-        />
-      ))}
-    </div>
+    <Droppable droppableId="root" type="DOCUMENT">
+      {(provided, snapshot) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.droppableProps}
+          className={`space-y-1 min-h-[100px] ${
+            snapshot.isDraggingOver ? 'bg-muted/20 rounded-md' : ''
+          }`}
+        >
+          {filteredTree.map((node, index) => (
+            <BinderItem
+              key={node.id}
+              node={node}
+              index={index}
+              level={0}
+              onSelect={onSelect}
+              onToggle={onToggle}
+              expandedNodes={expandedNodes}
+              selectedId={selectedId}
+              onDelete={onDelete}
+              onAddChild={onAddChild}
+            />
+          ))}
+          {provided.placeholder}
+        </div>
+      )}
+    </Droppable>
   );
 };
 

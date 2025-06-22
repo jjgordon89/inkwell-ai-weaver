@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import { Project, DocumentNode, DocumentView } from '@/types/document';
 
@@ -102,6 +101,15 @@ function projectReducer(state: ProjectState, action: ProjectAction): ProjectStat
         activeDocumentId: state.activeDocumentId === action.payload ? null : state.activeDocumentId
       };
     
+    case 'MOVE_DOCUMENT':
+      const { documentId, newParentId, newPosition } = action.payload;
+      const movedTree = moveDocumentInTree(state.documentTree, documentId, newParentId, newPosition);
+      return {
+        ...state,
+        documentTree: movedTree,
+        flatDocuments: flattenDocumentTree(movedTree)
+      };
+    
     case 'SET_ACTIVE_DOCUMENT':
       return { ...state, activeDocumentId: action.payload };
     
@@ -186,6 +194,65 @@ function deleteDocumentFromTree(tree: DocumentNode[], docId: string): DocumentNo
     }
     return node;
   });
+}
+
+function moveDocumentInTree(
+  tree: DocumentNode[], 
+  documentId: string, 
+  newParentId?: string, 
+  newPosition: number = 0
+): DocumentNode[] {
+  // First, find and remove the document from its current location
+  let documentToMove: DocumentNode | null = null;
+  
+  const removeDocument = (nodes: DocumentNode[]): DocumentNode[] => {
+    return nodes.filter(node => {
+      if (node.id === documentId) {
+        documentToMove = node;
+        return false;
+      }
+      if (node.children) {
+        node.children = removeDocument(node.children);
+      }
+      return true;
+    });
+  };
+  
+  const treeWithoutMoved = removeDocument([...tree]);
+  
+  if (!documentToMove) return tree;
+  
+  // Update the document's parentId
+  const updatedDocument = {
+    ...documentToMove,
+    parentId: newParentId,
+    lastModified: new Date()
+  };
+  
+  // Insert the document in its new location
+  if (!newParentId) {
+    // Moving to root level
+    const rootDocs = [...treeWithoutMoved];
+    rootDocs.splice(newPosition, 0, updatedDocument);
+    return rootDocs;
+  } else {
+    // Moving to a parent folder
+    const insertIntoParent = (nodes: DocumentNode[]): DocumentNode[] => {
+      return nodes.map(node => {
+        if (node.id === newParentId) {
+          const children = [...(node.children || [])];
+          children.splice(newPosition, 0, updatedDocument);
+          return { ...node, children };
+        }
+        if (node.children) {
+          return { ...node, children: insertIntoParent(node.children) };
+        }
+        return node;
+      });
+    };
+    
+    return insertIntoParent(treeWithoutMoved);
+  }
 }
 
 const ProjectContext = createContext<{
