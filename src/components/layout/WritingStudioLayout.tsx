@@ -1,3 +1,4 @@
+
 import React, { useState, Suspense } from 'react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import DocumentBinder from './DocumentBinder';
@@ -66,10 +67,9 @@ const WritingStudioLayout = () => {
   if (isMobile) {
     return (
       <div className="h-screen flex flex-col">
-        <div className="flex items-center justify-between p-2 border-b">
-          <ViewManager onViewChange={handleViewChange} />
-          <AccessibilityMenu />
-        </div>
+        <ViewManager 
+          onViewChange={handleViewChange}
+        />
         
         <div className="flex-1 overflow-hidden">
           {renderActiveView()}
@@ -85,10 +85,9 @@ const WritingStudioLayout = () => {
   // Desktop layout
   return (
     <div className="h-screen flex flex-col">
-      <div className="flex items-center justify-between p-2 border-b">
-        <ViewManager onViewChange={handleViewChange} />
-        <AccessibilityMenu />
-      </div>
+      <ViewManager 
+        onViewChange={handleViewChange}
+      />
       
       <div className="flex-1 overflow-hidden">
         <ResizablePanelGroup direction="horizontal">

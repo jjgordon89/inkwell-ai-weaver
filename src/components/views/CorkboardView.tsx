@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Grid3X3, Plus, Edit3, FileText, BookOpen } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -19,11 +20,14 @@ const CorkboardView = () => {
       doc.title === 'Manuscript' && doc.type === 'folder'
     );
     
+    // If no Manuscript folder exists, create the chapter at root level
+    const parentId = manuscriptFolder?.id || undefined;
+    
     const newChapter = {
       id: crypto.randomUUID(),
       title: 'New Chapter',
       type: 'chapter' as const,
-      parentId: manuscriptFolder?.id, // Set parent to Manuscript folder
+      parentId,
       status: 'not-started' as const,
       wordCount: 0,
       labels: [],
