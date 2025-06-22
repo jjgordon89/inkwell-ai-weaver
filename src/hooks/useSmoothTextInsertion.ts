@@ -1,5 +1,6 @@
 
 import { useCallback, useRef } from 'react';
+import { useCursorPositioning } from './useCursorPositioning';
 
 interface SmoothTextInsertionOptions {
   textareaRef: React.RefObject<any>;
@@ -8,6 +9,7 @@ interface SmoothTextInsertionOptions {
 
 export const useSmoothTextInsertion = ({ textareaRef, onContentChange }: SmoothTextInsertionOptions) => {
   const animationFrameRef = useRef<number>();
+  const { calculateOptimalCursorPosition, setCursorPosition } = useCursorPositioning({ textareaRef });
 
   const insertTextSmoothly = useCallback((text: string, replaceSelection = false) => {
     if (!textareaRef.current) return;
@@ -23,7 +25,7 @@ export const useSmoothTextInsertion = ({ textareaRef, onContentChange }: SmoothT
     if (replaceSelection && start !== end) {
       // Replace selected text
       newContent = currentContent.substring(0, start) + text + currentContent.substring(end);
-      newCursorPosition = start + text.length;
+      newCursorPosition = calculateOptimalCursorPosition(currentContent, newContent, start, text);
     } else {
       // Insert at cursor position with smart spacing
       const textBefore = currentContent.substring(Math.max(0, start - 1), start);
@@ -31,15 +33,20 @@ export const useSmoothTextInsertion = ({ textareaRef, onContentChange }: SmoothT
       
       // Add spacing if needed
       let finalText = text;
-      if (textBefore && !textBefore.match(/\s$/) && !text.startsWith(' ') && textBefore.match(/\w$/)) {
+      const needsSpaceBefore = textBefore && !textBefore.match(/\s$/) && 
+                               !text.startsWith(' ') && textBefore.match(/\w$/);
+      const needsSpaceAfter = textAfter && !textAfter.match(/^\s/) && 
+                              !text.endsWith(' ') && textAfter.match(/^\w/);
+      
+      if (needsSpaceBefore) {
         finalText = ' ' + text;
       }
-      if (textAfter && !textAfter.match(/^\s/) && !text.endsWith(' ') && textAfter.match(/^\w/)) {
+      if (needsSpaceAfter) {
         finalText = finalText + ' ';
       }
       
       newContent = currentContent.substring(0, start) + finalText + currentContent.substring(start);
-      newCursorPosition = start + finalText.length;
+      newCursorPosition = calculateOptimalCursorPosition(currentContent, newContent, start, finalText);
     }
     
     // Create synthetic event for content change
@@ -54,31 +61,27 @@ export const useSmoothTextInsertion = ({ textareaRef, onContentChange }: SmoothT
     // Update content
     onContentChange(syntheticEvent);
     
-    // Smooth cursor positioning with animation frame
+    // Smooth cursor positioning with enhanced animation
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
     
     animationFrameRef.current = requestAnimationFrame(() => {
+      // Set cursor position with smooth animation
+      setCursorPosition(newCursorPosition, true);
+      
+      // Add subtle visual feedback
       if (textarea) {
-        textarea.focus();
-        textarea.setSelectionRange(newCursorPosition, newCursorPosition);
+        textarea.style.transition = 'box-shadow 0.2s ease';
+        textarea.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.3)';
         
-        // Smooth scroll to cursor if needed
-        const lineHeight = parseInt(getComputedStyle(textarea).lineHeight) || 24;
-        const cursorLine = newContent.substring(0, newCursorPosition).split('\n').length;
-        const targetScrollTop = Math.max(0, (cursorLine - 8) * lineHeight);
-        
-        // Only scroll if significantly different
-        if (Math.abs(textarea.scrollTop - targetScrollTop) > lineHeight * 3) {
-          textarea.scrollTo({
-            top: targetScrollTop,
-            behavior: 'smooth'
-          });
-        }
+        setTimeout(() => {
+          textarea.style.boxShadow = '';
+          textarea.style.transition = '';
+        }, 200);
       }
     });
-  }, [textareaRef, onContentChange]);
+  }, [textareaRef, onContentChange, calculateOptimalCursorPosition, setCursorPosition]);
 
   return { insertTextSmoothly };
 };

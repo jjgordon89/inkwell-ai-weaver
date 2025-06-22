@@ -3,7 +3,7 @@ import { useCallback, useRef } from 'react';
 import { useCollaborativeAI } from '@/hooks/useCollaborativeAI';
 import { useEditorState } from '@/hooks/useEditorState';
 import { useWriting } from '@/contexts/WritingContext';
-import { useSmoothTextInsertion } from '@/hooks/useSmoothTextInsertion';
+import { useAISuggestionCursor } from '@/hooks/useAISuggestionCursor';
 
 interface EditorContentHandlerProps {
   onAddToHistory: (content: string, cursorPosition: number) => void;
@@ -28,18 +28,19 @@ export const useEditorContentHandler = ({ onAddToHistory, textareaRef }: EditorC
     handleContentChange(e);
   }, [handleContentChange, onAddToHistory, currentDocument]);
 
-  const { insertTextSmoothly } = useSmoothTextInsertion({
+  const { applySuggestionWithOptimalCursor } = useAISuggestionCursor({
     textareaRef,
     onContentChange: handleContentChangeWithHistory
   });
 
   const handleApplyAISuggestion = useCallback((newText: string, replaceSelection = false) => {
-    insertTextSmoothly(newText, replaceSelection);
-  }, [insertTextSmoothly]);
+    const suggestionType = replaceSelection ? 'replacement' : 'completion';
+    applySuggestionWithOptimalCursor(newText, suggestionType);
+  }, [applySuggestionWithOptimalCursor]);
 
   const handleTextCompletion = useCallback((completion: string) => {
-    insertTextSmoothly(completion, false);
-  }, [insertTextSmoothly]);
+    applySuggestionWithOptimalCursor(completion, 'completion');
+  }, [applySuggestionWithOptimalCursor]);
 
   return {
     handleContentChangeWithHistory,
