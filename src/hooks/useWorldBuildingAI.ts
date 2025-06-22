@@ -14,7 +14,7 @@ export const useWorldBuildingAI = () => {
         Respond with a JSON object containing:
         - name: A compelling name
         - description: Rich, detailed description
-        - significance: Why this is important to the story
+        - category: The category this element belongs to
         - connections: How it relates to other world elements
         - details: Specific interesting details
         
@@ -33,7 +33,7 @@ export const useWorldBuildingAI = () => {
           type,
           name: `${type}: ${prompt.substring(0, 20)}...`,
           description: result,
-          significance: '',
+          category: '',
           connections: [],
           details: {}
         };
