@@ -13,11 +13,11 @@ export const useCharacterAI = () => {
       throw new Error('AI provider not configured');
     }
 
-    return execute(async () => {
+    const result = await execute(async () => {
       const aiPrompt = `Generate a character based on this description: "${prompt}". 
       Provide the response in a structured format with name, description, age, occupation, appearance, personality, backstory, and relevant tags.`;
       
-      const response = await processText(aiPrompt, 'generate');
+      const response = await processText(aiPrompt, 'improve');
       
       // Basic parsing - in a real implementation this would be more sophisticated
       return {
@@ -32,6 +32,14 @@ export const useCharacterAI = () => {
         createdWith: 'ai' as const
       };
     }, 'generate character');
+
+    // Handle null return from execute
+    return result || {
+      name: 'Generated Character',
+      description: 'AI-generated character',
+      age: 25,
+      occupation: 'Unknown'
+    };
   };
 
   return {

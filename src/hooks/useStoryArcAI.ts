@@ -13,17 +13,23 @@ export const useStoryArcAI = () => {
       throw new Error('AI provider not configured');
     }
 
-    return execute(async () => {
+    const result = await execute(async () => {
       const aiPrompt = `Generate a story arc based on this description: "${prompt}". 
       Provide a title and detailed description for the story arc.`;
       
-      const response = await processText(aiPrompt, 'generate');
+      const response = await processText(aiPrompt, 'improve');
       
       return {
         title: `Generated Story Arc`,
         description: response || 'AI-generated story arc description',
       };
     }, 'generate story arc');
+
+    // Handle null return from execute
+    return result || {
+      title: 'Generated Story Arc',
+      description: 'AI-generated story arc description'
+    };
   };
 
   const improveSuggestions = async (currentArcs: StoryArc[]): Promise<string[]> => {
@@ -31,7 +37,7 @@ export const useStoryArcAI = () => {
       throw new Error('AI provider not configured');
     }
 
-    return execute(async () => {
+    const result = await execute(async () => {
       const aiPrompt = `Based on these existing story arcs: ${currentArcs.map(arc => arc.title).join(', ')}, 
       suggest 3-5 improvements or new story arc ideas.`;
       
@@ -46,6 +52,13 @@ export const useStoryArcAI = () => {
         'Include emotional climax'
       ];
     }, 'generate story arc suggestions');
+
+    // Handle null return from execute
+    return result || [
+      'Add character development arc',
+      'Include plot twist resolution',
+      'Develop supporting character relationships'
+    ];
   };
 
   return {

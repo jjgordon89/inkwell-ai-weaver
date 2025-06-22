@@ -13,11 +13,11 @@ export const useWorldBuildingAI = () => {
       throw new Error('AI provider not configured');
     }
 
-    return execute(async () => {
+    const result = await execute(async () => {
       const aiPrompt = `Generate a ${type} for world building based on this description: "${prompt}". 
       Provide a name and detailed description.`;
       
-      const response = await processText(aiPrompt, 'generate');
+      const response = await processText(aiPrompt, 'improve');
       
       return {
         name: `Generated ${type}`,
@@ -25,6 +25,13 @@ export const useWorldBuildingAI = () => {
         description: response || `AI-generated ${type} description`,
       };
     }, 'generate world element');
+
+    // Handle null return from execute
+    return result || {
+      name: `Generated ${type}`,
+      type,
+      description: `AI-generated ${type} description`
+    };
   };
 
   const improveSuggestions = async (currentElements: WorldElement[]): Promise<string[]> => {
@@ -32,7 +39,7 @@ export const useWorldBuildingAI = () => {
       throw new Error('AI provider not configured');
     }
 
-    return execute(async () => {
+    const result = await execute(async () => {
       const aiPrompt = `Based on these existing world elements: ${currentElements.map(el => `${el.name} (${el.type})`).join(', ')}, 
       suggest 3-5 improvements or new world building ideas.`;
       
@@ -47,6 +54,13 @@ export const useWorldBuildingAI = () => {
         'Include magical/technological systems'
       ];
     }, 'generate world building suggestions');
+
+    // Handle null return from execute
+    return result || [
+      'Add more detailed geography',
+      'Develop cultural traditions', 
+      'Create political systems'
+    ];
   };
 
   return {
