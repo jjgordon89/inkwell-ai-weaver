@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { FileText, Edit3, Save, Clock, Brain } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCollaborativeAI } from '@/hooks/useCollaborativeAI';
 import SmartTextCompletion from '@/components/ai/SmartTextCompletion';
 import InlineAISuggestions from '@/components/ai/InlineAISuggestions';
+import WorkflowAIIntegration from '@/components/editor/WorkflowAIIntegration';
 
 const EditorView = () => {
   const { state, dispatch } = useProject();
@@ -201,6 +201,13 @@ const EditorView = () => {
           documentContent={activeDocument.content || ''}
         />
       )}
+
+      {/* Workflow AI Integration */}
+      <WorkflowAIIntegration
+        selectedText={selectedText}
+        suggestions={suggestions}
+        isVisible={hasActiveDocument}
+      />
     </div>
   );
 };
