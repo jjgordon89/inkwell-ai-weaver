@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useWriting } from '@/contexts/WritingContext';
-import SmartTextHighlighter from '@/components/ai/SmartTextHighlighter';
 import FloatingAIStatus from '@/components/ai/FloatingAIStatus';
 import ImprovedAIOverlay from '@/components/ai/ImprovedAIOverlay';
 import { useSmoothTransitions } from '@/hooks/useSmoothTransitions';
@@ -70,28 +69,13 @@ const VisualAIIntegration: React.FC<VisualAIIntegrationProps> = ({
     setCursorPosition({ x: e.clientX, y: e.clientY });
   };
 
-  // Get AI enhanced ranges for text highlighting
-  const getAIEnhancedRanges = () => {
-    if (!state.currentDocument?.content) return [];
-    
-    // This would be populated by actual AI enhancement tracking
-    // For now, return empty array as this requires integration with AI services
-    return [];
-  };
-
   return (
     <div 
       className="relative h-full w-full"
       onMouseMove={handleMouseMove}
     >
-      {/* Main content with AI highlighting */}
-      <SmartTextHighlighter
-        text={state.currentDocument?.content || ''}
-        aiEnhancedRanges={getAIEnhancedRanges()}
-        className="h-full w-full"
-      >
-        {children}
-      </SmartTextHighlighter>
+      {/* Main content */}
+      {children}
 
       {/* Floating AI Status Indicator */}
       <FloatingAIStatus
