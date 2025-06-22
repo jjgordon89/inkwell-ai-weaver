@@ -1,7 +1,6 @@
 
 import { describe, it, expect, vi } from 'vitest'
 import { render, act } from '@testing-library/react'
-import { screen } from '@testing-library/react'
 import { WritingProvider, useWriting } from './WritingContext'
 
 // Test component that uses the WritingContext
@@ -44,47 +43,47 @@ const TestComponent = () => {
 
 describe('WritingContext', () => {
   it('should provide initial state', () => {
-    render(
+    const { getByTestId } = render(
       <WritingProvider>
         <TestComponent />
       </WritingProvider>
     )
 
-    expect(screen.getByTestId('document-title')).toHaveTextContent('New Document')
-    expect(screen.getByTestId('character-count')).toHaveTextContent('0')
-    expect(screen.getByTestId('active-section')).toHaveTextContent('story')
+    expect(getByTestId('document-title')).toHaveTextContent('New Document')
+    expect(getByTestId('character-count')).toHaveTextContent('0')
+    expect(getByTestId('active-section')).toHaveTextContent('story')
   })
 
   it('should handle adding characters', async () => {
-    render(
+    const { getByTestId } = render(
       <WritingProvider>
         <TestComponent />
       </WritingProvider>
     )
 
-    const addButton = screen.getByTestId('add-character')
+    const addButton = getByTestId('add-character')
     
     await act(async () => {
       addButton.click()
     })
 
-    expect(screen.getByTestId('character-count')).toHaveTextContent('1')
+    expect(getByTestId('character-count')).toHaveTextContent('1')
   })
 
   it('should handle section changes', async () => {
-    render(
+    const { getByTestId } = render(
       <WritingProvider>
         <TestComponent />
       </WritingProvider>
     )
 
-    const changeSectionButton = screen.getByTestId('change-section')
+    const changeSectionButton = getByTestId('change-section')
     
     await act(async () => {
       changeSectionButton.click()
     })
 
-    expect(screen.getByTestId('active-section')).toHaveTextContent('characters')
+    expect(getByTestId('active-section')).toHaveTextContent('characters')
   })
 
   it('should throw error when used outside provider', () => {
