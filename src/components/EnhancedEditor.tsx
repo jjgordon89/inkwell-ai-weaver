@@ -3,6 +3,7 @@ import { useAutoSave } from '@/hooks/useAutoSave';
 import { useCollaborativeAI } from '@/hooks/useCollaborativeAI';
 import { useEditorState } from '@/hooks/useEditorState';
 import { useTextSelection } from '@/hooks/useTextSelection';
+import { useUndoRedo } from '@/hooks/useUndoRedo';
 import InlineAISuggestions from '@/components/ai/InlineAISuggestions';
 import AIAssistantOverlay from '@/components/ai/AIAssistantOverlay';
 import ProactiveWritingSupport from '@/components/ai/ProactiveWritingSupport';
@@ -32,6 +33,14 @@ const EnhancedEditor = () => {
   } = useEditorState();
 
   const {
+    addToHistory,
+    undo,
+    redo,
+    canUndo,
+    canRedo
+  } = useUndoRedo(currentDocument?.content || '');
+
+  const {
     selectedText,
     selectionPosition,
     showInlineSuggestions,
@@ -49,6 +58,71 @@ const EnhancedEditor = () => {
 
   // Enable auto-save
   useAutoSave();
+
+  // Handle undo action
+  const handleUndo = useCallback(() => {
+    const previousState = undo();
+    if (previousState && textareaRef.current) {
+      const syntheticEvent = {
+        target: { 
+          value: previousState.content, 
+          selectionStart: previousState.cursorPosition 
+        }
+      } as React.ChangeEvent<HTMLTextAreaElement>;
+      handleContentChange(syntheticEvent);
+      
+      setTimeout(() => {
+        textareaRef.current?.setSelectionRange(previousState.cursorPosition, previousState.cursorPosition);
+      }, 0);
+    }
+  }, [undo, handleContentChange]);
+
+  // Handle redo action
+  const handleRedo = useCallback(() => {
+    const nextState = redo();
+    if (nextState && textareaRef.current) {
+      const syntheticEvent = {
+        target: { 
+          value: nextState.content, 
+          selectionStart: nextState.cursorPosition 
+        }
+      } as React.ChangeEvent<HTMLTextAreaElement>;
+      handleContentChange(syntheticEvent);
+      
+      setTimeout(() => {
+        textareaRef.current?.setSelectionRange(nextState.cursorPosition, nextState.cursorPosition);
+      }, 0);
+    }
+  }, [redo, handleContentChange]);
+
+  // Add keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleUndo, handleRedo]);
+
+  // Enhanced content change handler that adds to history
+  const handleContentChangeWithHistory = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const cursorPos = e.target.selectionStart || 0;
+    
+    // Add current state to history before making changes
+    if (currentDocument?.content !== e.target.value) {
+      addToHistory(e.target.value, cursorPos);
+    }
+    
+    // Call the original handler
+    handleContentChange(e);
+  }, [handleContentChange, addToHistory, currentDocument]);
 
   const handleTextSelectionWrapper = useCallback(() => {
     if (!textareaRef.current) return;
@@ -75,7 +149,7 @@ const EnhancedEditor = () => {
     const syntheticEvent = {
       target: { value: newContent, selectionStart: start + newText.length }
     } as React.ChangeEvent<HTMLTextAreaElement>;
-    handleContentChange(syntheticEvent);
+    handleContentChangeWithHistory(syntheticEvent);
     
     setShowInlineSuggestions(false);
     setSelectedText('');
@@ -85,7 +159,7 @@ const EnhancedEditor = () => {
       textareaRef.current?.focus();
       textareaRef.current?.setSelectionRange(start + newText.length, start + newText.length);
     }, 0);
-  }, [currentDocument, handleContentChange, setShowInlineSuggestions, setSelectedText]);
+  }, [currentDocument, handleContentChangeWithHistory, setShowInlineSuggestions, setSelectedText]);
 
   const handleTextCompletion = useCallback((completion: string) => {
     if (!textareaRef.current || !currentDocument) return;
@@ -98,14 +172,14 @@ const EnhancedEditor = () => {
     const syntheticEvent = {
       target: { value: newContent, selectionStart: cursorPos + completion.length }
     } as React.ChangeEvent<HTMLTextAreaElement>;
-    handleContentChange(syntheticEvent);
+    handleContentChangeWithHistory(syntheticEvent);
     
     // Set cursor after the completion
     setTimeout(() => {
       textareaRef.current?.focus();
       textareaRef.current?.setSelectionRange(cursorPos + completion.length, cursorPos + completion.length);
     }, 0);
-  }, [currentDocument, handleContentChange]);
+  }, [currentDocument, handleContentChangeWithHistory]);
 
   const handleQuickAIAction = useCallback(async (action: 'improve' | 'continue') => {
     if (!textareaRef.current || !currentDocument) return;
@@ -132,7 +206,7 @@ const EnhancedEditor = () => {
               const syntheticEvent = {
                 target: { value: newContent, selectionStart: cursorPos }
               } as React.ChangeEvent<HTMLTextAreaElement>;
-              handleContentChange(syntheticEvent);
+              handleContentChangeWithHistory(syntheticEvent);
             }
           }
           break;
@@ -142,7 +216,7 @@ const EnhancedEditor = () => {
     }
     
     setShowFloatingActions(false);
-  }, [currentDocument, generateTextCompletion, textAfterCursor, improveSelectedText, handleContentChange, handleTextCompletion, setShowFloatingActions]);
+  }, [currentDocument, generateTextCompletion, textAfterCursor, improveSelectedText, handleContentChangeWithHistory, handleTextCompletion, setShowFloatingActions]);
 
   const handleApplySuggestionFromPanel = useCallback((suggestion: any) => {
     // Apply the suggestion text at the current cursor position
@@ -163,7 +237,7 @@ const EnhancedEditor = () => {
     const syntheticEvent = {
       target: { value: newContent, selectionStart: cursorPos + suggestion.text.length }
     } as React.ChangeEvent<HTMLTextAreaElement>;
-    handleContentChange(syntheticEvent);
+    handleContentChangeWithHistory(syntheticEvent);
     
     // Dismiss the suggestion after applying
     dismissSuggestion(suggestion.id);
@@ -171,7 +245,7 @@ const EnhancedEditor = () => {
     setTimeout(() => {
       textareaRef.current?.focus();
     }, 0);
-  }, [currentDocument, handleContentChange, dismissSuggestion]);
+  }, [currentDocument, handleContentChangeWithHistory, dismissSuggestion]);
 
   // Update cursor position on scroll or resize
   useEffect(() => {
@@ -208,6 +282,10 @@ const EnhancedEditor = () => {
           showProactivePanel={showProactivePanel}
           onToggleProactivePanel={() => setShowProactivePanel(!showProactivePanel)}
           onToggleSuggestions={() => setShowSuggestionsPanel(!showSuggestionsPanel)}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          canUndo={canUndo}
+          canRedo={canRedo}
         />
         
         <EditorTextarea
@@ -215,7 +293,7 @@ const EnhancedEditor = () => {
           content={currentDocument.content || ''}
           textBeforeCursor={textBeforeCursor}
           textAfterCursor={textAfterCursor}
-          onChange={handleContentChange}
+          onChange={handleContentChangeWithHistory}
           onTextSelection={handleTextSelectionWrapper}
           onTextCompletion={handleTextCompletion}
         />

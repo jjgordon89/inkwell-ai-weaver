@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Brain, Sidebar } from 'lucide-react';
+import { Brain, Sidebar, Undo, Redo } from 'lucide-react';
 
 interface EditorHeaderProps {
   title: string;
@@ -9,6 +9,10 @@ interface EditorHeaderProps {
   showProactivePanel: boolean;
   onToggleProactivePanel: () => void;
   onToggleSuggestions?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
 }
 
 const EditorHeader: React.FC<EditorHeaderProps> = ({
@@ -16,11 +20,41 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
   suggestionsCount,
   showProactivePanel,
   onToggleProactivePanel,
-  onToggleSuggestions
+  onToggleSuggestions,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false
 }) => {
   return (
     <div className="p-4 border-b flex justify-between items-center">
-      <h2 className="text-xl font-bold">{title}</h2>
+      <div className="flex items-center gap-2">
+        <h2 className="text-xl font-bold">{title}</h2>
+        {(onUndo || onRedo) && (
+          <div className="flex items-center gap-1 ml-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onUndo}
+              disabled={!canUndo}
+              className="h-7 px-2"
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onRedo}
+              disabled={!canRedo}
+              className="h-7 px-2"
+              title="Redo (Ctrl+Y)"
+            >
+              <Redo className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
+      </div>
       <div className="text-xs text-muted-foreground flex items-center gap-4">
         <span>Auto-save enabled</span>
         {suggestionsCount > 0 && onToggleSuggestions && (
