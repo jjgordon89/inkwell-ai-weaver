@@ -1,8 +1,9 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Database, Bot, Palette, Shield, User, Bell } from 'lucide-react';
+import { Settings, Database, Bot, Palette, Shield, User, Bell, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import DatabaseSettings from '@/components/settings/DatabaseSettings';
 import AISettingsPanel from '@/components/settings/AISettingsPanel';
 import AppearanceSettings from '@/components/settings/AppearanceSettings';
@@ -13,9 +14,17 @@ import NotificationSettings from '@/components/settings/NotificationSettings';
 const SettingsPage = () => {
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center gap-2 mb-6">
-        <Settings className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">Settings</h1>
+      <div className="flex items-center gap-4 mb-6">
+        <Link to="/studio">
+          <Button variant="ghost" size="sm" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+        </Link>
+        <div className="flex items-center gap-2">
+          <Settings className="h-6 w-6" />
+          <h1 className="text-2xl font-bold">Settings</h1>
+        </div>
       </div>
 
       <Tabs defaultValue="database" className="w-full">
