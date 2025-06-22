@@ -3,33 +3,19 @@ import React, { useRef, useCallback, useEffect, useState } from 'react';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useEditorState } from '@/hooks/useEditorState';
 import { useTextSelection } from '@/hooks/useTextSelection';
-import { useUndoRedo } from '@/hooks/useUndoRedo';
 import { useContextualAITriggers } from '@/hooks/useContextualAITriggers';
-import InlineAISuggestions from '@/components/ai/InlineAISuggestions';
-import AIAssistantOverlay from '@/components/ai/AIAssistantOverlay';
-import ProactiveWritingSupport from '@/components/ai/ProactiveWritingSupport';
-import SuggestionsPanel from '@/components/ai/SuggestionsPanel';
-import ContextualSuggestions from '@/components/ai/ContextualSuggestions';
-import EditorHeader from '@/components/editor/EditorHeader';
-import EditorTextarea, { EditorTextareaRef } from '@/components/editor/EditorTextarea';
-import EditorFooter from '@/components/editor/EditorFooter';
-import FloatingActionButtons from '@/components/editor/FloatingActionButtons';
-import EditorKeyboardHandler from '@/components/editor/EditorKeyboardHandler';
 import { useEditorContentHandler } from '@/components/editor/EditorContentHandler';
 import { useEditorActionHandlers } from '@/components/editor/EditorActionHandlers';
-
-interface ContextualSuggestion {
-  id: string;
-  type: 'writing_block' | 'character_dialogue' | 'structure' | 'general';
-  message: string;
-  priority: 'low' | 'medium' | 'high';
-  actionable?: boolean;
-}
+import { useContextualSuggestionsManager } from '@/hooks/useContextualSuggestionsManager';
+import { useEditorActionsManager } from '@/components/editor/EditorActionsManager';
+import EditorActionsManager from '@/components/editor/EditorActionsManager';
+import EditorMainLayout from '@/components/editor/EditorMainLayout';
+import EditorAIPanels from '@/components/editor/EditorAIPanels';
+import type { EditorTextareaRef } from '@/components/editor/EditorTextarea';
 
 const EditorContainer = () => {
   const textareaRef = useRef<EditorTextareaRef>(null);
   const [showSuggestionsPanel, setShowSuggestionsPanel] = useState(false);
-  const [contextualSuggestions, setContextualSuggestions] = useState<ContextualSuggestion[]>([]);
 
   const {
     currentDocument,
@@ -46,14 +32,6 @@ const EditorContainer = () => {
   } = useEditorState();
 
   const {
-    addToHistory,
-    undo,
-    redo,
-    canUndo,
-    canRedo
-  } = useUndoRedo(currentDocument?.content || '');
-
-  const {
     selectedText,
     selectionPosition,
     showInlineSuggestions,
@@ -62,34 +40,15 @@ const EditorContainer = () => {
     handleTextSelection
   } = useTextSelection();
 
+  const {
+    contextualSuggestions,
+    handleContextualSuggestion,
+    dismissContextualSuggestion,
+    setContextualSuggestions
+  } = useContextualSuggestionsManager();
+
   // Enable auto-save
   useAutoSave();
-
-  // Handle contextual AI suggestions with improved UX
-  const handleContextualSuggestion = useCallback((message: string, type: string) => {
-    const suggestion: ContextualSuggestion = {
-      id: `contextual-${Date.now()}-${Math.random()}`,
-      type: type.includes('writing_block') ? 'writing_block' : 
-            type.includes('character') ? 'character_dialogue' :
-            type.includes('structure') ? 'structure' : 'general',
-      message,
-      priority: type.includes('pause') ? 'high' : 'medium',
-      actionable: true
-    };
-    
-    setContextualSuggestions(prev => {
-      // Remove duplicates and keep only recent suggestions
-      const filtered = prev.filter(s => s.message !== message && s.type !== suggestion.type);
-      return [...filtered, suggestion].slice(-3); // Keep only 3 suggestions max
-    });
-
-    // Auto-dismiss low priority suggestions after 15 seconds
-    if (suggestion.priority !== 'high') {
-      setTimeout(() => {
-        setContextualSuggestions(prev => prev.filter(s => s.id !== suggestion.id));
-      }, 15000);
-    }
-  }, []);
 
   // Initialize contextual AI triggers
   const {
@@ -105,7 +64,9 @@ const EditorContainer = () => {
     handleApplyAISuggestion,
     handleTextCompletion
   } = useEditorContentHandler({
-    onAddToHistory: addToHistory,
+    onAddToHistory: (content: string, cursorPosition: number) => {
+      addToHistory(content, cursorPosition);
+    },
     textareaRef
   });
 
@@ -128,6 +89,19 @@ const EditorContainer = () => {
     textAfterCursor
   });
 
+  // Editor actions manager
+  const {
+    addToHistory,
+    handleUndo,
+    handleRedo,
+    canUndo,
+    canRedo
+  } = useEditorActionsManager({
+    currentDocument,
+    onContentChangeWithHistory: enhancedContentChangeHandler,
+    textareaRef
+  });
+
   // Create wrapper function for text selection handling
   const handleTextSelectionWrapper = useCallback(() => {
     if (textareaRef.current) {
@@ -136,7 +110,7 @@ const EditorContainer = () => {
   }, [handleTextSelection, setCursorPosition, setShowFloatingActions]);
 
   // Handle contextual suggestion actions
-  const handleApplyContextualSuggestion = useCallback(async (suggestion: ContextualSuggestion) => {
+  const handleApplyContextualSuggestion = useCallback(async (suggestion: any) => {
     if (suggestion.type === 'writing_block' && suggestion.message.includes('continue')) {
       await handleQuickAIAction('continue');
     } else if (suggestion.type === 'character_dialogue') {
@@ -150,48 +124,7 @@ const EditorContainer = () => {
     
     // Dismiss the suggestion after applying
     setContextualSuggestions(prev => prev.filter(s => s.id !== suggestion.id));
-  }, [handleQuickAIAction, handleApplyAISuggestion, dialogueContext.currentCharacter]);
-
-  // Dismiss contextual suggestions
-  const dismissContextualSuggestion = useCallback((id: string) => {
-    setContextualSuggestions(prev => prev.filter(s => s.id !== id));
-  }, []);
-
-  // Handle undo action
-  const handleUndo = useCallback(() => {
-    const previousState = undo();
-    if (previousState && textareaRef.current) {
-      const syntheticEvent = {
-        target: { 
-          value: previousState.content, 
-          selectionStart: previousState.cursorPosition 
-        }
-      } as React.ChangeEvent<HTMLTextAreaElement>;
-      enhancedContentChangeHandler(syntheticEvent);
-      
-      setTimeout(() => {
-        textareaRef.current?.setSelectionRange(previousState.cursorPosition, previousState.cursorPosition);
-      }, 0);
-    }
-  }, [undo, enhancedContentChangeHandler]);
-
-  // Handle redo action
-  const handleRedo = useCallback(() => {
-    const nextState = redo();
-    if (nextState && textareaRef.current) {
-      const syntheticEvent = {
-        target: { 
-          value: nextState.content, 
-          selectionStart: nextState.cursorPosition 
-        }
-      } as React.ChangeEvent<HTMLTextAreaElement>;
-      enhancedContentChangeHandler(syntheticEvent);
-      
-      setTimeout(() => {
-        textareaRef.current?.setSelectionRange(nextState.cursorPosition, nextState.cursorPosition);
-      }, 0);
-    }
-  }, [redo, enhancedContentChangeHandler]);
+  }, [handleQuickAIAction, handleApplyAISuggestion, dialogueContext.currentCharacter, setContextualSuggestions]);
 
   // Improved floating actions auto-hide
   useEffect(() => {
@@ -231,88 +164,54 @@ const EditorContainer = () => {
 
   return (
     <div className="h-full flex bg-background relative">
-      <EditorKeyboardHandler onUndo={handleUndo} onRedo={handleRedo} />
+      <EditorActionsManager onUndo={handleUndo} onRedo={handleRedo} />
       
       {/* Main Editor Area */}
-      <div className="flex-1 flex flex-col">
-        <EditorHeader
-          title={currentDocument.title}
-          suggestionsCount={suggestions.length}
-          showProactivePanel={showProactivePanel}
-          onToggleProactivePanel={() => setShowProactivePanel(!showProactivePanel)}
-          onToggleSuggestions={() => setShowSuggestionsPanel(!showSuggestionsPanel)}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          canUndo={canUndo}
-          canRedo={canRedo}
-        />
-        
-        <EditorTextarea
-          ref={textareaRef}
-          content={currentDocument.content || ''}
-          textBeforeCursor={textBeforeCursor}
-          textAfterCursor={textAfterCursor}
-          onChange={enhancedContentChangeHandler}
-          onTextSelection={handleTextSelectionWrapper}
-          onTextCompletion={handleTextCompletion}
-        />
-        
-        <FloatingActionButtons
-          show={showFloatingActions}
-          position={cursorPosition}
-          onContinue={() => handleQuickAIAction('continue')}
-          onImprove={() => handleQuickAIAction('improve')}
-        />
-        
-        <EditorFooter wordCount={currentDocument.wordCount || 0} />
-      </div>
-
-      {/* Contextual AI Suggestions - Now less intrusive */}
-      <ContextualSuggestions
-        suggestions={contextualSuggestions}
-        onDismiss={dismissContextualSuggestion}
-        onApplyAction={handleApplyContextualSuggestion}
-        isVisible={contextualSuggestions.length > 0}
-        position={cursorPosition}
-      />
-
-      {/* AI Suggestions Panel */}
-      <SuggestionsPanel
+      <EditorMainLayout
+        currentDocument={currentDocument}
+        textareaRef={textareaRef}
+        textBeforeCursor={textBeforeCursor}
+        textAfterCursor={textAfterCursor}
+        cursorPosition={cursorPosition}
+        showFloatingActions={showFloatingActions}
         suggestions={suggestions}
-        isVisible={showSuggestionsPanel}
-        onClose={() => setShowSuggestionsPanel(false)}
-        onApplySuggestion={handleApplySuggestionFromPanel}
-        onDismissSuggestion={(id) => suggestions.find(s => s.id === id) && handleApplySuggestionFromPanel(suggestions.find(s => s.id === id)!)}
+        showProactivePanel={showProactivePanel}
+        onToggleProactivePanel={() => setShowProactivePanel(!showProactivePanel)}
+        onToggleSuggestions={() => setShowSuggestionsPanel(!showSuggestionsPanel)}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onContentChange={enhancedContentChangeHandler}
+        onTextSelection={handleTextSelectionWrapper}
+        onTextCompletion={handleTextCompletion}
+        onQuickAIAction={handleQuickAIAction}
       />
 
-      {/* Proactive Writing Support Panel */}
-      {showProactivePanel && (
-        <div className="w-80 border-l bg-background/50 backdrop-blur-sm overflow-y-auto">
-          <div className="p-4">
-            <ProactiveWritingSupport
-              isEnabled={proactiveEnabled}
-              onToggle={() => setProactiveEnabled(!proactiveEnabled)}
-            />
-          </div>
-        </div>
-      )}
-      
-      {/* Inline AI Suggestions for Selected Text */}
-      {showInlineSuggestions && selectedText && (
-        <InlineAISuggestions
-          selectedText={selectedText}
-          onApply={handleApplyAISuggestion}
-          onDismiss={() => {
-            setShowInlineSuggestions(false);
-            setSelectedText('');
-          }}
-          position={selectionPosition}
-          documentContent={currentDocument.content || ''}
-        />
-      )}
-      
-      {/* AI Assistant Overlay */}
-      <AIAssistantOverlay />
+      {/* AI Panels and Overlays */}
+      <EditorAIPanels
+        contextualSuggestions={contextualSuggestions}
+        cursorPosition={cursorPosition}
+        onDismissContextualSuggestion={dismissContextualSuggestion}
+        onApplyContextualSuggestion={handleApplyContextualSuggestion}
+        suggestions={suggestions}
+        showSuggestionsPanel={showSuggestionsPanel}
+        onCloseSuggestionsPanel={() => setShowSuggestionsPanel(false)}
+        onApplySuggestionFromPanel={handleApplySuggestionFromPanel}
+        showProactivePanel={showProactivePanel}
+        proactiveEnabled={proactiveEnabled}
+        onToggleProactive={() => setProactiveEnabled(!proactiveEnabled)}
+        showInlineSuggestions={showInlineSuggestions}
+        selectedText={selectedText}
+        selectionPosition={selectionPosition}
+        currentDocument={currentDocument}
+        onApplyAISuggestion={handleApplyAISuggestion}
+        onDismissInlineSuggestions={() => {
+          setShowInlineSuggestions(false);
+          setSelectedText('');
+        }}
+        setSelectedText={setSelectedText}
+      />
     </div>
   );
 };
