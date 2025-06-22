@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -7,9 +7,11 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Bell, Mail, MessageSquare, Award } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useDatabase } from '@/hooks/useDatabase';
 
 const NotificationSettings = () => {
   const { toast } = useToast();
+  const { getSetting, setSetting, isInitialized } = useDatabase();
   const [settings, setSettings] = useState({
     emailNotifications: true,
     pushNotifications: false,
@@ -18,12 +20,72 @@ const NotificationSettings = () => {
     collaborationUpdates: false,
     reminderTime: '09:00'
   });
+  const [loading, setLoading] = useState(false);
 
-  const handleSave = () => {
-    toast({
-      title: "Notification Settings Updated",
-      description: "Your notification preferences have been saved."
-    });
+  useEffect(() => {
+    const loadSettings = async () => {
+      if (!isInitialized) return;
+      
+      try {
+        const [email, push, writing, milestone, collaboration, time] = await Promise.all([
+          getSetting('notifications_email'),
+          getSetting('notifications_push'),
+          getSetting('notifications_writing_reminders'),
+          getSetting('notifications_milestone_alerts'),
+          getSetting('notifications_collaboration'),
+          getSetting('notifications_reminder_time')
+        ]);
+
+        setSettings({
+          emailNotifications: email === 'true',
+          pushNotifications: push === 'true',
+          writingReminders: writing !== 'false', // default to true
+          milestoneAlerts: milestone !== 'false', // default to true
+          collaborationUpdates: collaboration === 'true',
+          reminderTime: time || '09:00'
+        });
+      } catch (error) {
+        console.error('Failed to load notification settings:', error);
+      }
+    };
+
+    loadSettings();
+  }, [isInitialized, getSetting]);
+
+  const handleSave = async () => {
+    if (!isInitialized) {
+      toast({
+        title: "Error",
+        description: "Database not initialized",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await Promise.all([
+        setSetting('notifications_email', settings.emailNotifications.toString(), 'notifications'),
+        setSetting('notifications_push', settings.pushNotifications.toString(), 'notifications'),
+        setSetting('notifications_writing_reminders', settings.writingReminders.toString(), 'notifications'),
+        setSetting('notifications_milestone_alerts', settings.milestoneAlerts.toString(), 'notifications'),
+        setSetting('notifications_collaboration', settings.collaborationUpdates.toString(), 'notifications'),
+        setSetting('notifications_reminder_time', settings.reminderTime, 'notifications')
+      ]);
+
+      toast({
+        title: "Notification Settings Updated",
+        description: "Your notification preferences have been saved."
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save notification settings",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateSetting = (key: keyof typeof settings, value: any) => {
@@ -119,8 +181,8 @@ const NotificationSettings = () => {
           </div>
         )}
 
-        <Button onClick={handleSave} className="w-full">
-          Save Notification Settings
+        <Button onClick={handleSave} className="w-full" disabled={loading}>
+          {loading ? 'Saving...' : 'Save Notification Settings'}
         </Button>
       </CardContent>
     </Card>
