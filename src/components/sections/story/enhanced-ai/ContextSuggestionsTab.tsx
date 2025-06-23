@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Target, Loader2, Plus } from 'lucide-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Target, Loader2, Plus, AlertCircle } from 'lucide-react';
 
 interface ContextSuggestionsTabProps {
   suggestions: string[];
@@ -9,6 +10,7 @@ interface ContextSuggestionsTabProps {
   onApplySuggestion: (suggestion: string) => void;
   isProcessing: boolean;
   hasDocument: boolean;
+  error?: string;
 }
 
 const ContextSuggestionsTab: React.FC<ContextSuggestionsTabProps> = ({
@@ -16,7 +18,8 @@ const ContextSuggestionsTab: React.FC<ContextSuggestionsTabProps> = ({
   onGenerateSuggestions,
   onApplySuggestion,
   isProcessing,
-  hasDocument
+  hasDocument,
+  error
 }) => {
   return (
     <div className="space-y-3">
@@ -30,10 +33,28 @@ const ContextSuggestionsTab: React.FC<ContextSuggestionsTabProps> = ({
         ) : (
           <Target className="h-4 w-4 mr-2" />
         )}
-        Generate Context-Aware Suggestions
+        {isProcessing ? 'Generating...' : 'Generate Context-Aware Suggestions'}
       </Button>
       
-      {suggestions.length > 0 && (
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-sm">
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {isProcessing && (
+        <div className="flex items-center justify-center py-6">
+          <div className="text-center">
+            <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Analyzing your content...</p>
+          </div>
+        </div>
+      )}
+      
+      {suggestions.length > 0 && !isProcessing && (
         <div className="space-y-2">
           <h4 className="text-sm font-medium">Context-Aware Suggestions</h4>
           {suggestions.map((suggestion, index) => (
