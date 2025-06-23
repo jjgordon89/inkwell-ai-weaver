@@ -1,4 +1,3 @@
-
 export interface AIProvider {
   name: string;
   models: string[];

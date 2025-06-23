@@ -1,4 +1,3 @@
-
 import { AIAction, AIProvider } from './types';
 
 export const getPromptForAction = (action: AIAction, text: string): string => {
@@ -87,6 +86,70 @@ Engagement: 82`;
     default:
       return text;
   }
+};
+
+const makeCustomOpenAICompatibleRequest = async (
+  provider: AIProvider, 
+  apiKey: string, 
+  selectedModel: string, 
+  prompt: string, 
+  action: AIAction
+): Promise<string | null> => {
+  // Get custom endpoint from localStorage
+  const customEndpoint = localStorage.getItem('custom-openai-endpoint');
+  const customModels = localStorage.getItem('custom-openai-models');
+  
+  if (!customEndpoint) {
+    console.warn('No custom endpoint configured');
+    return null;
+  }
+
+  const parsedModels = customModels ? JSON.parse(customModels) : [];
+  if (parsedModels.length === 0) {
+    console.warn('No custom models configured');
+    return null;
+  }
+
+  // Use the first available model or the selected model if it exists
+  const modelToUse = parsedModels.includes(selectedModel) ? selectedModel : parsedModels[0];
+
+  const requestBody = {
+    model: modelToUse,
+    messages: [
+      {
+        role: 'system',
+        content: 'You are a helpful writing assistant. Follow the user\'s instructions precisely.'
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ],
+    max_tokens: 1000,
+    temperature: action === 'fix-grammar' ? 0.1 : 0.7
+  };
+
+  try {
+    const response = await fetch(customEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content || null;
+    } else {
+      console.warn(`Custom endpoint error: ${response.status} ${response.statusText}`);
+    }
+  } catch (error) {
+    console.warn(`Custom endpoint API error:`, error);
+  }
+
+  return null;
 };
 
 const makeGeminiAPIRequest = async (
@@ -277,10 +340,13 @@ export const makeAPIRequest = async (
   prompt: string, 
   action: AIAction
 ): Promise<string | null> => {
-  if (!provider.apiEndpoint) return null;
+  if (!provider.apiEndpoint && provider.name !== 'Custom OpenAI Compatible') return null;
 
   // Handle different provider types
   switch (provider.name) {
+    case 'Custom OpenAI Compatible':
+      return makeCustomOpenAICompatibleRequest(provider, apiKey, selectedModel, prompt, action);
+    
     case 'Google Gemini':
       return makeGeminiAPIRequest(provider, apiKey, selectedModel, prompt, action);
     
