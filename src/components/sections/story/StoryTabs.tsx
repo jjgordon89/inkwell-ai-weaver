@@ -9,17 +9,19 @@ import DocumentOutline from '@/components/sections/story/DocumentOutline';
 import ChapterManagement from '@/components/sections/story/ChapterManagement';
 import SmartNavigationPanel from './SmartNavigationPanel';
 import AdaptiveLearningPanel from './AdaptiveLearningPanel';
+import AdvancedWritingIntelligence from './AdvancedWritingIntelligence';
 
 const StoryTabs = () => {
   const [activeTab, setActiveTab] = useState("editor");
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-      <TabsList className="grid w-full grid-cols-8">
+      <TabsList className="grid w-full grid-cols-9">
         <TabsTrigger value="editor">Editor</TabsTrigger>
         <TabsTrigger value="structure">Structure</TabsTrigger>
         <TabsTrigger value="ai-writing">AI Writing</TabsTrigger>
         <TabsTrigger value="enhanced-ai">Enhanced AI</TabsTrigger>
+        <TabsTrigger value="intelligence">Intelligence</TabsTrigger>
         <TabsTrigger value="smart-navigation">Navigation</TabsTrigger>
         <TabsTrigger value="adaptive">Learning</TabsTrigger>
         <TabsTrigger value="outline">Outline</TabsTrigger>
@@ -41,6 +43,10 @@ const StoryTabs = () => {
 
         <TabsContent value="enhanced-ai" className="mt-0 h-full">
           <EnhancedAIPanel />
+        </TabsContent>
+
+        <TabsContent value="intelligence" className="mt-0 h-full">
+          <AdvancedWritingIntelligence />
         </TabsContent>
 
         <TabsContent value="smart-navigation" className="mt-0 h-full">
