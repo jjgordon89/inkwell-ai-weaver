@@ -1,256 +1,53 @@
 
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useAIContext } from '@/contexts/AIContext';
 import { AI_PROVIDERS } from './constants';
-import { DatabaseAIStorage } from '@/lib/databaseAIStorage';
-import { makeAPIRequest, performMockTextProcessing, getPromptForAction } from './textProcessing';
-import { validateAIInput, validateAIResponse } from '@/hooks/ai/aiUtils';
-import { testProviderConnection } from './connectionTest';
-import type { AIAction as ProcessingAction, AIProvider } from './types';
+import { useInitialState } from './useInitialState';
+import { useSettingsPersistence } from './useSettingsPersistence';
+import { useCacheOperations } from './useCacheOperations';
+import { useProviderOperations } from './useProviderOperations';
+import { useTextProcessingOperations } from './useTextProcessingOperations';
+import type { AIAction as ProcessingAction } from './types';
 
 export const useAIOperations = () => {
   const { state, dispatch } = useAIContext();
 
   // Load initial settings
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const settings = await DatabaseAIStorage.loadAISettings();
-        dispatch({
-          type: 'LOAD_INITIAL_STATE',
-          payload: {
-            selectedProvider: settings.selectedProvider || 'OpenAI',
-            selectedModel: settings.selectedModel || 'gpt-4.1-2025-04-14',
-            apiKeys: settings.apiKeys,
-            availableProviders: AI_PROVIDERS
-          }
-        });
-      } catch (error) {
-        console.error('Failed to load AI settings from database:', error);
-        dispatch({
-          type: 'LOAD_INITIAL_STATE',
-          payload: {
-            selectedProvider: 'OpenAI',
-            selectedModel: 'gpt-4.1-2025-04-14',
-            apiKeys: {},
-            availableProviders: AI_PROVIDERS
-          }
-        });
-      }
-    };
+  useInitialState(dispatch);
 
-    loadSettings();
-  }, [dispatch]);
+  // Handle settings persistence
+  useSettingsPersistence(state);
 
-  // Save settings when they change
-  useEffect(() => {
-    const saveSettings = async () => {
-      try {
-        await DatabaseAIStorage.saveSelectedProvider(state.selectedProvider);
-        await DatabaseAIStorage.saveSelectedModel(state.selectedModel);
-        await DatabaseAIStorage.saveApiKeys(state.apiKeys);
-      } catch (error) {
-        console.error('Failed to save AI settings to database:', error);
-      }
-    };
-
-    if (state.selectedProvider) {
-      saveSettings();
-    }
-  }, [state.selectedProvider, state.selectedModel, state.apiKeys]);
-
-  // Auto-update model when provider changes
-  useEffect(() => {
-    const currentProvider = AI_PROVIDERS.find(p => p.name === state.selectedProvider);
-    if (currentProvider && currentProvider.models.length > 0) {
-      if (!currentProvider.models.includes(state.selectedModel)) {
-        console.log(`Auto-switching model from ${state.selectedModel} to ${currentProvider.models[0]} for provider ${state.selectedProvider}`);
-        dispatch({ type: 'SET_MODEL', payload: currentProvider.models[0] });
-      }
-    }
-  }, [state.selectedProvider, state.selectedModel, dispatch]);
-
-  // Cache management
-  const getCachedResult = useCallback((key: string): string | null => {
-    if (!state.settings.cacheEnabled) return null;
-    
-    const cached = state.resultsCache.get(key);
-    if (!cached) return null;
-    
-    const isExpired = Date.now() - cached.timestamp > state.settings.cacheExpiryMs;
-    if (isExpired) {
-      dispatch({ type: 'CLEAR_CACHE' });
-      return null;
-    }
-    
-    return cached.result;
-  }, [state.resultsCache, state.settings.cacheEnabled, state.settings.cacheExpiryMs, dispatch]);
-
-  const cacheResult = useCallback((key: string, result: string) => {
-    if (state.settings.cacheEnabled) {
-      dispatch({ type: 'CACHE_RESULT', payload: { key, result } });
-    }
-  }, [state.settings.cacheEnabled, dispatch]);
+  // Cache operations
+  const { getCachedResult, cacheResult } = useCacheOperations(state, dispatch);
 
   // Provider operations
-  const setProvider = useCallback((provider: string) => {
-    console.log(`Provider changed from ${state.selectedProvider} to ${provider}`);
-    dispatch({ type: 'SET_PROVIDER', payload: provider });
-  }, [state.selectedProvider, dispatch]);
+  const {
+    setProvider,
+    setModel,
+    setApiKey,
+    testConnection,
+    getCurrentProviderInfo,
+    isCurrentProviderConfigured
+  } = useProviderOperations(state, dispatch);
 
-  const setModel = useCallback((model: string) => {
-    dispatch({ type: 'SET_MODEL', payload: model });
-  }, [dispatch]);
-
-  const setApiKey = useCallback((provider: string, key: string) => {
-    dispatch({ type: 'SET_API_KEY', payload: { provider, key: key.trim() } });
-  }, [dispatch]);
-
-  // Connection testing
-  const testConnection = useCallback(async (providerName: string): Promise<boolean> => {
-    dispatch({ type: 'SET_TESTING_CONNECTION', payload: true });
-    
-    try {
-      const provider = AI_PROVIDERS.find(p => p.name === providerName);
-      if (!provider) {
-        throw new Error(`Provider ${providerName} not found`);
-      }
-      
-      const apiKey = state.apiKeys[providerName];
-      if (!apiKey && provider.requiresApiKey) {
-        throw new Error(`API key required for ${providerName}`);
-      }
-      
-      const result = await testProviderConnection(provider, apiKey || '');
-      return result;
-    } catch (error) {
-      dispatch({ 
-        type: 'SET_ERROR', 
-        payload: { 
-          error: error instanceof Error ? error : new Error('Connection test failed'),
-          operation: 'test connection'
-        }
-      });
-      return false;
-    } finally {
-      dispatch({ type: 'SET_TESTING_CONNECTION', payload: false });
-    }
-  }, [state.apiKeys, dispatch]);
-
-  // Text processing
-  const processText = useCallback(async (
-    text: string,
-    action: ProcessingAction
-  ): Promise<string> => {
-    try {
-      validateAIInput(text, 'text processing');
-      
-      const cacheKey = `${state.selectedProvider}-${state.selectedModel}-${action}-${text.slice(0, 100)}`;
-      const cached = getCachedResult(cacheKey);
-      if (cached) {
-        console.log('Using cached result for text processing');
-        return cached;
-      }
-
-      const currentProvider = AI_PROVIDERS.find(p => p.name === state.selectedProvider);
-      if (!currentProvider) {
-        throw new Error(`Invalid provider: ${state.selectedProvider}`);
-      }
-
-      if (currentProvider.requiresApiKey && !state.apiKeys[state.selectedProvider]) {
-        throw new Error(`API key required for ${state.selectedProvider}. Please add your API key in the settings.`);
-      }
-
-      console.log(`Processing text with ${state.selectedProvider} (${state.selectedModel}) - Action: ${action}`);
-      dispatch({ type: 'SET_PROCESSING', payload: true });
-
-      let result: string;
-
-      // Try real API if available and configured
-      const canUseAPI = currentProvider.apiEndpoint && 
-        (!currentProvider.requiresApiKey || state.apiKeys[state.selectedProvider]);
-
-      if (canUseAPI) {
-        console.log(`Using real API for ${state.selectedProvider}`);
-        
-        const prompt = getPromptForAction(action, text);
-        const apiResult = await makeAPIRequest(
-          currentProvider, 
-          state.apiKeys[state.selectedProvider] || '', 
-          state.selectedModel, 
-          prompt, 
-          action
-        );
-        
-        if (apiResult) {
-          const validation = validateAIResponse(apiResult);
-          if (!validation.isValid) {
-            console.warn('API response validation failed:', validation.errors);
-            throw new Error(`Invalid API response: ${validation.errors.join(', ')}`);
-          }
-          result = apiResult;
-          console.log(`✅ Real AI processing completed successfully with ${state.selectedProvider}`);
-        } else {
-          console.warn(`API call failed, falling back to mock processing`);
-          result = await performMockTextProcessing(text, action, state.selectedModel);
-        }
-      } else {
-        console.log(`Using mock processing for ${state.selectedProvider} (API not available or not configured)`);
-        result = await performMockTextProcessing(text, action, state.selectedModel);
-      }
-
-      cacheResult(cacheKey, result);
-      console.log(`✅ Text processing completed successfully`);
-      return result;
-    } catch (error) {
-      console.error('❌ Text processing failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      dispatch({ 
-        type: 'SET_ERROR', 
-        payload: { 
-          error: new Error(`Failed to process text: ${errorMessage}`),
-          operation: 'text processing'
-        }
-      });
-      throw error;
-    } finally {
-      dispatch({ type: 'SET_PROCESSING', payload: false });
-    }
-  }, [
-    state.selectedProvider, 
-    state.selectedModel, 
-    state.apiKeys, 
-    getCachedResult, 
-    cacheResult, 
-    dispatch
-  ]);
+  // Text processing operations
+  const { processText } = useTextProcessingOperations(
+    state,
+    dispatch,
+    getCachedResult,
+    cacheResult
+  );
 
   // Settings management
   const updateSettings = useCallback((newSettings: Partial<typeof state.settings>) => {
     dispatch({ type: 'UPDATE_SETTINGS', payload: newSettings });
-    
-    const settingsToSave = { ...state.settings, ...newSettings };
-    localStorage.setItem('ai-configuration', JSON.stringify(settingsToSave));
-  }, [state.settings, dispatch]);
+  }, [dispatch]);
 
   // Error management
   const clearError = useCallback(() => {
     dispatch({ type: 'CLEAR_ERROR' });
   }, [dispatch]);
-
-  // Helper functions
-  const getCurrentProviderInfo = useCallback(() => {
-    return AI_PROVIDERS.find(p => p.name === state.selectedProvider);
-  }, [state.selectedProvider]);
-
-  const isCurrentProviderConfigured = useCallback(() => {
-    const provider = getCurrentProviderInfo();
-    if (!provider) return false;
-    if (provider.requiresApiKey) {
-      return !!state.apiKeys[state.selectedProvider];
-    }
-    return true;
-  }, [getCurrentProviderInfo, state.apiKeys, state.selectedProvider]);
 
   return {
     // State
