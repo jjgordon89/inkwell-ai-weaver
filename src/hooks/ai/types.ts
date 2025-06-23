@@ -1,3 +1,4 @@
+
 export interface AIProvider {
   name: string;
   models: string[];
@@ -7,7 +8,7 @@ export interface AIProvider {
   defaultPort?: number;
   description?: string;
   setupInstructions?: string;
-  customEndpoint?: boolean; // Indicates if user can customize the endpoint
+  customEndpoint?: string; // For user-specified endpoints
 }
 
 export type AIAction = 

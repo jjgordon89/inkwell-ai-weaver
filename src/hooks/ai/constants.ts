@@ -245,14 +245,6 @@ export const AI_PROVIDERS: AIProvider[] = [
     type: 'cloud'
   },
   {
-    name: 'Custom OpenAI Compatible',
-    models: ['custom-model'], // Will be updated by user
-    requiresApiKey: true,
-    apiEndpoint: 'https://api.your-provider.com/v1/chat/completions', // Will be updated by user
-    type: 'cloud',
-    customEndpoint: true
-  },
-  {
     name: 'Ollama',
     models: [], // Will be populated dynamically
     requiresApiKey: false,

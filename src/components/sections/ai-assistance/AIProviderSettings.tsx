@@ -9,7 +9,6 @@ import { useLocalModels } from '@/hooks/ai/useLocalModels';
 import ProviderSelector from './ProviderSelector';
 import ProviderDetails from './ProviderDetails';
 import ApiKeyInput from './ApiKeyInput';
-import CustomEndpointConfig from './CustomEndpointConfig';
 import LocalModelManager from '@/components/ai/LocalModelManager';
 import LocalProviderStatus from '@/components/ai/LocalProviderStatus';
 
@@ -77,8 +76,7 @@ const AIProviderSettings = () => {
           Choose your preferred AI provider for text processing and suggestions.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <ProviderSelector
+      <CardContent className="space-y-4">        <ProviderSelector
           selectedProvider={selectedProvider}
           availableProviders={availableProviders}
           onProviderChange={handleProviderChange}
@@ -92,13 +90,6 @@ const AIProviderSettings = () => {
               provider={currentProvider}
               providerJustChanged={providerJustChanged}
             />
-
-            {/* Custom Endpoint Configuration for OpenAI Compatible providers */}
-            {currentProvider.customEndpoint && (
-              <div className="mt-4">
-                <CustomEndpointConfig />
-              </div>
-            )}
 
             {/* Local Provider Status and Model Manager for local providers */}
             {currentProvider.type === 'local' && (
@@ -115,8 +106,8 @@ const AIProviderSettings = () => {
               </div>
             )}
 
-            {/* API Key Input for providers that require it (excluding custom providers) */}
-            {currentProvider.requiresApiKey && !currentProvider.customEndpoint && (
+            {/* API Key Input for providers that require it */}
+            {currentProvider.requiresApiKey && (
               <ApiKeyInput
                 provider={currentProvider}
                 apiKey={apiKeys[currentProvider.name] || ''}
