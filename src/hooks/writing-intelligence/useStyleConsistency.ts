@@ -94,7 +94,7 @@ Suggestion: [suggestion]
       });
 
       return issues;
-    }, 'analyze style consistency');
+    }, 'analyze style consistency') || [];
   };
 
   const buildStyleProfile = async (content: string): Promise<StyleProfile | null> => {
@@ -155,7 +155,7 @@ Patterns: [pattern1], [pattern2], [pattern3]`;
       const issues = await analyzeStyleConsistency(content);
       const profile = await buildStyleProfile(content);
       
-      if (issues) setConsistencyIssues(issues);
+      setConsistencyIssues(issues);
       if (profile) setStyleProfile(profile);
     }, 2000);
 

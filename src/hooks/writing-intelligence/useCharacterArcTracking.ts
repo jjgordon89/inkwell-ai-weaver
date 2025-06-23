@@ -90,7 +90,7 @@ Consistency: [score]`;
       }
 
       return arcs;
-    }, 'analyze character arcs');
+    }, 'analyze character arcs') || [];
   };
 
   const generateArcInsights = async (): Promise<CharacterArcInsight[]> => {
@@ -139,18 +139,14 @@ Consistency: [score]`;
       });
 
       return insights;
-    }, 'generate arc insights');
+    }, 'generate arc insights') || [];
   };
 
   const trackCharacterArcs = async () => {
     const arcs = await analyzeCharacterArcs();
-    if (arcs) {
-      setCharacterArcs(arcs);
-      const insights = await generateArcInsights();
-      if (insights) {
-        setArcInsights(insights);
-      }
-    }
+    setCharacterArcs(arcs);
+    const insights = await generateArcInsights();
+    setArcInsights(insights);
   };
 
   const dismissInsight = (id: string) => {

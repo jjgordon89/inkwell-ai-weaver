@@ -91,14 +91,12 @@ Suggestions: [suggestion1] | [suggestion2] | [suggestion3]
       });
 
       return holes;
-    }, 'detect plot holes');
+    }, 'detect plot holes') || [];
   };
 
   const runPlotHoleDetection = async () => {
     const holes = await detectPlotHoles();
-    if (holes) {
-      setPlotHoles(holes);
-    }
+    setPlotHoles(holes);
   };
 
   const dismissPlotHole = (id: string) => {
