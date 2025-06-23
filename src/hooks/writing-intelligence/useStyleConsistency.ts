@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAI } from '@/hooks/useAI';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
@@ -34,7 +33,7 @@ export const useStyleConsistency = () => {
   const [isMonitoring, setIsMonitoring] = useState(false);
 
   const analyzeStyleConsistency = async (content: string): Promise<StyleConsistencyIssue[]> => {
-    return execute(async () => {
+    const result = await execute(async () => {
       if (!content || content.length < 500) return [];
 
       const prompt = `Analyze this text for style consistency issues:
@@ -94,7 +93,9 @@ Suggestion: [suggestion]
       });
 
       return issues;
-    }, 'analyze style consistency') || [];
+    }, 'analyze style consistency');
+
+    return result || [];
   };
 
   const buildStyleProfile = async (content: string): Promise<StyleProfile | null> => {

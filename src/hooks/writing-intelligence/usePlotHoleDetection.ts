@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAI } from '@/hooks/useAI';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
@@ -22,7 +21,7 @@ export const usePlotHoleDetection = () => {
   const [plotHoles, setPlotHoles] = useState<PlotHole[]>([]);
 
   const detectPlotHoles = async (): Promise<PlotHole[]> => {
-    return execute(async () => {
+    const result = await execute(async () => {
       if (!state.currentDocument?.content) return [];
 
       const content = state.currentDocument.content;
@@ -91,7 +90,9 @@ Suggestions: [suggestion1] | [suggestion2] | [suggestion3]
       });
 
       return holes;
-    }, 'detect plot holes') || [];
+    }, 'detect plot holes');
+
+    return result || [];
   };
 
   const runPlotHoleDetection = async () => {

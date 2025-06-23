@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAI } from '@/hooks/useAI';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
@@ -33,7 +32,7 @@ export const useCharacterArcTracking = () => {
   const [arcInsights, setArcInsights] = useState<CharacterArcInsight[]>([]);
 
   const analyzeCharacterArcs = async (): Promise<CharacterArcProgress[]> => {
-    return execute(async () => {
+    const result = await execute(async () => {
       if (!state.currentDocument?.content || state.characters.length === 0) return [];
 
       const content = state.currentDocument.content;
@@ -90,11 +89,13 @@ Consistency: [score]`;
       }
 
       return arcs;
-    }, 'analyze character arcs') || [];
+    }, 'analyze character arcs');
+
+    return result || [];
   };
 
   const generateArcInsights = async (): Promise<CharacterArcInsight[]> => {
-    return execute(async () => {
+    const result = await execute(async () => {
       if (characterArcs.length === 0) return [];
 
       const insights: CharacterArcInsight[] = [];
@@ -139,7 +140,9 @@ Consistency: [score]`;
       });
 
       return insights;
-    }, 'generate arc insights') || [];
+    }, 'generate arc insights');
+
+    return result || [];
   };
 
   const trackCharacterArcs = async () => {
