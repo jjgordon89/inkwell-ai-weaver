@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,35 +17,53 @@ const AIModelSettings = () => {
   const availableModels = currentProvider?.models || [];
 
   const getModelIcon = (modelName: string) => {
-    if (modelName.includes('gpt-4') || modelName.includes('claude-opus') || modelName.includes('o3')) {
+    if (modelName.includes('gpt-4') || modelName.includes('claude-opus') || modelName.includes('o3') || modelName.includes('gemini-2.0')) {
       return <Crown className="h-4 w-4 text-yellow-500" />;
     }
-    if (modelName.includes('turbo') || modelName.includes('haiku') || modelName.includes('mini')) {
+    if (modelName.includes('turbo') || modelName.includes('haiku') || modelName.includes('mini') || modelName.includes('flash')) {
       return <Zap className="h-4 w-4 text-blue-500" />;
     }
     return <Brain className="h-4 w-4 text-gray-500" />;
   };
 
   const getModelBadge = (modelName: string) => {
-    if (modelName.includes('gpt-4.1') || modelName.includes('claude-opus-4') || modelName.includes('o3')) {
+    if (modelName.includes('gpt-4.1') || modelName.includes('claude-opus-4') || modelName.includes('o3') || modelName.includes('gemini-2.0') || modelName.includes('exp')) {
       return <Badge variant="default" className="bg-yellow-100 text-yellow-800">Premium</Badge>;
     }
-    if (modelName.includes('turbo') || modelName.includes('haiku') || modelName.includes('mini')) {
+    if (modelName.includes('turbo') || modelName.includes('haiku') || modelName.includes('mini') || modelName.includes('flash')) {
       return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Fast</Badge>;
     }
     return <Badge variant="outline">Standard</Badge>;
   };
 
   const getModelDescription = (modelName: string) => {
+    // OpenAI models
     if (modelName.includes('gpt-4.1')) return 'OpenAI\'s flagship model with superior performance';
     if (modelName.includes('o3')) return 'Advanced reasoning model for complex problems';
     if (modelName.includes('o4-mini')) return 'Fast reasoning model optimized for efficiency';
+    
+    // Claude models
     if (modelName.includes('claude-opus-4')) return 'Anthropic\'s most capable model with superior reasoning';
     if (modelName.includes('claude-sonnet-4')) return 'High-performance model with exceptional reasoning';
     if (modelName.includes('haiku')) return 'Fastest Claude model for quick responses';
-    if (modelName.includes('gemini-pro')) return 'Google\'s multimodal AI model';
+    
+    // Gemini models
+    if (modelName.includes('gemini-2.0-flash-exp')) return 'Google\'s latest experimental Gemini 2.0 with flash speed';
+    if (modelName.includes('gemini-exp-1206')) return 'Experimental Gemini model with enhanced capabilities';
+    if (modelName.includes('gemini-1.5-pro-002')) return 'Latest Gemini Pro with improved performance and accuracy';
+    if (modelName.includes('gemini-1.5-pro-001')) return 'Gemini Pro with advanced multimodal capabilities';
+    if (modelName.includes('gemini-1.5-pro')) return 'Google\'s flagship multimodal AI with 1M+ token context';
+    if (modelName.includes('gemini-1.5-flash-002')) return 'Fastest Gemini model with enhanced speed and efficiency';
+    if (modelName.includes('gemini-1.5-flash-001')) return 'High-speed Gemini model for quick responses';
+    if (modelName.includes('gemini-1.5-flash-8b')) return 'Lightweight Gemini model optimized for speed';
+    if (modelName.includes('gemini-1.5-flash')) return 'Fast and efficient Gemini model for rapid processing';
+    if (modelName.includes('gemini-pro-vision')) return 'Gemini Pro with advanced vision capabilities';
+    if (modelName.includes('gemini-pro')) return 'Google\'s multimodal AI model with text and vision';
+    
+    // Other models
     if (modelName.includes('llama')) return 'Meta\'s open-source language model';
     if (modelName.includes('mixtral')) return 'Mistral\'s mixture of experts model';
+    
     return 'AI language model for text generation and analysis';
   };
 
