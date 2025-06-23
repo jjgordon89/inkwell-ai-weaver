@@ -8,6 +8,7 @@ import { useWriting } from '@/contexts/WritingContext';
 import OneClickActions from '@/components/ai/OneClickActions';
 import BatchProcessor from '@/components/ai/BatchProcessor';
 import ContextAwareAIPanel from '@/components/ai/ContextAwareAIPanel';
+import AIPoweredTemplates from '@/components/ai/AIPoweredTemplates';
 
 interface WorkflowAIIntegrationProps {
   selectedText?: string;
@@ -22,7 +23,7 @@ const WorkflowAIIntegration: React.FC<WorkflowAIIntegrationProps> = ({
 }) => {
   const { state } = useWriting();
   const [isExpanded, setIsExpanded] = useState(false);
-  const [activeTab, setActiveTab] = useState<'context' | 'actions' | 'batch'>('context');
+  const [activeTab, setActiveTab] = useState<'context' | 'actions' | 'batch' | 'templates'>('context');
 
   if (!isVisible) return null;
 
@@ -113,6 +114,14 @@ const WorkflowAIIntegration: React.FC<WorkflowAIIntegrationProps> = ({
                   </Badge>
                 )}
               </Button>
+              <Button
+                variant={activeTab === 'templates' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('templates')}
+                className="h-6 px-2 text-xs"
+              >
+                Templates
+              </Button>
             </div>
           </div>
 
@@ -132,6 +141,8 @@ const WorkflowAIIntegration: React.FC<WorkflowAIIntegrationProps> = ({
                 <p className="text-xs">No suggestions available for batch processing</p>
               </div>
             )}
+
+            {activeTab === 'templates' && <AIPoweredTemplates />}
           </div>
         </Card>
       )}

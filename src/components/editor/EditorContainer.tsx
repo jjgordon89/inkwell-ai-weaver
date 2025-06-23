@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect, useState } from 'react';
-import { useAutoSave } from '@/hooks/useAutoSave';
+import { useSmartAutoSave } from '@/hooks/useSmartAutoSave';
 import { useEditorState } from '@/hooks/useEditorState';
 import { useTextSelection } from '@/hooks/useTextSelection';
 import { useContextualAITriggers } from '@/hooks/useContextualAITriggers';
@@ -46,8 +46,8 @@ const EditorContainer = () => {
     setContextualSuggestions
   } = useContextualSuggestionsManager();
 
-  // Enable auto-save
-  useAutoSave();
+  // Enable smart auto-save
+  const { lastSave, saveHistory } = useSmartAutoSave();
 
   // Enhanced contextual AI triggers with intelligent assistance
   const {
@@ -220,6 +220,18 @@ const EditorContainer = () => {
         }}
         setSelectedText={setSelectedText}
       />
+
+      {/* Smart Save Status - show recent save insights */}
+      {lastSave && (
+        <div className="fixed bottom-4 right-4 z-30">
+          <div className="bg-background/90 backdrop-blur-sm border rounded-lg p-2 text-xs text-muted-foreground">
+            Last save: {lastSave.wordCount} words
+            {lastSave.keyChanges.length > 0 && (
+              <span className="ml-2 text-primary">• {lastSave.keyChanges[0]}</span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
