@@ -11,19 +11,21 @@ import SmartNavigationPanel from './SmartNavigationPanel';
 import AdaptiveLearningPanel from './AdaptiveLearningPanel';
 import AdvancedWritingIntelligence from './AdvancedWritingIntelligence';
 import CollaborativeAIFeatures from './CollaborativeAIFeatures';
+import VisualEnhancementsPanel from '@/components/ai/VisualEnhancementsPanel';
 
 const StoryTabs = () => {
   const [activeTab, setActiveTab] = useState("editor");
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-      <TabsList className="grid w-full grid-cols-10">
+      <TabsList className="grid w-full grid-cols-11">
         <TabsTrigger value="editor">Editor</TabsTrigger>
         <TabsTrigger value="structure">Structure</TabsTrigger>
         <TabsTrigger value="ai-writing">AI Writing</TabsTrigger>
         <TabsTrigger value="enhanced-ai">Enhanced AI</TabsTrigger>
         <TabsTrigger value="intelligence">Intelligence</TabsTrigger>
         <TabsTrigger value="collaborative">Collaborative</TabsTrigger>
+        <TabsTrigger value="visual">Visual</TabsTrigger>
         <TabsTrigger value="smart-navigation">Navigation</TabsTrigger>
         <TabsTrigger value="adaptive">Learning</TabsTrigger>
         <TabsTrigger value="outline">Outline</TabsTrigger>
@@ -53,6 +55,14 @@ const StoryTabs = () => {
 
         <TabsContent value="collaborative" className="mt-0 h-full">
           <CollaborativeAIFeatures />
+        </TabsContent>
+
+        <TabsContent value="visual" className="mt-0 h-full">
+          <VisualEnhancementsPanel
+            content="Sample story content for demonstration..."
+            totalWords={15420}
+            targetWords={50000}
+          />
         </TabsContent>
 
         <TabsContent value="smart-navigation" className="mt-0 h-full">
