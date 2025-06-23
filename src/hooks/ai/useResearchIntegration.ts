@@ -47,10 +47,12 @@ export const useResearchIntegration = () => {
           const paragraphs = manuscript.content.split('\n\n').filter(p => p.trim().length > 50);
           
           keyFacts.forEach((fact, factIndex) => {
-            const factWords = fact.toLowerCase().match(/\b\w{4,}\b/g) || [];
+            const factMatches = fact.toLowerCase().match(/\b\w{4,}\b/g);
+            const factWords: string[] = factMatches ? factMatches : [];
             
             paragraphs.forEach((paragraph, paraIndex) => {
-              const paraWords = paragraph.toLowerCase().match(/\b\w{4,}\b/g) || [];
+              const paraMatches = paragraph.toLowerCase().match(/\b\w{4,}\b/g);
+              const paraWords: string[] = paraMatches ? paraMatches : [];
               const commonWords = factWords.filter(word => paraWords.includes(word));
               
               if (commonWords.length >= 2) {
