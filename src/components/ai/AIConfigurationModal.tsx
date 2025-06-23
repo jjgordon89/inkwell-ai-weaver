@@ -22,8 +22,8 @@ const AIConfigurationModal: React.FC<AIConfigurationModalProps> = ({ isOpen, onC
     selectedModel, 
     availableProviders, 
     apiKeys,
-    setProvider, 
-    setModel, 
+    setSelectedProvider, 
+    setSelectedModel, 
     setApiKey,
     testConnection,
     isTestingConnection,
@@ -38,12 +38,12 @@ const AIConfigurationModal: React.FC<AIConfigurationModalProps> = ({ isOpen, onC
   const currentApiKey = apiKeys[selectedProvider] || '';
 
   const handleProviderChange = (provider: string) => {
-    setProvider(provider);
+    setSelectedProvider(provider);
     setTestResult(null);
   };
 
   const handleModelChange = (model: string) => {
-    setModel(model);
+    setSelectedModel(model);
     setTestResult(null);
   };
 

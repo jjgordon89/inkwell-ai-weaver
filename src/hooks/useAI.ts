@@ -23,9 +23,7 @@ export const useAI = () => {
     updateSettings,
     clearError,
     getCurrentProviderInfo,
-    isProviderConfigured,
-    isCurrentProviderConfigured,
-    clearCache
+    isCurrentProviderConfigured
   } = useAIOperations();
 
   return {
@@ -49,14 +47,12 @@ export const useAI = () => {
     },
     availableProviders,
     getCurrentProviderInfo,
-    isProviderConfigured,
     isCurrentProviderConfigured,
     
     // Additional state management features
     error,
     clearError,
     settings,
-    updateSettings,
-    clearCache
+    updateSettings
   };
 };
