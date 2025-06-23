@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, X, Wand2, Zap, Plus, Brain } from 'lucide-react';
-import { useCollaborativeAI } from '@/hooks/useCollaborativeAI';
+import { useAI } from '@/hooks/useAI';
 import InlineAITooltip from './InlineAITooltip';
 import AIRevisionMode from './AIRevisionMode';
 
@@ -26,7 +26,7 @@ const InlineAISuggestions: React.FC<InlineAISuggestionsProps> = ({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeMode, setActiveMode] = useState<'suggestions' | 'revision' | 'tooltip'>('suggestions');
-  const { improveSelectedText, generateTextCompletion } = useCollaborativeAI();
+  const { processText } = useAI();
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -35,9 +35,9 @@ const InlineAISuggestions: React.FC<InlineAISuggestionsProps> = ({
       
       setIsLoading(true);
       try {
-        const improvement = await improveSelectedText(selectedText);
+        const improvement = await processText(selectedText, 'improve');
         if (improvement) {
-          setSuggestions([improvement.text]);
+          setSuggestions([improvement]);
         }
       } catch (error) {
         console.error('Failed to generate suggestions:', error);
@@ -49,7 +49,7 @@ const InlineAISuggestions: React.FC<InlineAISuggestionsProps> = ({
     if (activeMode === 'suggestions') {
       generateSuggestions();
     }
-  }, [selectedText, improveSelectedText, activeMode]);
+  }, [selectedText, processText, activeMode]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -67,9 +67,9 @@ const InlineAISuggestions: React.FC<InlineAISuggestionsProps> = ({
     
     setIsLoading(true);
     try {
-      const result = await improveSelectedText(selectedText);
+      const result = await processText(selectedText, action);
       if (result) {
-        onApply(result.text);
+        onApply(result);
       }
     } catch (error) {
       console.error('Quick action failed:', error);

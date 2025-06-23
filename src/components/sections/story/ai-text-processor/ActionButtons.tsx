@@ -53,14 +53,14 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           onClick={() => onAction(action)}
           disabled={isProcessing || !isProviderConfigured}
           className="flex items-center gap-2"
-          title={!isProviderConfigured ? 'Configure API key first' : getActionDescription(action)}
+          title={!isProviderConfigured ? 'Configure AI provider first' : getActionDescription(action)}
         >
           {processingAction === action ? (
             <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           ) : (
             getActionIcon(action)
           )}
-          {processingAction === action ? 'Generating...' : label}
+          {processingAction === action ? 'Processing...' : label}
         </Button>
       ))}
     </div>

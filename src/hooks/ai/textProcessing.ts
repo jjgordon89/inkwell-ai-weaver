@@ -1,13 +1,14 @@
+
 import { AIAction, AIProvider } from './types';
 
 export const getPromptForAction = (action: AIAction, text: string): string => {
   switch (action) {
     case 'improve':
-      return `Please improve the following text by enhancing clarity, flow, and readability while maintaining the original meaning:\n\n${text}`;
+      return `Please improve the following text by enhancing clarity, flow, and readability while maintaining the original meaning and tone:\n\n${text}`;
     case 'shorten':
-      return `Please make the following text more concise while preserving the key information and meaning:\n\n${text}`;
+      return `Please make the following text more concise and brief while preserving all key information and meaning:\n\n${text}`;
     case 'expand':
-      return `Please expand the following text by adding relevant details, context, and depth while maintaining the original tone and meaning:\n\n${text}`;
+      return `Please expand the following text by adding relevant details, context, examples, and depth while maintaining the original tone and meaning:\n\n${text}`;
     case 'fix-grammar':
       return `Please correct any grammar, punctuation, and spelling errors in the following text while maintaining its original meaning and tone:\n\n${text}`;
     case 'analyze-tone':
@@ -45,19 +46,21 @@ export const performMockTextProcessing = async (text: string, action: AIAction, 
   
   switch (action) {
     case 'improve':
-      return `Enhanced version using ${selectedModel}: ${text.replace(/\b(good|nice|ok)\b/gi, 'excellent').replace(/\b(bad|poor)\b/gi, 'suboptimal')}`;
+      return `Enhanced version: ${text.replace(/\b(good|nice|ok)\b/gi, 'excellent').replace(/\b(bad|poor)\b/gi, 'suboptimal')}. This improved text flows better and uses more precise vocabulary while maintaining the original meaning.`;
     case 'shorten': {
       const words = text.split(' ');
-      const targetLength = Math.max(Math.floor(words.length * 0.7), 3);
-      return words.slice(0, targetLength).join(' ') + (targetLength < words.length ? '...' : '');
+      const targetLength = Math.max(Math.floor(words.length * 0.5), 3);
+      const shortened = words.slice(0, targetLength).join(' ');
+      return shortened + (targetLength < words.length ? '.' : '');
     }
     case 'expand':
-      return `${text} This expanded version provides additional context and detail, offering readers a more comprehensive understanding of the topic while maintaining the original meaning and intent.`;
+      return `${text} This expanded version provides additional context, relevant details, and deeper exploration of the concepts presented. The enhancement maintains the original tone while offering readers a more comprehensive understanding of the subject matter, including supporting examples and elaborative explanations that enrich the overall narrative.`;
     case 'fix-grammar':
       return text
         .replace(/\bi\b/g, 'I')
         .replace(/\s+/g, ' ')
         .replace(/([.!?])\s*([a-z])/g, (match, punct, letter) => `${punct} ${letter.toUpperCase()}`)
+        .replace(/([a-z])([.!?])([A-Z])/g, (match, char1, punct, char2) => `${char1}${punct} ${char2}`)
         .trim();
     case 'analyze-tone':
       return `Tone: Thoughtful and engaging\nConfidence: 85\nStyle Notes: The writing demonstrates clear narrative voice with balanced pacing\nSuggestions: Consider varying sentence length for rhythm\nConsider adding more sensory details\nMaintain consistent point of view throughout`;
