@@ -20,9 +20,24 @@ export const useProviderOperations = (state: ProviderState, dispatch: React.Disp
         const customModels = localStorage.getItem('custom-openai-models');
         if (customModels) {
           const parsedModels = JSON.parse(customModels);
-          if (parsedModels.length > 0 && !parsedModels.includes(state.selectedModel)) {
-            console.log(`Auto-switching to first custom model: ${parsedModels[0]}`);
-            dispatch({ type: 'SET_MODEL', payload: parsedModels[0] });
+          if (parsedModels.length > 0) {
+            // If current model is not in custom models, switch to first custom model
+            if (!parsedModels.includes(state.selectedModel)) {
+              console.log(`Auto-switching to first custom model: ${parsedModels[0]}`);
+              dispatch({ type: 'SET_MODEL', payload: parsedModels[0] });
+            }
+          } else {
+            // No custom models configured, clear selected model
+            if (state.selectedModel) {
+              console.log('No custom models configured, clearing selected model');
+              dispatch({ type: 'SET_MODEL', payload: '' });
+            }
+          }
+        } else {
+          // No custom models configured, clear selected model
+          if (state.selectedModel) {
+            console.log('No custom models configured, clearing selected model');
+            dispatch({ type: 'SET_MODEL', payload: '' });
           }
         }
       }

@@ -75,11 +75,25 @@ export const useAIOperations = () => {
     return true;
   }, [state.apiKeys]);
 
+  // Get available providers with dynamic models for custom endpoints
+  const getAvailableProviders = useCallback(() => {
+    return AI_PROVIDERS.map(provider => {
+      if (provider.name === 'Custom OpenAI Compatible') {
+        const customModels = localStorage.getItem('custom-openai-models');
+        return {
+          ...provider,
+          models: customModels ? JSON.parse(customModels) : []
+        };
+      }
+      return provider;
+    });
+  }, []);
+
   return {
     // State
     selectedProvider: state.selectedProvider,
     selectedModel: state.selectedModel,
-    availableProviders: state.availableProviders,
+    availableProviders: getAvailableProviders(),
     apiKeys: state.apiKeys,
     isProcessing: state.isProcessing,
     isTestingConnection: state.isTestingConnection,
@@ -98,6 +112,7 @@ export const useAIOperations = () => {
     // Helpers
     getCurrentProviderInfo,
     isCurrentProviderConfigured,
-    isProviderConfigured
+    isProviderConfigured,
+    getAvailableProviders
   };
 };
