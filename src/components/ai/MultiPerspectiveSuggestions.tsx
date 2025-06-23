@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { User, BookOpen, Sparkles, Refresh } from 'lucide-react';
+import { User, BookOpen, Sparkles, RefreshCw } from 'lucide-react';
 import { useCollaborativeAI } from '@/hooks/useCollaborativeAI';
 
 interface AIPerspective {
@@ -130,7 +129,7 @@ const MultiPerspectiveSuggestions: React.FC<MultiPerspectiveSuggestionsProps> = 
             {isGenerating ? (
               <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
             ) : (
-              <Refresh className="h-4 w-4 mr-2" />
+              <RefreshCw className="h-4 w-4 mr-2" />
             )}
             Analyze
           </Button>
