@@ -13,7 +13,7 @@ export interface AISuggestion {
   text: string;
   original?: string;
   confidence: number;
-  type: string;
+  type: 'improvement' | 'character' | 'plot' | 'completion';
 }
 
 export interface AIContext {
@@ -62,7 +62,7 @@ export const useCollaborativeAI = () => {
 
     setIsProcessing(true);
     try {
-      const completion = await processText(textBefore, 'continue');
+      const completion = await processText(textBefore, 'improve'); // Using 'improve' instead of 'continue'
       return completion;
     } catch (error) {
       console.error('Failed to generate text completion:', error);

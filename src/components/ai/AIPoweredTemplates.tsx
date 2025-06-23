@@ -112,7 +112,7 @@ Based on story world: "${state.currentDocument.content?.substring(0, 300) || 'Ne
       const suggestions = await generateContextualSuggestions(
         state.currentDocument.content || '',
         undefined,
-        state.characters,
+        state.characters.map(c => c.name), // Convert Character[] to string[]
         state.storyArcs
       );
 
