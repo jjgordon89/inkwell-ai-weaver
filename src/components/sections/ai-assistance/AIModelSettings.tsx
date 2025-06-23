@@ -17,10 +17,10 @@ const AIModelSettings = () => {
   const availableModels = currentProvider?.models || [];
 
   const getModelIcon = (modelName: string) => {
-    if (modelName.includes('gpt-4') || modelName.includes('claude-opus') || modelName.includes('o3') || modelName.includes('gemini-2.0')) {
+    if (modelName.includes('gpt-4') || modelName.includes('claude-opus') || modelName.includes('o3') || modelName.includes('gemini-2.0') || modelName.includes('405b') || modelName.includes('70b')) {
       return <Crown className="h-4 w-4 text-yellow-500" />;
     }
-    if (modelName.includes('turbo') || modelName.includes('haiku') || modelName.includes('mini') || modelName.includes('flash') || modelName.includes(':free')) {
+    if (modelName.includes('turbo') || modelName.includes('haiku') || modelName.includes('mini') || modelName.includes('flash') || modelName.includes(':free') || modelName.includes('8b') || modelName.includes('7b')) {
       return <Zap className="h-4 w-4 text-blue-500" />;
     }
     return <Brain className="h-4 w-4 text-gray-500" />;
@@ -30,10 +30,10 @@ const AIModelSettings = () => {
     if (modelName.includes(':free')) {
       return <Badge variant="secondary" className="bg-green-100 text-green-800">Free</Badge>;
     }
-    if (modelName.includes('gpt-4.1') || modelName.includes('claude-opus-4') || modelName.includes('o3') || modelName.includes('gemini-2.0') || modelName.includes('exp')) {
+    if (modelName.includes('gpt-4.1') || modelName.includes('claude-opus-4') || modelName.includes('o3') || modelName.includes('gemini-2.0') || modelName.includes('exp') || modelName.includes('405b')) {
       return <Badge variant="default" className="bg-yellow-100 text-yellow-800">Premium</Badge>;
     }
-    if (modelName.includes('turbo') || modelName.includes('haiku') || modelName.includes('mini') || modelName.includes('flash')) {
+    if (modelName.includes('turbo') || modelName.includes('haiku') || modelName.includes('mini') || modelName.includes('flash') || modelName.includes('8b') || modelName.includes('7b')) {
       return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Fast</Badge>;
     }
     return <Badge variant="outline">Standard</Badge>;
@@ -53,7 +53,9 @@ const AIModelSettings = () => {
     
     // Gemini models
     if (modelName.includes('gemini-2.0-flash-exp')) return 'Google\'s latest experimental Gemini 2.0 with flash speed';
+    if (modelName.includes('gemini-2.0-flash-thinking')) return 'Gemini 2.0 with advanced thinking capabilities';
     if (modelName.includes('gemini-exp-1206')) return 'Experimental Gemini model with enhanced capabilities';
+    if (modelName.includes('gemini-exp-1121')) return 'Experimental Gemini model from November 2024';
     if (modelName.includes('gemini-1.5-pro-002')) return 'Latest Gemini Pro with improved performance and accuracy';
     if (modelName.includes('gemini-1.5-pro-001')) return 'Gemini Pro with advanced multimodal capabilities';
     if (modelName.includes('gemini-1.5-pro')) return 'Google\'s flagship multimodal AI with 1M+ token context';
@@ -63,6 +65,52 @@ const AIModelSettings = () => {
     if (modelName.includes('gemini-1.5-flash')) return 'Fast and efficient Gemini model for rapid processing';
     if (modelName.includes('gemini-pro-vision')) return 'Gemini Pro with advanced vision capabilities';
     if (modelName.includes('gemini-pro')) return 'Google\'s multimodal AI model with text and vision';
+    
+    // Together AI models
+    if (modelName.includes('Meta-Llama-3.1-405B')) return 'Meta\'s largest and most capable Llama model';
+    if (modelName.includes('Meta-Llama-3.1-70B')) return 'High-performance 70B parameter Llama model';
+    if (modelName.includes('Meta-Llama-3.1-8B')) return 'Efficient 8B parameter Llama model';
+    if (modelName.includes('Llama-3.2-90B-Vision')) return 'Vision-capable Llama model with 90B parameters';
+    if (modelName.includes('Llama-3.2-11B-Vision')) return 'Compact vision-capable Llama model';
+    if (modelName.includes('RedPajama-INCITE')) return 'Open-source instruction-tuned model';
+    if (modelName.includes('Nous-Hermes-2-Mixtral')) return 'Nous Research fine-tuned Mixtral model';
+    if (modelName.includes('Qwen2.5-72B')) return 'Alibaba\'s latest large language model';
+    if (modelName.includes('Platypus2-70B')) return 'Fine-tuned model optimized for STEM tasks';
+    
+    // Perplexity models
+    if (modelName.includes('sonar-small-128k-online')) return 'Small online Perplexity model with web access';
+    if (modelName.includes('sonar-large-128k-online')) return 'Large online Perplexity model with web access';
+    if (modelName.includes('sonar-huge-128k-online')) return 'Huge online Perplexity model with web access';
+    if (modelName.includes('sonar-small-128k-chat')) return 'Small Perplexity chat model';
+    if (modelName.includes('sonar-large-128k-chat')) return 'Large Perplexity chat model';
+    
+    // Fireworks AI models
+    if (modelName.includes('llama-v3p1-405b')) return 'Fireworks-hosted Llama 3.1 405B model';
+    if (modelName.includes('llama-v3p1-70b')) return 'Fireworks-hosted Llama 3.1 70B model';
+    if (modelName.includes('llama-v3p1-8b')) return 'Fireworks-hosted Llama 3.1 8B model';
+    if (modelName.includes('deepseek-v2p5')) return 'DeepSeek v2.5 model hosted on Fireworks';
+    
+    // DeepSeek models
+    if (modelName.includes('deepseek-chat')) return 'DeepSeek\'s conversational AI model';
+    if (modelName.includes('deepseek-coder')) return 'DeepSeek\'s code-specialized model';
+    if (modelName.includes('deepseek-reasoner')) return 'DeepSeek\'s reasoning-focused model';
+    
+    // Cohere models
+    if (modelName.includes('command-r-plus')) return 'Cohere\'s most capable command model';
+    if (modelName.includes('command-r')) return 'Cohere\'s instruction-following model';
+    if (modelName.includes('command-nightly')) return 'Cohere\'s experimental nightly model';
+    if (modelName.includes('command-light')) return 'Cohere\'s lightweight model';
+    
+    // Mistral AI models
+    if (modelName.includes('mistral-large-2407')) return 'Mistral\'s flagship large model from July 2024';
+    if (modelName.includes('mistral-large-2402')) return 'Mistral\'s large model from February 2024';
+    if (modelName.includes('mistral-medium')) return 'Mistral\'s balanced performance model';
+    if (modelName.includes('mistral-small')) return 'Mistral\'s efficient small model';
+    if (modelName.includes('codestral-2405')) return 'Mistral\'s code-specialized model';
+    if (modelName.includes('codestral-mamba')) return 'Mistral\'s Mamba-based code model';
+    if (modelName.includes('open-mistral-7b')) return 'Open-source Mistral 7B model';
+    if (modelName.includes('open-mixtral-8x7b')) return 'Open-source Mixtral 8x7B model';
+    if (modelName.includes('open-mixtral-8x22b')) return 'Open-source Mixtral 8x22B model';
     
     // OpenRouter specific models
     if (modelName.includes('meta-llama/llama-3.2-1b')) return 'Compact Llama model for basic tasks';
@@ -87,6 +135,13 @@ const AIModelSettings = () => {
     if (modelName.includes('databricks/dbrx-instruct')) return 'Databricks\' instruction-tuned model';
     if (modelName.includes('deepseek/deepseek-chat')) return 'DeepSeek\'s conversational model';
     if (modelName.includes('deepseek/deepseek-coder')) return 'DeepSeek\'s code-specialized model';
+    
+    // Groq models
+    if (modelName.includes('llama-3.3-70b')) return 'Groq-hosted Llama 3.3 70B model';
+    if (modelName.includes('llama-3.1-70b')) return 'Groq-hosted Llama 3.1 70B model';
+    if (modelName.includes('llama-3.1-8b')) return 'Groq-hosted Llama 3.1 8B model';
+    if (modelName.includes('mixtral-8x7b')) return 'Groq-hosted Mixtral 8x7B model';
+    if (modelName.includes('gemma2-9b')) return 'Groq-hosted Gemma 2 9B model';
     
     // Other models
     if (modelName.includes('llama')) return 'Meta\'s open-source language model';

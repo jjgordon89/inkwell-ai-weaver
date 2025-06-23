@@ -32,13 +32,16 @@ export const AI_PROVIDERS: AIProvider[] = [
     name: 'Google Gemini',
     models: [
       'gemini-2.0-flash-exp',
+      'gemini-2.0-flash-thinking-exp-1219',
       'gemini-exp-1206',
+      'gemini-exp-1121',
       'gemini-1.5-pro-002',
       'gemini-1.5-pro-001',
       'gemini-1.5-pro',
       'gemini-1.5-flash-002',
       'gemini-1.5-flash-001',
       'gemini-1.5-flash',
+      'gemini-1.5-flash-8b-001',
       'gemini-1.5-flash-8b',
       'gemini-pro',
       'gemini-pro-vision'
@@ -63,6 +66,111 @@ export const AI_PROVIDERS: AIProvider[] = [
     ],
     requiresApiKey: true,
     apiEndpoint: 'https://api.groq.com/openai/v1/chat/completions',
+    type: 'cloud'
+  },
+  {
+    name: 'Together AI',
+    models: [
+      'meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo',
+      'meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo',
+      'meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo',
+      'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo',
+      'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
+      'mistralai/Mixtral-8x7B-Instruct-v0.1',
+      'mistralai/Mistral-7B-Instruct-v0.3',
+      'microsoft/DialoGPT-medium',
+      'togethercomputer/RedPajama-INCITE-7B-Chat',
+      'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO',
+      'Qwen/Qwen2.5-72B-Instruct',
+      'garage-bAInd/Platypus2-70B-instruct'
+    ],
+    requiresApiKey: true,
+    apiEndpoint: 'https://api.together.xyz/v1/chat/completions',
+    type: 'cloud'
+  },
+  {
+    name: 'Perplexity',
+    models: [
+      'llama-3.1-sonar-small-128k-online',
+      'llama-3.1-sonar-large-128k-online',
+      'llama-3.1-sonar-huge-128k-online',
+      'llama-3.1-sonar-small-128k-chat',
+      'llama-3.1-sonar-large-128k-chat',
+      'llama-3.1-8b-instruct',
+      'llama-3.1-70b-instruct'
+    ],
+    requiresApiKey: true,
+    apiEndpoint: 'https://api.perplexity.ai/chat/completions',
+    type: 'cloud'
+  },
+  {
+    name: 'Fireworks AI',
+    models: [
+      'accounts/fireworks/models/llama-v3p1-405b-instruct',
+      'accounts/fireworks/models/llama-v3p1-70b-instruct',
+      'accounts/fireworks/models/llama-v3p1-8b-instruct',
+      'accounts/fireworks/models/mixtral-8x7b-instruct',
+      'accounts/fireworks/models/mixtral-8x22b-instruct',
+      'accounts/fireworks/models/qwen2p5-72b-instruct',
+      'accounts/fireworks/models/deepseek-v2p5',
+      'accounts/fireworks/models/gemma2-9b-it'
+    ],
+    requiresApiKey: true,
+    apiEndpoint: 'https://api.fireworks.ai/inference/v1/chat/completions',
+    type: 'cloud'
+  },
+  {
+    name: 'DeepSeek',
+    models: [
+      'deepseek-chat',
+      'deepseek-coder',
+      'deepseek-reasoner'
+    ],
+    requiresApiKey: true,
+    apiEndpoint: 'https://api.deepseek.com/chat/completions',
+    type: 'cloud'
+  },
+  {
+    name: 'Anthropic (Direct)',
+    models: [
+      'claude-3-5-sonnet-20241022',
+      'claude-3-5-haiku-20241022',
+      'claude-3-opus-20240229',
+      'claude-3-sonnet-20240229',
+      'claude-3-haiku-20240307'
+    ],
+    requiresApiKey: true,
+    apiEndpoint: 'https://api.anthropic.com/v1/messages',
+    type: 'cloud'
+  },
+  {
+    name: 'Cohere',
+    models: [
+      'command-r-plus',
+      'command-r',
+      'command-nightly',
+      'command-light-nightly'
+    ],
+    requiresApiKey: true,
+    apiEndpoint: 'https://api.cohere.ai/v1/chat',
+    type: 'cloud'
+  },
+  {
+    name: 'Mistral AI',
+    models: [
+      'mistral-large-2407',
+      'mistral-large-2402',
+      'mistral-medium-2312',
+      'mistral-small-2402',
+      'mistral-small-2312',
+      'open-mistral-7b',
+      'open-mixtral-8x7b',
+      'open-mixtral-8x22b',
+      'codestral-2405',
+      'codestral-mamba-2407'
+    ],
+    requiresApiKey: true,
+    apiEndpoint: 'https://api.mistral.ai/v1/chat/completions',
     type: 'cloud'
   },
   {
