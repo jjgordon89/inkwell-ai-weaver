@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback } from 'react';
 import { FileText, Edit3, Save, Clock, Brain } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
@@ -206,7 +207,7 @@ const EditorView = () => {
       {/* Workflow AI Integration */}
       <WorkflowAIIntegration
         selectedText={selectedText}
-        suggestions={suggestions.map(s => s.text || s.content || String(s))}
+        suggestions={suggestions.map(s => s.text)}
         isVisible={!!activeDocument}
       />
     </div>
@@ -214,3 +215,4 @@ const EditorView = () => {
 };
 
 export default EditorView;
+
