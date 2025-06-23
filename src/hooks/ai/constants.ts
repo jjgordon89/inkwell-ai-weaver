@@ -15,6 +15,15 @@ export const AI_PROVIDERS: AIProvider[] = [
     type: 'cloud'
   },
   {
+    name: 'Custom OpenAI Compatible',
+    models: [], // Will be configured by user
+    requiresApiKey: true,
+    apiEndpoint: '', // Will be configured by user
+    type: 'cloud',
+    customEndpoint: '',
+    description: 'Configure your own OpenAI-compatible endpoint'
+  },
+  {
     name: 'Claude',
     models: [
       'claude-opus-4-20250514',
@@ -242,15 +251,6 @@ export const AI_PROVIDERS: AIProvider[] = [
     requiresApiKey: true,
     apiEndpoint: 'https://openrouter.ai/api/v1/chat/completions',
     type: 'cloud'
-  },
-  {
-    name: 'Custom OpenAI Compatible',
-    models: [], // Will be configured by user
-    requiresApiKey: true,
-    apiEndpoint: '', // Will be configured by user
-    type: 'cloud',
-    customEndpoint: '',
-    description: 'Configure your own OpenAI-compatible endpoint'
   },
   {
     name: 'Ollama',
