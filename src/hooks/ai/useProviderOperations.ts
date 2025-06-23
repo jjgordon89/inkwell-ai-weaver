@@ -2,7 +2,7 @@
 import { useEffect, useCallback } from 'react';
 import { AI_PROVIDERS } from './constants';
 import { testProviderConnection } from './connectionTest';
-import type { AIContextDispatch } from '@/contexts/AIContext';
+import type { AIContextAction } from '@/contexts/AIContext';
 
 interface ProviderState {
   selectedProvider: string;
@@ -10,7 +10,7 @@ interface ProviderState {
   apiKeys: Record<string, string>;
 }
 
-export const useProviderOperations = (state: ProviderState, dispatch: AIContextDispatch) => {
+export const useProviderOperations = (state: ProviderState, dispatch: React.Dispatch<AIContextAction>) => {
   // Auto-update model when provider changes
   useEffect(() => {
     const currentProvider = AI_PROVIDERS.find(p => p.name === state.selectedProvider);

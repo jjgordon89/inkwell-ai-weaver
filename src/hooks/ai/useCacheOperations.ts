@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import type { AIContextDispatch } from '@/contexts/AIContext';
+import type { AIContextAction } from '@/contexts/AIContext';
 
 interface CacheState {
   resultsCache: Map<string, { result: string; timestamp: number }>;
@@ -10,7 +10,7 @@ interface CacheState {
   };
 }
 
-export const useCacheOperations = (state: CacheState, dispatch: AIContextDispatch) => {
+export const useCacheOperations = (state: CacheState, dispatch: React.Dispatch<AIContextAction>) => {
   const getCachedResult = useCallback((key: string): string | null => {
     if (!state.settings.cacheEnabled) return null;
     

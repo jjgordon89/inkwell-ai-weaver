@@ -4,7 +4,7 @@ import { AI_PROVIDERS } from './constants';
 import { makeAPIRequest, performMockTextProcessing, getPromptForAction } from './textProcessing';
 import { validateAIInput, validateAIResponse } from './aiUtils';
 import type { AIAction, AIProvider } from './types';
-import type { AIContextDispatch } from '@/contexts/AIContext';
+import type { AIContextAction } from '@/contexts/AIContext';
 
 interface TextProcessingState {
   selectedProvider: string;
@@ -14,7 +14,7 @@ interface TextProcessingState {
 
 export const useTextProcessingOperations = (
   state: TextProcessingState, 
-  dispatch: AIContextDispatch,
+  dispatch: React.Dispatch<AIContextAction>,
   getCachedResult: (key: string) => string | null,
   cacheResult: (key: string, result: string) => void
 ) => {

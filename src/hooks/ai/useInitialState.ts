@@ -2,9 +2,9 @@
 import { useEffect } from 'react';
 import { AI_PROVIDERS } from './constants';
 import { DatabaseAIStorage } from '@/lib/databaseAIStorage';
-import type { AIContextDispatch } from '@/contexts/AIContext';
+import type { AIContextAction } from '@/contexts/AIContext';
 
-export const useInitialState = (dispatch: AIContextDispatch) => {
+export const useInitialState = (dispatch: React.Dispatch<AIContextAction>) => {
   useEffect(() => {
     const loadSettings = async () => {
       try {
