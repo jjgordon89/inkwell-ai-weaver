@@ -110,7 +110,7 @@ const makeCustomOpenAICompatibleRequest = async (
     return null;
   }
 
-  // Use the first available model or the selected model if it exists
+  // Use the selected model if it exists in custom models, otherwise use first available
   const modelToUse = parsedModels.includes(selectedModel) ? selectedModel : parsedModels[0];
 
   const requestBody = {
@@ -130,6 +130,7 @@ const makeCustomOpenAICompatibleRequest = async (
   };
 
   try {
+    console.log(`Making request to custom endpoint: ${customEndpoint}`);
     const response = await fetch(customEndpoint, {
       method: 'POST',
       headers: {
@@ -144,6 +145,8 @@ const makeCustomOpenAICompatibleRequest = async (
       return data.choices?.[0]?.message?.content || null;
     } else {
       console.warn(`Custom endpoint error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.warn('Error response:', errorText);
     }
   } catch (error) {
     console.warn(`Custom endpoint API error:`, error);
@@ -340,8 +343,8 @@ export const makeAPIRequest = async (
   prompt: string, 
   action: AIAction
 ): Promise<string | null> => {
-  if (!provider.apiEndpoint && provider.name !== 'Custom OpenAI Compatible') return null;
-
+  console.log(`Making API request to ${provider.name} with model ${selectedModel}`);
+  
   // Handle different provider types
   switch (provider.name) {
     case 'Custom OpenAI Compatible':
@@ -357,7 +360,7 @@ export const makeAPIRequest = async (
       return makeLMStudioAPIRequest(provider, apiKey, selectedModel, prompt, action);
     
     default:
-      // Handle OpenAI-compatible APIs (OpenAI, Groq, OpenRouter)
+      // Handle OpenAI-compatible APIs (OpenAI, Groq, OpenRouter, etc.)
       return makeOpenAICompatibleAPIRequest(provider, apiKey, selectedModel, prompt, action);
   }
 };
