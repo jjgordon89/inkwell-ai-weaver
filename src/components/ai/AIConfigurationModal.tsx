@@ -117,7 +117,7 @@ const AIConfigurationModal: React.FC<AIConfigurationModalProps> = ({ isOpen, onC
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {currentProvider.models.map((model) => (
+                  {currentProvider.models.map((model: string) => (
                     <SelectItem key={model} value={model}>
                       {model}
                     </SelectItem>

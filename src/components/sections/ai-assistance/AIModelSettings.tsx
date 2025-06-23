@@ -150,6 +150,10 @@ const AIModelSettings = () => {
     return 'AI language model for text generation and analysis';
   };
 
+  const handleModelChange = (model: string) => {
+    setSelectedModel(model);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -166,7 +170,7 @@ const AIModelSettings = () => {
           <label className="text-sm font-medium">Selected Model</label>
           <Select 
             value={selectedModel} 
-            onValueChange={setSelectedModel}
+            onValueChange={handleModelChange}
             disabled={availableModels.length === 0}
           >
             <SelectTrigger>
@@ -180,7 +184,7 @@ const AIModelSettings = () => {
               </SelectValue>
             </SelectTrigger>
             <SelectContent className="max-h-60">
-              {availableModels.map((model) => (
+              {availableModels.map((model: string) => (
                 <SelectItem key={model} value={model}>
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-2">

@@ -53,6 +53,10 @@ const QuickAISettings: React.FC<QuickAISettingsProps> = ({
     }
   };
 
+  const handleModelChange = (model: string) => {
+    setSelectedModel(model);
+  };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -115,14 +119,14 @@ const QuickAISettings: React.FC<QuickAISettingsProps> = ({
             <Label htmlFor="model-select">Model</Label>
             <Select 
               value={selectedModel} 
-              onValueChange={setSelectedModel}
+              onValueChange={handleModelChange}
               disabled={availableModels.length === 0}
             >
               <SelectTrigger id="model-select">
                 <SelectValue placeholder="Select model" />
               </SelectTrigger>
               <SelectContent>
-                {availableModels.map((model) => (
+                {availableModels.map((model: string) => (
                   <SelectItem key={model} value={model}>
                     {model}
                   </SelectItem>
