@@ -10,6 +10,7 @@ import type { AIAction as ProcessingAction, AIProvider } from './types';
 
 export const useAIOperations = () => {
   const { state, dispatch } = useAIContext();
+
   // Load initial settings
   useEffect(() => {
     const loadSettings = async () => {
@@ -26,7 +27,6 @@ export const useAIOperations = () => {
         });
       } catch (error) {
         console.error('Failed to load AI settings from database:', error);
-        // Fallback to defaults
         dispatch({
           type: 'LOAD_INITIAL_STATE',
           payload: {
@@ -41,6 +41,7 @@ export const useAIOperations = () => {
 
     loadSettings();
   }, [dispatch]);
+
   // Save settings when they change
   useEffect(() => {
     const saveSettings = async () => {
@@ -53,7 +54,6 @@ export const useAIOperations = () => {
       }
     };
 
-    // Only save if we have a selected provider (i.e., after initial load)
     if (state.selectedProvider) {
       saveSettings();
     }
@@ -162,10 +162,11 @@ export const useAIOperations = () => {
       }
 
       console.log(`Processing text with ${state.selectedProvider} (${state.selectedModel}) - Action: ${action}`);
-      dispatch({ type: 'SET_PROCESSING', payload: true });      let result: string;
+      dispatch({ type: 'SET_PROCESSING', payload: true });
+
+      let result: string;
 
       // Try real API if available and configured
-      // For local providers, we don't need an API key
       const canUseAPI = currentProvider.apiEndpoint && 
         (!currentProvider.requiresApiKey || state.apiKeys[state.selectedProvider]);
 
@@ -194,7 +195,6 @@ export const useAIOperations = () => {
           result = await performMockTextProcessing(text, action, state.selectedModel);
         }
       } else {
-        // Fallback to mock processing
         console.log(`Using mock processing for ${state.selectedProvider} (API not available or not configured)`);
         result = await performMockTextProcessing(text, action, state.selectedModel);
       }
@@ -229,7 +229,6 @@ export const useAIOperations = () => {
   const updateSettings = useCallback((newSettings: Partial<typeof state.settings>) => {
     dispatch({ type: 'UPDATE_SETTINGS', payload: newSettings });
     
-    // Save to localStorage
     const settingsToSave = { ...state.settings, ...newSettings };
     localStorage.setItem('ai-configuration', JSON.stringify(settingsToSave));
   }, [state.settings, dispatch]);
@@ -244,42 +243,37 @@ export const useAIOperations = () => {
     return AI_PROVIDERS.find(p => p.name === state.selectedProvider);
   }, [state.selectedProvider]);
 
-  const isProviderConfigured = useCallback((providerName: string) => {
-    const provider = AI_PROVIDERS.find(p => p.name === providerName);
-    if (!provider) return false;
-    
-    return !provider.requiresApiKey || Boolean(state.apiKeys[providerName]);
-  }, [state.apiKeys]);
-
   const isCurrentProviderConfigured = useCallback(() => {
-    return isProviderConfigured(state.selectedProvider);
-  }, [isProviderConfigured, state.selectedProvider]);
+    const provider = getCurrentProviderInfo();
+    if (!provider) return false;
+    if (provider.requiresApiKey) {
+      return !!state.apiKeys[state.selectedProvider];
+    }
+    return true;
+  }, [getCurrentProviderInfo, state.apiKeys, state.selectedProvider]);
 
   return {
     // State
-    ...state,
+    selectedProvider: state.selectedProvider,
+    selectedModel: state.selectedModel,
+    availableProviders: state.availableProviders,
+    apiKeys: state.apiKeys,
+    isProcessing: state.isProcessing,
+    isTestingConnection: state.isTestingConnection,
+    error: state.error,
+    settings: state.settings,
     
-    // Provider operations
+    // Operations
     setProvider,
     setModel,
     setApiKey,
-    
-    // Processing operations
-    processText,
     testConnection,
-    
-    // Settings
+    processText,
     updateSettings,
-    
-    // Error handling
     clearError,
     
-    // Helper functions
+    // Helpers
     getCurrentProviderInfo,
-    isProviderConfigured,
-    isCurrentProviderConfigured,
-    
-    // Cache operations
-    clearCache: () => dispatch({ type: 'CLEAR_CACHE' })
+    isCurrentProviderConfigured
   };
 };
