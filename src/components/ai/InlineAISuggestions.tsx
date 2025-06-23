@@ -95,10 +95,12 @@ const InlineAISuggestions: React.FC<InlineAISuggestionsProps> = ({
   return (
     <Card
       ref={cardRef}
-      className="absolute z-50 w-96 p-4 shadow-2xl border-2 border-primary/20 bg-background/95 backdrop-blur-sm"
+      className="fixed z-50 w-96 max-w-[90vw] p-4 shadow-2xl border-2 border-primary/20 bg-background/95 backdrop-blur-sm"
       style={{
-        left: Math.min(position.x, window.innerWidth - 384),
-        top: Math.max(position.y - 120, 10)
+        left: Math.min(position.x, window.innerWidth - 400),
+        top: Math.max(position.y - 120, 10),
+        maxHeight: 'calc(100vh - 20px)',
+        overflow: 'auto'
       }}
     >
       <div className="space-y-4">
@@ -140,10 +142,10 @@ const InlineAISuggestions: React.FC<InlineAISuggestionsProps> = ({
         {/* Selected text preview */}
         <div className="p-3 bg-muted/50 rounded-lg border">
           <p className="text-xs font-medium mb-1">Selected Text:</p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground break-words">
             "{selectedText.substring(0, 80)}{selectedText.length > 80 ? '...' : ''}"
           </p>
-          <div className="flex gap-2 mt-2">
+          <div className="flex gap-2 mt-2 flex-wrap">
             <Badge variant="outline" className="text-xs">
               {selectedText.split(' ').length} words
             </Badge>
@@ -227,7 +229,7 @@ const InlineAISuggestions: React.FC<InlineAISuggestionsProps> = ({
         )}
 
         {activeMode === 'revision' && (
-          <div className="min-h-[200px]">
+          <div className="min-h-[200px] max-h-[300px] overflow-auto">
             <AIRevisionMode
               documentContent={documentContent}
               isActive={true}

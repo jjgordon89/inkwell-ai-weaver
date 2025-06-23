@@ -25,9 +25,9 @@ const DesktopStudioLayout = ({
   completeOnboarding 
 }: DesktopStudioLayoutProps) => {
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen w-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="h-12 flex items-center justify-between px-6 border-b bg-background">
+      <div className="h-12 flex items-center justify-between px-6 border-b bg-background flex-shrink-0">
         <h1 className="text-lg font-semibold">Manuscript</h1>
         <Link to="/settings">
           <Button variant="ghost" size="sm">
@@ -36,16 +36,19 @@ const DesktopStudioLayout = ({
         </Link>
       </div>
 
-      <ViewManager onViewChange={onViewChange} />
+      <div className="flex-shrink-0">
+        <ViewManager onViewChange={onViewChange} />
+      </div>
       
       <div className="flex-1 overflow-hidden">
-        <ResizablePanelGroup direction="horizontal">
+        <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Document Binder */}
           <ResizablePanel 
             defaultSize={20} 
             minSize={15} 
             maxSize={35}
             data-tour="binder"
+            className="overflow-hidden"
           >
             <DocumentBinder />
           </ResizablePanel>
@@ -53,8 +56,8 @@ const DesktopStudioLayout = ({
           <ResizableHandle />
           
           {/* Main Content Area */}
-          <ResizablePanel defaultSize={60} data-tour="editor">
-            <div className="h-full" data-tour="views">
+          <ResizablePanel defaultSize={60} data-tour="editor" className="overflow-hidden">
+            <div className="h-full overflow-hidden" data-tour="views">
               {renderActiveView()}
             </div>
           </ResizablePanel>
@@ -67,6 +70,7 @@ const DesktopStudioLayout = ({
             minSize={15} 
             maxSize={30}
             data-tour="inspector"
+            className="overflow-hidden"
           >
             <InspectorPanel />
           </ResizablePanel>

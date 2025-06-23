@@ -79,7 +79,7 @@ const EditorContainerLayout: React.FC<EditorContainerLayoutProps> = ({
   setSelectedText
 }) => {
   return (
-    <div className="h-full flex bg-background relative">
+    <div className="h-full w-full flex bg-background relative overflow-hidden">
       <EditorActionsManager onUndo={onUndo} onRedo={onRedo} />
       
       {/* Main Editor Area */}
@@ -128,11 +128,11 @@ const EditorContainerLayout: React.FC<EditorContainerLayoutProps> = ({
 
       {/* Smart Save Status - show recent save insights */}
       {lastSave && (
-        <div className="fixed bottom-4 right-4 z-30">
+        <div className="fixed bottom-4 right-4 z-30 max-w-xs">
           <div className="bg-background/90 backdrop-blur-sm border rounded-lg p-2 text-xs text-muted-foreground">
             Last save: {lastSave.wordCount} words
             {lastSave.keyChanges.length > 0 && (
-              <span className="ml-2 text-primary">• {lastSave.keyChanges[0]}</span>
+              <span className="ml-2 text-primary block truncate">• {lastSave.keyChanges[0]}</span>
             )}
           </div>
         </div>
