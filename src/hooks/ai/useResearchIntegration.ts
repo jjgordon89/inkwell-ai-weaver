@@ -65,7 +65,7 @@ export const useResearchIntegration = () => {
                   relevantContent: fact.trim(),
                   suggestedIntegration: generateIntegrationSuggestion(fact, paragraph, category),
                   integrationPoint: paragraph.slice(0, 100) + '...',
-                  confidence: Math.min(0.9, commonWords.length / factWords.length),
+                  confidence: Math.min(0.9, commonWords.length / Math.max(factWords.length, 1)),
                   category
                 });
               }
