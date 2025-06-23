@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Brain, Link2, BookOpen, FileExport, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Brain, Link2, BookOpen, FileText, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useIntelligentCrossReferences } from '@/hooks/ai/useIntelligentCrossReferences';
 import { useResearchIntegration } from '@/hooks/ai/useResearchIntegration';
 import { useExportOptimization } from '@/hooks/ai/useExportOptimization';
@@ -37,7 +36,7 @@ const SmartContentManagement = () => {
     getOptimizationsByCategory
   } = useExportOptimization();
 
-  const getConnectionIcon = (type: string) => {
+  function getConnectionIcon(type: string) {
     switch (type) {
       case 'character-appears': return '👤';
       case 'plot-development': return '📈';
@@ -46,9 +45,9 @@ const SmartContentManagement = () => {
       case 'narrative-flow': return '➡️';
       default: return '🔗';
     }
-  };
+  }
 
-  const getCategoryIcon = (category: string) => {
+  function getCategoryIcon(category: string) {
     switch (category) {
       case 'historical': return '🏛️';
       case 'technical': return '⚙️';
@@ -57,16 +56,16 @@ const SmartContentManagement = () => {
       case 'cultural': return '🌍';
       default: return '📝';
     }
-  };
+  }
 
-  const getPriorityColor = (priority: string) => {
+  function getPriorityColor(priority: string) {
     switch (priority) {
       case 'high': return 'destructive';
       case 'medium': return 'default';
       case 'low': return 'secondary';
       default: return 'outline';
     }
-  };
+  }
 
   return (
     <div className="h-full bg-muted/30 p-4 flex flex-col space-y-6 border-l">
@@ -92,7 +91,7 @@ const SmartContentManagement = () => {
               Research
             </TabsTrigger>
             <TabsTrigger value="export" className="flex items-center gap-1">
-              <FileExport className="h-4 w-4" />
+              <FileText className="h-4 w-4" />
               Export
             </TabsTrigger>
           </TabsList>
@@ -334,7 +333,7 @@ const SmartContentManagement = () => {
                   ))
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
-                    <FileExport className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
                     <p>Select a format and click "Analyze" to optimize for export</p>
                   </div>
                 )}
