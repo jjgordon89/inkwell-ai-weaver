@@ -115,8 +115,8 @@ const AIProviderSettings = () => {
               </div>
             )}
 
-            {/* API Key Input for providers that require it */}
-            {currentProvider.requiresApiKey && (
+            {/* API Key Input for providers that require it (excluding custom providers) */}
+            {currentProvider.requiresApiKey && !currentProvider.customEndpoint && (
               <ApiKeyInput
                 provider={currentProvider}
                 apiKey={apiKeys[currentProvider.name] || ''}
