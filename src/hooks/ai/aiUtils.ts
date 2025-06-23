@@ -97,3 +97,38 @@ export const categorizeModel = (modelName: string): string => {
   
   return 'general';
 };
+
+// AI response parsing utilities
+export const parseAIResponse = (response: string): Record<string, unknown> => {
+  const parsed: Record<string, unknown> = {};
+  
+  // Parse key-value pairs from response
+  const lines = response.split('\n');
+  for (const line of lines) {
+    if (line.includes(':')) {
+      const [key, ...valueParts] = line.split(':');
+      const value = valueParts.join(':').trim();
+      const normalizedKey = key.trim().toLowerCase().replace(/\s+/g, '');
+      parsed[normalizedKey] = value;
+    }
+  }
+  
+  return parsed;
+};
+
+// Error handling utility
+export const handleAIError = (error: unknown, operation: string): Error => {
+  if (error instanceof Error) {
+    return new Error(`Failed to ${operation}: ${error.message}`);
+  }
+  return new Error(`Failed to ${operation}: Unknown error occurred`);
+};
+
+// Create suggestions list from AI response
+export const createSuggestionsList = (response: string): string[] => {
+  return response
+    .split('\n')
+    .filter(line => line.trim().startsWith('-') || line.trim().startsWith('•'))
+    .map(line => line.replace(/^[-•]\s*/, '').trim())
+    .filter(Boolean);
+};

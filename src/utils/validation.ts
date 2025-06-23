@@ -1,4 +1,12 @@
+// Re-export everything from the modular validation system
+export * from './validation/types';
+export * from './validation/core';
+export * from './validation/rules';
+export * from './validation/apiValidators';
+export * from './validation/domainValidators';
+export * from './validation/documentValidators';
 
+// Keep the existing exports for backward compatibility
 export interface ValidationResult {
   isValid: boolean;
   errors: string[];
