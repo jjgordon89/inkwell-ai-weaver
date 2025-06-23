@@ -8,9 +8,31 @@ export interface TextImprovement {
   reason: string;
 }
 
+export interface AISuggestion {
+  id: string;
+  text: string;
+  original?: string;
+  confidence: number;
+  type: string;
+}
+
+export interface AIContext {
+  currentText: string;
+  cursorPosition: number;
+  selectedText: string;
+  characters: string[];
+}
+
 export const useCollaborativeAI = () => {
   const { processText } = useAI();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);
+  const [context, setContext] = useState<AIContext>({
+    currentText: '',
+    cursorPosition: 0,
+    selectedText: '',
+    characters: []
+  });
 
   const improveSelectedText = async (text: string): Promise<TextImprovement | null> => {
     if (!text || text.trim().length === 0) return null;
@@ -30,6 +52,49 @@ export const useCollaborativeAI = () => {
     } catch (error) {
       console.error('Failed to improve text:', error);
       return null;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const generateTextCompletion = async (textBefore: string, textAfter: string): Promise<string | null> => {
+    if (!textBefore || textBefore.trim().length === 0) return null;
+
+    setIsProcessing(true);
+    try {
+      const completion = await processText(textBefore, 'continue');
+      return completion;
+    } catch (error) {
+      console.error('Failed to generate text completion:', error);
+      return null;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const generateContextualSuggestions = async (
+    text: string,
+    selectedText?: string,
+    characters: string[] = [],
+    storyArcs: any[] = []
+  ): Promise<string[]> => {
+    if (!text || text.trim().length === 0) return [];
+
+    setIsProcessing(true);
+    try {
+      const prompt = `Analyze this text and provide contextual writing suggestions: "${text}"`;
+      const result = await processText(prompt, 'analyze-tone');
+      
+      // Parse the result into individual suggestions
+      return result
+        .split('\n')
+        .filter(line => line.trim().length > 0)
+        .map(line => line.replace(/^[-•*]\s*/, '').trim())
+        .filter(suggestion => suggestion.length > 10)
+        .slice(0, 5);
+    } catch (error) {
+      console.error('Failed to generate contextual suggestions:', error);
+      return [];
     } finally {
       setIsProcessing(false);
     }
@@ -121,9 +186,34 @@ export const useCollaborativeAI = () => {
     }
   };
 
+  const updateContext = (newContext: Partial<AIContext>) => {
+    setContext(prev => ({ ...prev, ...newContext }));
+  };
+
+  const dismissSuggestion = (suggestionId: string) => {
+    setSuggestions(prev => prev.filter(s => s.id !== suggestionId));
+  };
+
+  const clearAllSuggestions = () => {
+    setSuggestions([]);
+  };
+
   return {
+    // Core state
     isProcessing,
+    isAnalyzing: isProcessing, // Alias for backward compatibility
+    suggestions,
+    context,
+    
+    // Core functions
     improveSelectedText,
+    generateTextCompletion,
+    generateContextualSuggestions,
+    updateContext,
+    dismissSuggestion,
+    clearAllSuggestions,
+    
+    // New collaborative features
     generateMultiPerspectiveSuggestions,
     analyzeVersionChanges
   };
