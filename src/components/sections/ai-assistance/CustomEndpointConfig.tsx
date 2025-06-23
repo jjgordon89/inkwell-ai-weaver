@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,7 +21,8 @@ const CustomEndpointConfig = () => {
   const [customModels, setCustomModels] = useState<string[]>([]);
   const [newModel, setNewModel] = useState('');
   const [apiKey, setApiKeyLocal] = useState('');
-  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'success' | 'error' | 'warning'>('idle');
+  const [statusMessage, setStatusMessage] = useState('');
 
   // Load saved custom configuration
   useEffect(() => {
@@ -62,15 +62,31 @@ const CustomEndpointConfig = () => {
   const handleTestConnection = async () => {
     if (!customEndpoint || !apiKey) {
       setConnectionStatus('error');
+      setStatusMessage('Please configure both endpoint URL and API key');
+      return;
+    }
+
+    if (customModels.length === 0) {
+      setConnectionStatus('error');
+      setStatusMessage('Please add at least one model');
       return;
     }
 
     setConnectionStatus('testing');
+    setStatusMessage('Testing connection...');
+    
     try {
       const success = await testConnection('Custom OpenAI Compatible');
-      setConnectionStatus(success ? 'success' : 'error');
+      if (success) {
+        setConnectionStatus('success');
+        setStatusMessage('Connection successful! Your custom endpoint is working correctly.');
+      } else {
+        setConnectionStatus('warning');
+        setStatusMessage('Connection test failed, but this might be due to browser CORS restrictions. The endpoint may still work for actual API calls.');
+      }
     } catch (error) {
       setConnectionStatus('error');
+      setStatusMessage('Connection failed. Please check your endpoint URL and API key.');
     }
   };
 
@@ -173,7 +189,7 @@ const CustomEndpointConfig = () => {
         <div className="space-y-3">
           <Button 
             onClick={handleTestConnection}
-            disabled={!customEndpoint || !apiKey || isTestingConnection}
+            disabled={!customEndpoint || !apiKey || customModels.length === 0 || isTestingConnection}
             className="w-full"
             variant={connectionStatus === 'success' ? 'default' : 'outline'}
           >
@@ -185,7 +201,16 @@ const CustomEndpointConfig = () => {
             <Alert className="border-green-200 bg-green-50">
               <CheckCircle2 className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-800">
-                Connection successful! Your custom endpoint is working correctly.
+                {statusMessage}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {connectionStatus === 'warning' && (
+            <Alert className="border-yellow-200 bg-yellow-50">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-yellow-800">
+                {statusMessage}
               </AlertDescription>
             </Alert>
           )}
@@ -194,9 +219,17 @@ const CustomEndpointConfig = () => {
             <Alert className="border-red-200 bg-red-50">
               <AlertCircle className="h-4 w-4 text-red-600" />
               <AlertDescription className="text-red-800">
-                Connection failed. Please check your endpoint URL and API key.
+                {statusMessage}
               </AlertDescription>
             </Alert>
+          )}
+
+          {/* Additional info for CORS issues */}
+          {connectionStatus === 'warning' && (
+            <div className="text-xs text-muted-foreground p-3 bg-muted rounded-lg">
+              <p className="font-medium mb-1">Note about browser limitations:</p>
+              <p>Many custom API endpoints have CORS restrictions that prevent direct testing from the browser. This doesn't mean your endpoint won't work - it's just a security limitation of web browsers.</p>
+            </div>
           )}
         </div>
 
