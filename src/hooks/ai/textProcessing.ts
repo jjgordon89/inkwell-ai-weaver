@@ -45,13 +45,26 @@ export const cleanAIResponse = (response: string, action: AIAction): string => {
       /^Enhanced version:/i
     ];
     
-    // Remove common AI response suffixes
+    // Remove common AI response suffixes and meta-commentary
     const suffixesToRemove = [
       /This continuation maintains the same tone and style\.?$/i,
       /This follows the established narrative voice\.?$/i,
       /This preserves the original style\.?$/i,
       /Hope this helps!?$/i,
-      /Let me know if you'd like me to adjust anything\.?$/i
+      /Let me know if you'd like me to adjust anything\.?$/i,
+      /The narrative flows beautifully here\.?$/i,
+      /This moment held deeper significance[^.]*\.$/i,
+      /revealing layers of meaning[^.]*\.$/i
+    ];
+    
+    // Remove meta-commentary patterns that shouldn't be in the actual text
+    const metaCommentaryPatterns = [
+      /\. The narrative flows beautifully here\./gi,
+      /\. This moment held deeper significance[^.]*\./gi,
+      /\. revealing layers of meaning[^.]*\./gi,
+      /\([^)]*commentary[^)]*\)/gi,
+      /\([^)]*flows beautifully[^)]*\)/gi,
+      /\([^)]*narrative[^)]*\)/gi
     ];
     
     // Apply prefix removal
@@ -64,11 +77,19 @@ export const cleanAIResponse = (response: string, action: AIAction): string => {
       cleaned = cleaned.replace(suffix, '').trim();
     }
     
+    // Remove meta-commentary patterns
+    for (const pattern of metaCommentaryPatterns) {
+      cleaned = cleaned.replace(pattern, '.').trim();
+    }
+    
     // Remove quotes if the entire response is wrapped in them
     if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || 
         (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
       cleaned = cleaned.slice(1, -1).trim();
     }
+    
+    // Clean up any double periods or spaces
+    cleaned = cleaned.replace(/\.+/g, '.').replace(/\s+/g, ' ').trim();
     
     return cleaned;
   }
@@ -85,18 +106,20 @@ export const performMockTextProcessing = async (text: string, action: AIAction, 
   switch (action) {
     case 'improve':
       result = text.replace(/\b(good|nice|okay)\b/gi, 'excellent')
-        .replace(/\b(bad|poor)\b/gi, 'challenging')
-        .replace(/\./g, '. The narrative flows beautifully here.');
+        .replace(/\b(bad|poor)\b/gi, 'challenging');
       break;
     case 'continue':
     case 'continue-story':
-      // Generate a natural continuation without meta-commentary
+      // Generate clean continuation without meta-commentary
       const continuations = [
         ' The shadows lengthened as evening approached, casting everything in a golden hue.',
         ' She paused, listening to the distant sound of footsteps echoing down the corridor.',
         ' The weight of the decision pressed heavily on his shoulders as he considered his options.',
         ' Time seemed to slow as the moment stretched between them, heavy with unspoken words.',
-        ' The old house creaked softly, as if sharing its secrets with those who would listen.'
+        ' The old house creaked softly, as if sharing its secrets with those who would listen.',
+        ' Outside, the wind picked up, rattling the windows with increasing intensity.',
+        ' He felt the familiar tingle of anticipation as the story began to unfold.',
+        ' The silence was broken only by the steady rhythm of rain against the glass.'
       ];
       result = continuations[Math.floor(Math.random() * continuations.length)];
       break;
@@ -104,7 +127,7 @@ export const performMockTextProcessing = async (text: string, action: AIAction, 
       result = text.split(' ').slice(0, Math.max(1, Math.floor(text.split(' ').length * 0.7))).join(' ');
       break;
     case 'expand':
-      result = text + ' This moment held deeper significance, revealing layers of meaning that had previously remained hidden beneath the surface.';
+      result = text + ' The details became clearer as the scene unfolded before them.';
       break;
     case 'fix-grammar':
       result = text.replace(/\bi\b/g, 'I').replace(/([.!?])\s*([a-z])/g, '$1 $2'.toUpperCase());
