@@ -1,108 +1,84 @@
 
 import { useCallback } from 'react';
+import { getPromptForAction, cleanAIResponse, makeAPIRequest } from './textProcessing';
 import { AI_PROVIDERS } from './constants';
-import { makeAPIRequest, performMockTextProcessing, getPromptForAction } from './textProcessing';
-import { validateAIInput, validateAIResponse } from './aiUtils';
-import type { AIAction, AIProvider } from './types';
-import type { AIContextAction } from '@/contexts/AIContext';
-
-interface TextProcessingState {
-  selectedProvider: string;
-  selectedModel: string;
-  apiKeys: Record<string, string>;
-}
+import type { AIAction } from './types';
+import type { AIState, AIContextAction } from '@/contexts/AIContext';
 
 export const useTextProcessingOperations = (
-  state: TextProcessingState, 
+  state: AIState,
   dispatch: React.Dispatch<AIContextAction>,
   getCachedResult: (key: string) => string | null,
   cacheResult: (key: string, result: string) => void
 ) => {
-  const processText = useCallback(async (
-    text: string,
-    action: AIAction
-  ): Promise<string> => {
-    try {
-      validateAIInput(text, 'text processing');
-      
-      const cacheKey = `${state.selectedProvider}-${state.selectedModel}-${action}-${text.slice(0, 100)}`;
+  const processText = useCallback(async (text: string, action: AIAction): Promise<string> => {
+    if (!text || text.trim().length === 0) {
+      throw new Error('No text provided for processing');
+    }
+
+    // Create cache key
+    const cacheKey = `${state.selectedProvider}-${state.selectedModel}-${action}-${text.slice(0, 100)}`;
+    
+    // Check cache first
+    if (state.settings.cacheEnabled) {
       const cached = getCachedResult(cacheKey);
       if (cached) {
         console.log('Using cached result for text processing');
         return cached;
       }
+    }
 
-      const currentProvider = AI_PROVIDERS.find(p => p.name === state.selectedProvider);
-      if (!currentProvider) {
-        throw new Error(`Invalid provider: ${state.selectedProvider}`);
+    dispatch({ type: 'SET_PROCESSING', payload: true });
+    dispatch({ type: 'SET_ERROR', payload: { error: null } });
+
+    try {
+      const provider = AI_PROVIDERS.find(p => p.name === state.selectedProvider);
+      if (!provider) {
+        throw new Error(`Provider ${state.selectedProvider} not found`);
       }
 
-      if (currentProvider.requiresApiKey && !state.apiKeys[state.selectedProvider]) {
-        throw new Error(`API key required for ${state.selectedProvider}. Please add your API key in the settings.`);
+      const apiKey = state.apiKeys[state.selectedProvider];
+      if (provider.requiresApiKey && !apiKey) {
+        throw new Error(`API key required for ${state.selectedProvider}`);
       }
 
-      console.log(`Processing text with ${state.selectedProvider} (${state.selectedModel}) - Action: ${action}`);
-      dispatch({ type: 'SET_PROCESSING', payload: true });
-
-      let result: string;
-
-      // Try real API if available and configured
-      const canUseAPI = currentProvider.apiEndpoint && 
-        (!currentProvider.requiresApiKey || state.apiKeys[state.selectedProvider]);
-
-      if (canUseAPI) {
-        console.log(`Using real API for ${state.selectedProvider}`);
-        
-        const prompt = getPromptForAction(action, text);
-        const apiResult = await makeAPIRequest(
-          currentProvider, 
-          state.apiKeys[state.selectedProvider] || '', 
-          state.selectedModel, 
-          prompt, 
-          action
-        );
-        
-        if (apiResult) {
-          const validation = validateAIResponse(apiResult);
-          if (!validation.isValid) {
-            console.warn('API response validation failed:', validation.errors);
-            throw new Error(`Invalid API response: ${validation.errors.join(', ')}`);
-          }
-          result = apiResult;
-          console.log(`✅ Real AI processing completed successfully with ${state.selectedProvider}`);
-        } else {
-          console.warn(`API call failed, falling back to mock processing`);
-          result = await performMockTextProcessing(text, action, state.selectedModel);
-        }
-      } else {
-        console.log(`Using mock processing for ${state.selectedProvider} (API not available or not configured)`);
-        result = await performMockTextProcessing(text, action, state.selectedModel);
+      // Generate the prompt for the action
+      const prompt = getPromptForAction(action, text);
+      
+      // Make the API request (this will use mock processing for now)
+      const result = await makeAPIRequest(provider, apiKey, state.selectedModel, prompt, action);
+      
+      // Clean the response
+      const cleanedResult = cleanAIResponse(result, action);
+      
+      // Cache the result
+      if (state.settings.cacheEnabled && cleanedResult) {
+        cacheResult(cacheKey, cleanedResult);
       }
 
-      cacheResult(cacheKey, result);
-      console.log(`✅ Text processing completed successfully`);
-      return result;
+      return cleanedResult;
     } catch (error) {
-      console.error('❌ Text processing failed:', error);
+      console.error('Text processing failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       dispatch({ 
         type: 'SET_ERROR', 
         payload: { 
-          error: new Error(`Failed to process text: ${errorMessage}`),
-          operation: 'text processing'
-        }
+          error: new Error(errorMessage), 
+          operation: `processText-${action}` 
+        } 
       });
       throw error;
     } finally {
       dispatch({ type: 'SET_PROCESSING', payload: false });
     }
   }, [
-    state.selectedProvider, 
-    state.selectedModel, 
-    state.apiKeys, 
-    getCachedResult, 
-    cacheResult, 
-    dispatch
+    state.selectedProvider,
+    state.selectedModel,
+    state.apiKeys,
+    state.settings.cacheEnabled,
+    dispatch,
+    getCachedResult,
+    cacheResult
   ]);
 
   return { processText };
