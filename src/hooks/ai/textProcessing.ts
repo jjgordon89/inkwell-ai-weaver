@@ -12,6 +12,7 @@ export const getPromptForAction = (action: AIAction, text: string): string => {
     case 'fix-grammar':
       return `Fix any grammar, spelling, or punctuation errors in this text. Return ONLY the corrected text: "${text}"`;
     case 'continue':
+    case 'continue-story':
       return `Continue this text naturally in the same style and voice. Return ONLY the continuation text without any introduction or explanation: "${text}"`;
     case 'analyze-tone':
       return `Analyze the tone and style of this text: "${text}"`;
@@ -24,7 +25,7 @@ export const cleanAIResponse = (response: string, action: AIAction): string => {
   if (!response) return '';
   
   // For continuation and extension actions, remove common AI prefixes/suffixes
-  if (action === 'continue' || action === 'improve' || action === 'expand') {
+  if (action === 'continue' || action === 'continue-story' || action === 'improve' || action === 'expand') {
     let cleaned = response.trim();
     
     // Remove common AI response prefixes
@@ -88,6 +89,7 @@ export const performMockTextProcessing = async (text: string, action: AIAction, 
         .replace(/\./g, '. The narrative flows beautifully here.');
       break;
     case 'continue':
+    case 'continue-story':
       // Generate a natural continuation without meta-commentary
       const continuations = [
         ' The shadows lengthened as evening approached, casting everything in a golden hue.',

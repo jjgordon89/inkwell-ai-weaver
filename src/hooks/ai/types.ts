@@ -1,3 +1,4 @@
+
 export interface AIProvider {
   name: string;
   models: string[];
@@ -18,6 +19,7 @@ export type AIAction =
   | 'analyze-tone'
   | 'generate-plot'
   | 'continue-story'
+  | 'continue'
   | 'writing-prompt'
   | 'context-suggestion'
   | 'analyze-writing-quality'
