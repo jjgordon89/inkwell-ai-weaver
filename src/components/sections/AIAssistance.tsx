@@ -6,6 +6,7 @@ import AIProviderSettings from './ai-assistance/AIProviderSettings';
 import AIModelSettings from './ai-assistance/AIModelSettings';
 import AIConfigurationPanel from './ai-assistance/AIConfigurationPanel';
 import LocalModelTester from '../ai/LocalModelTester';
+import ContinueWritingButton from '../editor/ContinueWritingButton';
 
 const AIAssistance = () => {
   const { selectedProvider, selectedModel, isProcessing } = useAI();
@@ -28,6 +29,23 @@ const AIAssistance = () => {
       </div>
 
       <div className="space-y-6 flex-grow overflow-auto">
+        {/* Continue Writing Feature */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-semibold">Writing Assistant</h3>
+          </div>
+          <div className="border rounded-lg p-4 bg-muted/50">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-medium">Continue Writing</h4>
+            </div>
+            <p className="text-sm text-muted-foreground mb-3">
+              Let AI continue your story from where you left off
+            </p>
+            <ContinueWritingButton />
+          </div>
+        </div>
+
         {/* Provider Selection */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
@@ -41,7 +59,9 @@ const AIAssistance = () => {
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Model Configuration</h3>
           <AIModelSettings />
-        </div>        {/* Configuration Panel */}
+        </div>
+
+        {/* Configuration Panel */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Advanced Settings</h3>
           <AIConfigurationPanel />

@@ -58,7 +58,6 @@ const EditorMainLayout: React.FC<EditorMainLayoutProps> = ({
         onRedo={onRedo}
         canUndo={canUndo}
         canRedo={canRedo}
-        textareaRef={textareaRef}
       />
       
       <EditorTextarea

@@ -10,7 +10,6 @@ import {
   Brain,
   FileText
 } from 'lucide-react';
-import ContinueWritingButton from './ContinueWritingButton';
 import { EditorTextareaRef } from './EditorTextarea';
 
 interface EditorHeaderProps {
@@ -48,11 +47,6 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-2">
-        <ContinueWritingButton 
-          textareaRef={textareaRef}
-          className="mr-2"
-        />
-        
         <Button
           variant="ghost"
           size="sm"
