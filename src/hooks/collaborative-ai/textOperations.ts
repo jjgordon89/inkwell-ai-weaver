@@ -29,7 +29,10 @@ export const useTextOperations = () => {
     if (!textBefore || textBefore.trim().length === 0) return null;
 
     try {
-      const completion = await processText(textBefore, 'improve');
+      // Use 'continue' action for text completion to get pure extension
+      const completion = await processText(textBefore, 'continue');
+      
+      // Ensure we only return the continuation text, not any explanations
       return completion;
     } catch (error) {
       console.error('Failed to generate text completion:', error);
