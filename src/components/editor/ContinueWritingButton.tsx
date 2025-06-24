@@ -5,9 +5,10 @@ import { Zap, Loader2 } from 'lucide-react';
 import { useCollaborativeAI } from '@/hooks/useCollaborativeAI';
 import { useWriting } from '@/contexts/WritingContext';
 import { useToast } from '@/hooks/use-toast';
+import { EditorTextareaRef } from './EditorTextarea';
 
 interface ContinueWritingButtonProps {
-  textareaRef?: React.RefObject<HTMLTextAreaElement>;
+  textareaRef?: React.RefObject<EditorTextareaRef>;
   className?: string;
 }
 

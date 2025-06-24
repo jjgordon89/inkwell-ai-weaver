@@ -11,6 +11,7 @@ import {
   FileText
 } from 'lucide-react';
 import ContinueWritingButton from './ContinueWritingButton';
+import { EditorTextareaRef } from './EditorTextarea';
 
 interface EditorHeaderProps {
   title: string;
@@ -22,7 +23,7 @@ interface EditorHeaderProps {
   onRedo: () => void;
   canUndo: boolean;
   canRedo: boolean;
-  textareaRef?: React.RefObject<HTMLTextAreaElement>;
+  textareaRef?: React.RefObject<EditorTextareaRef>;
 }
 
 const EditorHeader: React.FC<EditorHeaderProps> = ({
