@@ -1,60 +1,53 @@
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Zap, Loader2 } from 'lucide-react';
-import { useCollaborativeAI } from '@/hooks/useCollaborativeAI';
+import React from 'react';
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Loader2 } from 'lucide-react';
+import { useAI } from '@/hooks/useAI';
 import { useWriting } from '@/contexts/WritingContext';
-import { useToast } from '@/hooks/use-toast';
-import { EditorTextareaRef } from './EditorTextarea';
+import { useToast } from "@/hooks/use-toast";
 
 interface ContinueWritingButtonProps {
-  textareaRef?: React.RefObject<EditorTextareaRef>;
-  className?: string;
+  textareaRef?: React.RefObject<any>;
+  variant?: "default" | "outline" | "ghost";
+  size?: "default" | "sm" | "lg";
 }
 
-const ContinueWritingButton: React.FC<ContinueWritingButtonProps> = ({
-  textareaRef,
-  className = ''
+const ContinueWritingButton: React.FC<ContinueWritingButtonProps> = ({ 
+  textareaRef, 
+  variant = "outline", 
+  size = "sm" 
 }) => {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const { generateTextCompletion } = useCollaborativeAI();
+  const { processText, isProcessing, isCurrentProviderConfigured } = useAI();
   const { state, dispatch } = useWriting();
   const { toast } = useToast();
 
   const handleContinueWriting = async () => {
-    if (!state.currentDocument) {
+    if (!state.currentDocument || !isCurrentProviderConfigured()) {
       toast({
-        title: "No Document",
-        description: "Please select a document to continue writing.",
+        title: "AI Not Configured",
+        description: "Please configure an AI provider first",
         variant: "destructive"
       });
       return;
     }
 
-    setIsGenerating(true);
-    
-    try {
-      const currentContent = state.currentDocument.content || '';
-      
-      // Get the last 200 characters for context
-      const contextText = currentContent.slice(-200);
-      
-      if (contextText.trim().length === 0) {
-        toast({
-          title: "No Content",
-          description: "Please write some content first, then use continue writing.",
-          variant: "destructive"
-        });
-        setIsGenerating(false);
-        return;
-      }
+    const content = state.currentDocument.content || '';
+    if (content.length < 10) {
+      toast({
+        title: "Insufficient Content",
+        description: "Write at least a few sentences first",
+        variant: "destructive"
+      });
+      return;
+    }
 
-      // Generate continuation
-      const continuation = await generateTextCompletion(contextText, '');
-      
+    try {
+      // Get the last 200 characters as context
+      const contextText = content.slice(-200);
+      const continuation = await processText(contextText, 'continue');
+
       if (continuation) {
-        // Add the continuation to the document
-        const newContent = currentContent + (currentContent.endsWith(' ') ? '' : ' ') + continuation;
+        const newContent = content + ' ' + continuation;
         
         dispatch({
           type: 'UPDATE_DOCUMENT_CONTENT',
@@ -64,58 +57,53 @@ const ContinueWritingButton: React.FC<ContinueWritingButtonProps> = ({
           }
         });
 
-        // Focus the textarea and move cursor to end if ref is available
+        // Focus textarea if available
         if (textareaRef?.current) {
-          setTimeout(() => {
-            if (textareaRef.current) {
-              textareaRef.current.focus();
-              textareaRef.current.setSelectionRange(newContent.length, newContent.length);
-            }
-          }, 100);
+          textareaRef.current.focus();
+          // Move cursor to end
+          const textareaElement = textareaRef.current.querySelector('textarea');
+          if (textareaElement) {
+            textareaElement.setSelectionRange(newContent.length, newContent.length);
+          }
         }
 
         toast({
-          title: "Writing Continued",
-          description: "AI has added new content to your document.",
-        });
-      } else {
-        toast({
-          title: "Unable to Continue",
-          description: "The AI couldn't generate a continuation. Try adding more context.",
-          variant: "destructive"
+          title: "Story Continued",
+          description: "AI has added to your story"
         });
       }
     } catch (error) {
       console.error('Continue writing failed:', error);
       toast({
-        title: "Error",
-        description: "Failed to continue writing. Please try again.",
+        title: "Failed to Continue",
+        description: "Could not generate continuation",
         variant: "destructive"
       });
-    } finally {
-      setIsGenerating(false);
     }
   };
 
+  if (!isCurrentProviderConfigured()) {
+    return (
+      <Button variant={variant} size={size} disabled>
+        <ArrowRight className="h-4 w-4 mr-2" />
+        Continue Writing (Configure AI first)
+      </Button>
+    );
+  }
+
   return (
-    <Button
+    <Button 
+      variant={variant} 
+      size={size}
       onClick={handleContinueWriting}
-      disabled={isGenerating || !state.currentDocument}
-      className={`${className}`}
-      variant="outline"
-      size="sm"
+      disabled={isProcessing || !state.currentDocument?.content}
     >
-      {isGenerating ? (
-        <>
-          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          Continuing...
-        </>
+      {isProcessing ? (
+        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
       ) : (
-        <>
-          <Zap className="h-4 w-4 mr-2" />
-          Continue Writing
-        </>
+        <ArrowRight className="h-4 w-4 mr-2" />
       )}
+      Continue Writing
     </Button>
   );
 };
