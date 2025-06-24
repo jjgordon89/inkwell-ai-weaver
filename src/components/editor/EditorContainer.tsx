@@ -1,83 +1,76 @@
 
-import React from 'react';
-import { useEditorContainerState } from './useEditorContainerState';
-import { useEditorEnhancedHandlers } from './useEditorEnhancedHandlers';
-import EditorContainerLayout from './EditorContainerLayout';
+import React, { useRef } from 'react';
+import { useEditorState } from '@/hooks/useEditorState';
+import { useUndoRedo } from '@/hooks/useUndoRedo';
+import { useCollaborativeAI } from '@/hooks/useCollaborativeAI';
+import EditorMainLayout from './EditorMainLayout';
+import { EditorTextareaRef } from './EditorTextarea';
 
 const EditorContainer = () => {
   const {
-    textareaRef,
-    showSuggestionsPanel,
-    setShowSuggestionsPanel,
     currentDocument,
     showProactivePanel,
     setShowProactivePanel,
-    proactiveEnabled,
-    setProactiveEnabled,
     textBeforeCursor,
     textAfterCursor,
     cursorPosition,
-    setCursorPosition,
     showFloatingActions,
-    setShowFloatingActions,
-    selectedText,
-    selectionPosition,
-    showInlineSuggestions,
-    setShowInlineSuggestions,
-    setSelectedText,
-    handleTextSelection,
-    contextualSuggestions,
-    handleContextualSuggestion,
-    dismissContextualSuggestion,
-    setContextualSuggestions,
-    lastSave,
-    saveHistory,
-    activeTriggers,
-    dialogueContext,
-    writingBlocks,
-    userActivity,
-    isTyping,
-    handleTypingActivity,
-    dismissTrigger
-  } = useEditorContainerState();
+    handleContentChange
+  } = useEditorState();
 
-  const {
-    enhancedContentChangeHandler,
-    handleApplyAISuggestion,
-    handleTextCompletion,
-    handleQuickAIAction,
-    handleApplySuggestionFromPanel,
-    suggestions,
-    addToHistory,
-    handleUndo,
-    handleRedo,
-    canUndo,
-    canRedo,
-    handleTextSelectionWrapper,
-    handleApplyContextualSuggestion
-  } = useEditorEnhancedHandlers({
-    textareaRef,
-    handleTypingActivity,
-    textAfterCursor,
-    currentDocument,
-    dialogueContext,
-    setContextualSuggestions,
-    setCursorPosition,
-    setShowFloatingActions,
-    showFloatingActions,
-    handleTextSelection
-  });
+  const { canUndo, canRedo, undo, redo } = useUndoRedo();
+  const { suggestions } = useCollaborativeAI();
+  const textareaRef = useRef<EditorTextareaRef>(null);
+
+  const handleTextSelection = () => {
+    // Handle text selection logic
+  };
+
+  const handleTextCompletion = (completion: string) => {
+    if (currentDocument && textareaRef.current) {
+      const currentContent = currentDocument.content || '';
+      const cursorPos = textareaRef.current.selectionStart;
+      const newContent = currentContent.slice(0, cursorPos) + completion + currentContent.slice(cursorPos);
+      
+      // Simulate change event to update content
+      const syntheticEvent = {
+        target: { value: newContent }
+      } as React.ChangeEvent<HTMLTextAreaElement>;
+      
+      handleContentChange(syntheticEvent);
+      
+      // Move cursor to end of inserted text
+      setTimeout(() => {
+        if (textareaRef.current) {
+          const newCursorPos = cursorPos + completion.length;
+          textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+          textareaRef.current.focus();
+        }
+      }, 0);
+    }
+  };
+
+  const handleToggleSuggestions = () => {
+    // Toggle suggestions logic
+  };
+
+  const handleQuickAIAction = (action: 'continue' | 'improve') => {
+    // Handle quick AI actions
+  };
 
   if (!currentDocument) {
     return (
-      <div className="h-full flex items-center justify-center bg-background">
-        <p className="text-muted-foreground">No document selected</p>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-medium mb-2">No Document Selected</h2>
+          <p className="text-muted-foreground">Select a document from the sidebar to start editing.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <EditorContainerLayout
+    <EditorMainLayout
       currentDocument={currentDocument}
       textareaRef={textareaRef}
       textBeforeCursor={textBeforeCursor}
@@ -86,34 +79,16 @@ const EditorContainer = () => {
       showFloatingActions={showFloatingActions}
       suggestions={suggestions}
       showProactivePanel={showProactivePanel}
-      proactiveEnabled={proactiveEnabled}
-      showSuggestionsPanel={showSuggestionsPanel}
-      contextualSuggestions={contextualSuggestions}
-      showInlineSuggestions={showInlineSuggestions}
-      selectedText={selectedText}
-      selectionPosition={selectionPosition}
-      lastSave={lastSave}
       onToggleProactivePanel={() => setShowProactivePanel(!showProactivePanel)}
-      onToggleSuggestions={() => setShowSuggestionsPanel(!showSuggestionsPanel)}
-      onUndo={handleUndo}
-      onRedo={handleRedo}
+      onToggleSuggestions={handleToggleSuggestions}
+      onUndo={undo}
+      onRedo={redo}
       canUndo={canUndo}
       canRedo={canRedo}
-      onContentChange={enhancedContentChangeHandler}
-      onTextSelection={handleTextSelectionWrapper}
+      onContentChange={handleContentChange}
+      onTextSelection={handleTextSelection}
       onTextCompletion={handleTextCompletion}
       onQuickAIAction={handleQuickAIAction}
-      onDismissContextualSuggestion={dismissContextualSuggestion}
-      onApplyContextualSuggestion={handleApplyContextualSuggestion}
-      onCloseSuggestionsPanel={() => setShowSuggestionsPanel(false)}
-      onApplySuggestionFromPanel={handleApplySuggestionFromPanel}
-      onToggleProactive={() => setProactiveEnabled(!proactiveEnabled)}
-      onApplyAISuggestion={handleApplyAISuggestion}
-      onDismissInlineSuggestions={() => {
-        setShowInlineSuggestions(false);
-        setSelectedText('');
-      }}
-      setSelectedText={setSelectedText}
     />
   );
 };

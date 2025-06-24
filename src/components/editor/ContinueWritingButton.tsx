@@ -66,8 +66,12 @@ const ContinueWritingButton: React.FC<ContinueWritingButtonProps> = ({
 
         // Focus the textarea and move cursor to end if ref is available
         if (textareaRef?.current) {
-          textareaRef.current.focus();
-          textareaRef.current.setSelectionRange(newContent.length, newContent.length);
+          setTimeout(() => {
+            if (textareaRef.current) {
+              textareaRef.current.focus();
+              textareaRef.current.setSelectionRange(newContent.length, newContent.length);
+            }
+          }, 100);
         }
 
         toast({
