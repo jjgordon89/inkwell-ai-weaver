@@ -6,7 +6,6 @@ import AIProviderSettings from './ai-assistance/AIProviderSettings';
 import AIModelSettings from './ai-assistance/AIModelSettings';
 import AIConfigurationPanel from './ai-assistance/AIConfigurationPanel';
 import LocalModelTester from '../ai/LocalModelTester';
-import ContinueWritingButton from '../editor/ContinueWritingButton';
 
 const AIAssistance = () => {
   const { selectedProvider, selectedModel, isProcessing } = useAI();
@@ -42,7 +41,9 @@ const AIAssistance = () => {
             <p className="text-sm text-muted-foreground mb-3">
               Let AI continue your story from where you left off
             </p>
-            <ContinueWritingButton />
+            <div className="text-sm text-muted-foreground">
+              Continue writing feature available in the editor when text is selected
+            </div>
           </div>
         </div>
 
