@@ -3,8 +3,10 @@ import React, { useRef } from 'react';
 import { useEditorState } from '@/hooks/useEditorState';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
 import { useCollaborativeAI } from '@/hooks/useCollaborativeAI';
+import { useAI } from '@/hooks/useAI';
 import EditorMainLayout from './EditorMainLayout';
 import { EditorTextareaRef } from './EditorTextarea';
+import { useToast } from "@/hooks/use-toast";
 
 const EditorContainer = () => {
   const {
@@ -20,6 +22,8 @@ const EditorContainer = () => {
 
   const { canUndo, canRedo, undo, redo } = useUndoRedo();
   const { suggestions } = useCollaborativeAI();
+  const { processText, isCurrentProviderConfigured } = useAI();
+  const { toast } = useToast();
   const textareaRef = useRef<EditorTextareaRef>(null);
 
   const handleTextSelection = () => {
@@ -54,8 +58,46 @@ const EditorContainer = () => {
     // Toggle suggestions logic
   };
 
-  const handleQuickAIAction = (action: 'continue' | 'improve') => {
-    // Handle quick AI actions
+  const handleQuickAIAction = async (action: 'continue' | 'improve') => {
+    if (!currentDocument || !isCurrentProviderConfigured()) {
+      toast({
+        title: "AI Not Available",
+        description: "Please configure an AI provider first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const content = currentDocument.content || '';
+      const contextText = action === 'continue' ? content.slice(-200) : content;
+      const result = await processText(contextText, action);
+      
+      if (result && result.trim()) {
+        const newContent = action === 'continue' 
+          ? content + ' ' + result.trim()
+          : result.trim();
+        
+        const syntheticEvent = {
+          target: { value: newContent }
+        } as React.ChangeEvent<HTMLTextAreaElement>;
+        
+        handleContentChange(syntheticEvent);
+        
+        toast({
+          title: `AI ${action === 'continue' ? 'Continuation' : 'Improvement'} Applied`,
+          description: "Your text has been updated",
+          duration: 3000
+        });
+      }
+    } catch (error) {
+      console.error('AI action failed:', error);
+      toast({
+        title: "AI Action Failed",
+        description: error instanceof Error ? error.message : "Could not process text",
+        variant: "destructive"
+      });
+    }
   };
 
   if (!currentDocument) {

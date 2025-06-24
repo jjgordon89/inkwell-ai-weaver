@@ -1,33 +1,20 @@
 
 import { useEffect } from 'react';
-import { DatabaseAIStorage } from '@/lib/databaseAIStorage';
+import type { AIState } from '@/contexts/AIContext';
 
-interface SettingsState {
-  selectedProvider: string;
-  selectedModel: string;
-  apiKeys: Record<string, string>;
-  settings: any;
-}
-
-export const useSettingsPersistence = (state: SettingsState) => {
+export const useSettingsPersistence = (state: AIState) => {
+  // Save provider selection
   useEffect(() => {
-    const saveSettings = async () => {
-      try {
-        await DatabaseAIStorage.saveSelectedProvider(state.selectedProvider);
-        await DatabaseAIStorage.saveSelectedModel(state.selectedModel);
-        await DatabaseAIStorage.saveApiKeys(state.apiKeys);
-      } catch (error) {
-        console.error('Failed to save AI settings to database:', error);
-      }
-    };
+    localStorage.setItem('ai-selected-provider', state.selectedProvider);
+  }, [state.selectedProvider]);
 
-    if (state.selectedProvider) {
-      saveSettings();
-    }
-  }, [state.selectedProvider, state.selectedModel, state.apiKeys]);
-
+  // Save model selection
   useEffect(() => {
-    const settingsToSave = state.settings;
-    localStorage.setItem('ai-configuration', JSON.stringify(settingsToSave));
+    localStorage.setItem('ai-selected-model', state.selectedModel);
+  }, [state.selectedModel]);
+
+  // Save settings
+  useEffect(() => {
+    localStorage.setItem('ai-settings', JSON.stringify(state.settings));
   }, [state.settings]);
 };
