@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -12,6 +11,7 @@ import ProviderStatus from './ai-text-processor/ProviderStatus';
 import SelectedTextDisplay from './ai-text-processor/SelectedTextDisplay';
 import ActionButtons from './ai-text-processor/ActionButtons';
 import SuggestionsList from './ai-text-processor/SuggestionsList';
+import RevisionModeButton from './ai-text-processor/RevisionModeButton';
 
 interface TextSuggestion {
   id: string;
@@ -138,7 +138,7 @@ const AITextProcessorContent = () => {
         <CardDescription>
           {state.selectedText 
             ? `Process "${state.selectedText.substring(0, 30)}${state.selectedText.length > 30 ? '...' : ''}"`
-            : 'Select text in the editor to enable AI processing'
+            : 'Select text in the editor to enable AI processing or use revision mode for document-wide improvements'
           }
         </CardDescription>
       </CardHeader>
@@ -164,8 +164,13 @@ const AITextProcessorContent = () => {
           </Alert>
         )}
 
+        {/* Revision Mode - available even without selected text */}
+        <div className="border-t pt-4">
+          <RevisionModeButton isProviderConfigured={isCurrentProviderConfigured()} />
+        </div>
+
         {state.selectedText ? (
-          <div className="space-y-3">
+          <div className="space-y-3 border-t pt-4">
             <SelectedTextDisplay selectedText={state.selectedText} />
 
             {!showSuggestions && (
@@ -195,11 +200,11 @@ const AITextProcessorContent = () => {
             )}
           </div>
         ) : (
-          <div className="text-center p-6 text-muted-foreground">
+          <div className="text-center p-6 text-muted-foreground border-t pt-4">
             <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm mb-2">No text selected</p>
             <p className="text-xs">
-              Highlight text in the editor to process it with AI
+              Highlight text in the editor to process it with AI, or use Revision Mode above for document-wide improvements
             </p>
           </div>
         )}
