@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -47,7 +46,7 @@ const EnhancedModelSelector = () => {
     if (!provider) return [];
 
     const dbModels = modelDatabase[selectedProvider] || [];
-    return provider.models.map(modelId => {
+    return provider.models.map((modelId: string) => {
       const modelInfo = dbModels.find(m => m.id === modelId);
       return modelInfo || {
         id: modelId,
@@ -60,7 +59,7 @@ const EnhancedModelSelector = () => {
   }, [selectedProvider, availableProviders]);
 
   const filteredModels = useMemo(() => {
-    return currentProviderModels.filter(model => {
+    return currentProviderModels.filter((model: ModelInfo) => {
       const matchesSearch = model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           model.id.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = categoryFilter === 'all' || model.category === categoryFilter;
@@ -131,7 +130,7 @@ const EnhancedModelSelector = () => {
 
         {/* Model Grid */}
         <div className="grid gap-3 max-h-64 overflow-y-auto">
-          {filteredModels.map((model) => (
+          {filteredModels.map((model: ModelInfo) => (
             <div
               key={model.id}
               className={`p-3 border rounded-lg cursor-pointer transition-colors hover:bg-muted/50 ${

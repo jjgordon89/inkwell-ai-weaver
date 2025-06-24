@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +54,10 @@ const AIPerformanceMonitor = () => {
 
   // Record a successful request
   const recordSuccess = (responseTime: number) => {
-    const newMetrics = {
+    const newProviderStatus: 'healthy' | 'degraded' | 'down' = 
+      responseTime < 5000 ? 'healthy' : responseTime < 10000 ? 'degraded' : 'down';
+    
+    const newMetrics: PerformanceMetrics = {
       ...metrics,
       totalRequests: metrics.totalRequests + 1,
       lastResponseTime: responseTime,
@@ -63,19 +65,19 @@ const AIPerformanceMonitor = () => {
         ? responseTime 
         : (metrics.averageResponseTime * metrics.totalRequests + responseTime) / (metrics.totalRequests + 1),
       successRate: ((metrics.totalRequests - metrics.errorCount) / (metrics.totalRequests + 1)) * 100,
-      providerStatus: responseTime < 5000 ? 'healthy' : responseTime < 10000 ? 'degraded' : 'down' as const
+      providerStatus: newProviderStatus
     };
     saveMetrics(newMetrics);
   };
 
   // Record a failed request
   const recordError = () => {
-    const newMetrics = {
+    const newMetrics: PerformanceMetrics = {
       ...metrics,
       totalRequests: metrics.totalRequests + 1,
       errorCount: metrics.errorCount + 1,
       successRate: ((metrics.totalRequests - metrics.errorCount) / (metrics.totalRequests + 1)) * 100,
-      providerStatus: 'degraded' as const
+      providerStatus: 'degraded'
     };
     saveMetrics(newMetrics);
   };
