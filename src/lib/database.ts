@@ -576,15 +576,16 @@ export class SQLiteDatabase {
     if (provider.configuration && !isValidJSON(provider.configuration)) {
       throw new Error('Invalid JSON for AI provider configuration');
     }
-    const name = sanitizeString(provider.name);
-    const endpoint = sanitizeString(provider.endpoint);
-    const model = sanitizeString(provider.model);
-    if (!name) throw new Error('Provider name is required');
+    // Sanitize user input
+    const name = sanitizeInput(provider.name);
+    const endpoint = sanitizeInput(provider.endpoint ?? '');
+    const model = sanitizeInput(provider.model ?? '');
+    const api_key = provider.api_key ? obfuscate(provider.api_key) : null;
     await this.callWorker<void>('run', {
       sql: `INSERT OR REPLACE INTO ai_providers (name, api_key, endpoint, model, is_active, is_local, configuration, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
       params: [
         name,
-        provider.api_key || null,
+        api_key,
         endpoint,
         model,
         provider.is_active ? 1 : 0,
@@ -651,6 +652,90 @@ export class SQLiteDatabase {
       }
     }
     return results;
+  }
+
+  /**
+   * Get all project templates from the database.
+   * @returns Array of project templates.
+   */
+  async getProjectTemplates(): Promise<Array<{
+    id: number;
+    name: string;
+    description: string;
+    genre: string;
+    tone: string;
+    structure: string;
+    template_json: object;
+    createdAt: string;
+    updatedAt: string;
+  }>> {
+    await this.initialize();
+    const rows = await this.callWorker<SQLJsExecResult[]>("exec", {
+      sql: "SELECT id, name, description, genre, tone, structure, template_json, created_at, updated_at FROM project_templates ORDER BY name ASC",
+    });
+    const results: Array<{
+      id: number;
+      name: string;
+      description: string;
+      genre: string;
+      tone: string;
+      structure: string;
+      template_json: object;
+      createdAt: string;
+      updatedAt: string;
+    }> = [];
+    if (rows[0]) {
+      for (const row of rows[0].values) {
+        let templateJson: object = {};
+        try {
+          templateJson = row[6] ? JSON.parse(row[6] as string) : {};
+        } catch {
+          templateJson = {};
+        }
+        results.push({
+          id: row[0] as number,
+          name: row[1] as string,
+          description: row[2] as string,
+          genre: row[3] as string,
+          tone: row[4] as string,
+          structure: row[5] as string,
+          template_json: templateJson,
+          createdAt: row[7] as string,
+          updatedAt: row[8] as string,
+        });
+      }
+    }
+    return results;
+  }
+
+  /**
+   * Delete an AI provider by ID.
+   * @param id - The provider ID.
+   */
+  async deleteAIProvider(id: number): Promise<void> {
+    await this.initialize();
+    await this.callWorker<void>('run', {
+      sql: 'DELETE FROM ai_providers WHERE id = ?',
+      params: [id]
+    });
+    this.debouncedSave();
+  }
+
+  /**
+   * Set the active AI provider by ID (sets is_active=1 for the given ID, 0 for all others).
+   * @param id - The provider ID to set as active.
+   */
+  async setActiveAIProvider(id: number): Promise<void> {
+    await this.initialize();
+    // Set all to inactive, then set the chosen one to active
+    await this.callWorker<void>('run', {
+      sql: 'UPDATE ai_providers SET is_active = 0',
+    });
+    await this.callWorker<void>('run', {
+      sql: 'UPDATE ai_providers SET is_active = 1 WHERE id = ?',
+      params: [id]
+    });
+    this.debouncedSave();
   }
 
   // --- Web Worker Setup ---

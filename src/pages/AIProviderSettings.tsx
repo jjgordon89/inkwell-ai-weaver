@@ -10,7 +10,7 @@ interface AIProvider {
   model: string;
   is_active: boolean;
   is_local: boolean;
-  configuration: string;
+  configuration: string | object | null;
 }
 
 const AIProviderSettings: React.FC = () => {
@@ -21,7 +21,11 @@ const AIProviderSettings: React.FC = () => {
 
   const loadProviders = async () => {
     const rows = await database.listAIProviders();
-    setProviders(rows);
+    // Convert configuration to string for form fields
+    setProviders(rows.map((prov) => ({
+      ...prov,
+      configuration: prov.configuration ? JSON.stringify(prov.configuration) : ""
+    })));
   };
 
   useEffect(() => {
@@ -30,7 +34,7 @@ const AIProviderSettings: React.FC = () => {
 
   const handleEdit = (prov: AIProvider) => {
     setEditing(prov);
-    setForm({ ...prov, api_key: "" }); // Do not show key
+    setForm({ ...prov, api_key: "", configuration: typeof prov.configuration === "string" ? prov.configuration : JSON.stringify(prov.configuration ?? "") }); // Do not show key
   };
 
   const handleDelete = async (id: number) => {
@@ -59,13 +63,14 @@ const AIProviderSettings: React.FC = () => {
         model: form.model || "",
         is_active: !!form.is_active,
         is_local: !!form.is_local,
-        configuration: form.configuration ? JSON.parse(form.configuration) : undefined,
+        configuration: form.configuration ? JSON.parse(form.configuration as string) : undefined,
       });
       setEditing(null);
       setForm({});
       loadProviders();
-    } catch (err: any) {
-      setError(err.message || "Failed to save provider");
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message || "Failed to save provider");
+      else setError("Failed to save provider");
     }
   };
 
@@ -78,7 +83,7 @@ const AIProviderSettings: React.FC = () => {
         <input className="w-full border rounded px-3 py-2" placeholder="Endpoint" value={form.endpoint || ""} onChange={handleChange("endpoint")} />
         <input className="w-full border rounded px-3 py-2" placeholder="Model" value={form.model || ""} onChange={handleChange("model")} />
         <input className="w-full border rounded px-3 py-2" placeholder="API Key" value={form.api_key || ""} onChange={handleChange("api_key")} type="password" autoComplete="new-password" />
-        <textarea className="w-full border rounded px-3 py-2" placeholder="Configuration (JSON)" value={form.configuration || ""} onChange={handleChange("configuration")} />
+        <textarea className="w-full border rounded px-3 py-2" placeholder="Configuration (JSON)" value={typeof form.configuration === "string" ? form.configuration : JSON.stringify(form.configuration ?? "")} onChange={handleChange("configuration")} />
         <div className="flex gap-2">
           <Button type="submit">{editing ? "Update" : "Add"} Provider</Button>
           {editing && <Button type="button" variant="outline" onClick={() => { setEditing(null); setForm({}); }}>Cancel</Button>}

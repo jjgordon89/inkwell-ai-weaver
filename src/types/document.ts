@@ -41,5 +41,5 @@ export interface DocumentView {
   name: string;
   type: 'editor' | 'corkboard' | 'outline' | 'timeline' | 'research';
   activeDocumentId?: string;
-  viewSettings?: Record<string, any>;
+  viewSettings?: Record<string, unknown>;
 }

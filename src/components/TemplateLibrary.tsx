@@ -24,7 +24,6 @@ export default function TemplateLibrary() {
     setLoading(true);
     setError(null);
     try {
-      // @ts-expect-error: getProjectTemplates is implemented on SQLiteDatabase
       const data = await database.getProjectTemplates();
       setTemplates(data);
     } catch (e: unknown) {

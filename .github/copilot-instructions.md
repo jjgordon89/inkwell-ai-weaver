@@ -23,6 +23,7 @@ globs: *
     *   Add validation for JSON fields before saving to the database.
     *   Sanitize all user input before saving to the database.
 *   When sanitizing string inputs, use a `sanitizeString` utility for all user-facing string fields (project/template/provider names, descriptions, etc.) to prevent XSS/injection.
+*   Ensure there is only one implementation of each method within a class. Remove any duplicate method implementations.
 
 ## WORKFLOW & RELEASE RULES
 *   Clicking the "Create New Project" button on the Projects page navigates to `/projects/new`.
@@ -45,6 +46,7 @@ globs: *
     *   Users must be able to edit and delete templates via the UI.
     *   The template selection UI should show a richer preview or allow inline editing before use.
 *   Fallback Logic: Add support for alternative AI providers or graceful fallback if the main API fails.
+*   Inline editing and richer previews are present, but template re-use (applying a template to a new/existing project) should be accessible from the project creation and editing flows.
 
 ## TECH STACK
 *   sql.js - SQLite compiled to WebAssembly
@@ -85,6 +87,7 @@ globs: *
 ## TEMPLATE LIBRARY ENHANCEMENTS
 *   Users must be able to edit and delete templates via the UI.
 *   The template selection UI should show a richer preview or allow inline editing before use.
+*   Inline editing and richer previews are present, but template re-use (applying a template to a new/existing project) should be accessible from the project creation and editing flows.
 
 ## ERROR HANDLING & USER FEEDBACK
 *   Implement better error messages for AI failures, DB issues, etc.
@@ -113,3 +116,34 @@ globs: *
 ## SECURITY
 *   Implement more robust validation for all user inputs (not just JSON).
 *   Ensure all user-generated content is sanitized before rendering to prevent XSS/injection.
+
+## UI COMPONENT & PAGE REVIEW
+*   The following components and pages must be reviewed and updated for compliance, input sanitization, async feedback, and documentation/testing:
+    *   `Projects.tsx` (Projects list, navigation)
+    *   `NewProjectPage.tsx` (Project creation workflow)
+    *   `TemplateLibrary.tsx` (Template selection, editing, preview)
+    *   `ProjectSettings.tsx` (Project settings side panel)
+    *   `Editor.tsx` / `EnhancedEditor.tsx` (Project editing, user input)
+    *   (Story, WorldBuilding, etc. — user-generated content)
+    *   `AIProviderSettings.tsx` (AI provider management UI)
+    *   `UserSettings.tsx` (User preferences/settings)
+    *   `AsyncFeedback.tsx` (Feedback UI)
+    *   All components/pages making async DB/AI calls.
+
+## USER INPUT HANDLING
+*   For each form/editor (project, template, provider, settings, world/story elements, etc.):
+    *   Ensure all string fields are sanitized with `sanitizeString` before saving or rendering.
+    *   Check for any direct use of user input in the UI or DB and update as needed.
+
+## ASYNC OPERATIONS AUDIT
+*   For each async operation (DB, AI, network):
+    *   Confirm there is a loading/progress indicator.
+    *   Ensure errors are caught and displayed to the user.
+    *   Add timeouts/retries where appropriate.
+
+## TESTS & DOCUMENTATION
+*   Review the `test/` directory for coverage of:
+    *   Project/template workflows
+    *   AI provider management
+    *   Settings and user preferences
+*   Add or update JSDoc comments for all public methods in new/updated files.
