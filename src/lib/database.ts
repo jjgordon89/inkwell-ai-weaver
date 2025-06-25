@@ -391,6 +391,85 @@ class SQLiteDatabase {
       return [];
     }
   }
+  // Project methods
+  async addProject(project: {
+    name: string;
+    description?: string;
+    settings?: object;
+  }): Promise<number> {
+    await this.initialize();
+    if (!this.db) throw new Error('Database not initialized');
+
+    try {
+      const stmt = this.db.prepare(`
+        INSERT INTO projects (name, description, settings, created_at, updated_at)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      `);
+      stmt.run([
+        project.name,
+        project.description ?? '',
+        project.settings ? JSON.stringify(project.settings) : null
+      ]);
+      const id = this.db.exec('SELECT last_insert_rowid() as id')[0]?.values[0][0] as number;
+      stmt.free();
+      await this.saveToStorage();
+      return id;
+    } catch (error) {
+      console.error('Failed to add project:', error);
+      throw error;
+    }
+  }
+
+  async getProjects(): Promise<Array<{ id: number; name: string; description: string; createdAt: string; updatedAt: string; lastOpened: string | null }>> {
+    await this.initialize();
+    if (!this.db) return [];
+    try {
+      const stmt = this.db.prepare('SELECT id, name, description, created_at as createdAt, updated_at as updatedAt, last_opened as lastOpened FROM projects ORDER BY updated_at DESC');
+      const results: Array<{ id: number; name: string; description: string; createdAt: string; updatedAt: string; lastOpened: string | null }> = [];
+      while (stmt.step()) {
+        const row = stmt.getAsObject();
+        results.push({
+          id: row.id as number,
+          name: row.name as string,
+          description: row.description as string,
+          createdAt: row.createdAt as string,
+          updatedAt: row.updatedAt as string,
+          lastOpened: row.lastOpened as string | null
+        });
+      }
+      stmt.free();
+      return results;
+    } catch (error) {
+      console.error('Failed to get projects:', error);
+      return [];
+    }
+  }
+
+  async getProjectById(id: number): Promise<{ id: number; name: string; description: string; createdAt: string; updatedAt: string; lastOpened: string | null } | null> {
+    await this.initialize();
+    if (!this.db) return null;
+    try {
+      const stmt = this.db.prepare('SELECT id, name, description, created_at as createdAt, updated_at as updatedAt, last_opened as lastOpened FROM projects WHERE id = ?');
+      stmt.bind([id]);
+      let project = null;
+      if (stmt.step()) {
+        const row = stmt.getAsObject();
+        project = {
+          id: row.id as number,
+          name: row.name as string,
+          description: row.description as string,
+          createdAt: row.createdAt as string,
+          updatedAt: row.updatedAt as string,
+          lastOpened: row.lastOpened as string | null
+        };
+      }
+      stmt.free();
+      return project;
+    } catch (error) {
+      console.error('Failed to get project by id:', error);
+      return null;
+    }
+  }
   // Generic query method for advanced usage
   async query(sql: string, params: (string | number | null)[] = []): Promise<Record<string, unknown>[]> {
     await this.initialize();

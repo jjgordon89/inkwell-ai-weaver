@@ -1,18 +1,36 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EmptyState from "@/components/ui/empty-state";
 import { Plus, Book } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import database from "@/lib/database";
+
+interface ProjectListItem {
+  id: number;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+  lastOpened: string | null;
+}
 
 const ProjectsPage = () => {
-  // Mock data for projects. In a real app, this would come from an API.
-  const projects = [
-    { id: 1, name: "The Crimson Cipher", lastEdited: "2 hours ago" },
-    { id: 2, name: "Echoes of Nebula", lastEdited: "1 day ago" },
-  ];
-
+  const [projects, setProjects] = useState<ProjectListItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchProjects = async () => {
+      setLoading(true);
+      const result = await database.getProjects();
+      if (mounted) setProjects(result);
+      setLoading(false);
+    };
+    fetchProjects();
+    return () => { mounted = false; };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -26,19 +44,29 @@ const ProjectsPage = () => {
         </header>
 
         <main>
-          {projects.length > 0 ? (
+          {loading ? (
+            <div>Loading projects...</div>
+          ) : projects.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects.map((project) => (
                 <Link to="/studio" key={project.id}>
                   <Card className="hover:shadow-lg transition-shadow duration-200 cursor-pointer h-full flex flex-col">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-3">
-                        <Book className="text-primary"/>
+                        <Book className="text-primary" />
                         {project.name}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="flex-grow">
-                      <p className="text-sm text-muted-foreground">Last edited: {project.lastEdited}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Last edited:{" "}
+                        {project.updatedAt
+                          ? new Date(project.updatedAt).toLocaleString()
+                          : "-"}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {project.description}
+                      </p>
                     </CardContent>
                   </Card>
                 </Link>
