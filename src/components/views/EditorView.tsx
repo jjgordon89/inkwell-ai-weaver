@@ -1,10 +1,10 @@
-
 import React, { useCallback } from 'react';
 import { useEditorViewState } from './editor/useEditorViewState';
 import EditorViewHeader from './editor/EditorViewHeader';
 import EditorTextarea from './editor/EditorTextarea';
 import EditorAIComponents from './editor/EditorAIComponents';
 import EditorEmptyState from './editor/EditorEmptyState';
+import ProjectSettings from '@/components/ProjectSettings';
 
 const EditorView = () => {
   const {
@@ -63,7 +63,7 @@ const EditorView = () => {
   }
 
   return (
-    <div className="h-full flex flex-col relative">
+    <div className="h-full flex flex-col">
       <EditorViewHeader
         title={activeDocument.title}
         status={activeDocument.status}
@@ -72,23 +72,30 @@ const EditorView = () => {
         suggestionsCount={suggestions.length}
         onSave={handleSave}
       />
-      
-      <EditorTextarea
-        content={activeDocument.content || ''}
-        onChange={handleContentChange}
-        onTextSelection={handleTextSelection}
-      />
-
-      <EditorAIComponents
-        activeDocument={activeDocument}
-        selectedText={selectedText}
-        selectionPosition={selectionPosition}
-        showInlineSuggestions={showInlineSuggestions}
-        suggestions={suggestions}
-        onContentChange={handleContentChange}
-        onApplyAISuggestion={handleApplyAISuggestion}
-        onDismissInlineSuggestions={handleDismissInlineSuggestions}
-      />
+      <div className="flex-1 flex flex-row overflow-hidden">
+        <div className="flex-1">
+          <EditorTextarea
+            content={activeDocument.content || ''}
+            onChange={handleContentChange}
+            onTextSelection={handleTextSelection}
+          />
+          <EditorAIComponents
+            activeDocument={activeDocument}
+            selectedText={selectedText}
+            selectionPosition={selectionPosition}
+            showInlineSuggestions={showInlineSuggestions}
+            suggestions={suggestions}
+            onContentChange={handleContentChange}
+            onApplyAISuggestion={handleApplyAISuggestion}
+            onDismissInlineSuggestions={handleDismissInlineSuggestions}
+          />
+        </div>
+        {/* Project Settings Tab/Panel */}
+        <div className="w-96 border-l bg-gray-50 p-4 overflow-y-auto hidden md:block">
+          <ProjectSettings />
+        </div>
+      </div>
+      <EditorEmptyState />
     </div>
   );
 };

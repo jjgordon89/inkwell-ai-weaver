@@ -1,4 +1,3 @@
-
 export interface Project {
   id: string;
   name: string;
@@ -8,6 +7,7 @@ export interface Project {
   structure: 'novel' | 'screenplay' | 'research' | 'poetry';
   wordCountTarget?: number;
   status: 'draft' | 'revision' | 'editing' | 'complete';
+  settings?: object; // Project-specific settings (JSON from DB)
 }
 
 export interface DocumentNode {

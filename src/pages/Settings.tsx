@@ -10,6 +10,8 @@ import AppearanceSettings from '@/components/settings/AppearanceSettings';
 import PrivacySettings from '@/components/settings/PrivacySettings';
 import ProfileSettings from '@/components/settings/ProfileSettings';
 import NotificationSettings from '@/components/settings/NotificationSettings';
+import TemplateLibrary from '@/components/TemplateLibrary';
+import UserSettings from '@/components/UserSettings';
 
 const SettingsPage = () => {
   return (
@@ -28,7 +30,7 @@ const SettingsPage = () => {
       </div>
 
       <Tabs defaultValue="database" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="database" className="flex items-center gap-2">
             <Database className="h-4 w-4" />
             Database
@@ -52,6 +54,10 @@ const SettingsPage = () => {
           <TabsTrigger value="privacy" className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
             Privacy
+          </TabsTrigger>
+          <TabsTrigger value="templates" className="flex items-center gap-2">
+            <Bot className="h-4 w-4" />
+            Templates
           </TabsTrigger>
         </TabsList>
 
@@ -77,6 +83,14 @@ const SettingsPage = () => {
 
         <TabsContent value="privacy" className="mt-6">
           <PrivacySettings />
+        </TabsContent>
+
+        <TabsContent value="templates" className="mt-6">
+          <TemplateLibrary />
+        </TabsContent>
+
+        <TabsContent value="user" className="mt-6">
+          <UserSettings />
         </TabsContent>
       </Tabs>
     </div>
