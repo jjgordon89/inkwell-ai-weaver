@@ -1,18 +1,40 @@
 
 // SQLite Web Worker for sql.js
-// Use self instead of importScripts for better compatibility
-self.importScripts = self.importScripts || function() {};
-
-// Import sql.js
-self.importScripts('https://sql.js.org/dist/sql-wasm.js');
-
-import type { Database, SqlJsStatic } from 'sql.js';
-
-let db: Database | null = null;
-let SQL: SqlJsStatic | null = null;
+// Proper Web Worker implementation without importScripts
 
 // Define worker context properly
 const ctx: Worker = self as any;
+
+let db: any = null;
+let SQL: any = null;
+
+// Initialize SQL.js function
+async function initializeSQLJS() {
+  try {
+    // Load sql.js dynamically using fetch instead of importScripts
+    const response = await fetch('https://sql.js.org/dist/sql-wasm.js');
+    const scriptText = await response.text();
+    
+    // Execute the script in worker context
+    eval(scriptText);
+    
+    // Initialize SQL.js
+    const initSqlJs = (self as any).initSqlJs;
+    if (!initSqlJs) {
+      throw new Error('initSqlJs not found - sql.js may not have loaded properly');
+    }
+    
+    SQL = await initSqlJs({ 
+      locateFile: (file: string) => `https://sql.js.org/dist/${file}` 
+    });
+    
+    console.log('[DB Worker] SQL.js initialized successfully');
+    return true;
+  } catch (error) {
+    console.error('[DB Worker] Failed to initialize SQL.js:', error);
+    throw error;
+  }
+}
 
 // Message handler
 ctx.onmessage = async (event: MessageEvent) => {
@@ -21,20 +43,7 @@ ctx.onmessage = async (event: MessageEvent) => {
   try {
     // Initialize SQL.js if not already done
     if (!SQL) {
-      try {
-        const initSqlJs = (self as any).initSqlJs;
-        if (!initSqlJs) {
-          throw new Error('initSqlJs not found - sql.js may not have loaded properly');
-        }
-        
-        SQL = await initSqlJs({ 
-          locateFile: (file: string) => `https://sql.js.org/dist/${file}` 
-        });
-        console.log('[DB Worker] SQL.js initialized successfully');
-      } catch (error) {
-        console.error('[DB Worker] Failed to initialize SQL.js:', error);
-        throw error;
-      }
+      await initializeSQLJS();
     }
 
     // Handle different actions
