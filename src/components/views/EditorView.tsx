@@ -95,7 +95,7 @@ const EditorView = () => {
             suggestions={suggestions.map((text, index) => ({ 
               id: `suggestion-${index}`, 
               text, 
-              type: 'suggestion' as const,
+              type: 'improvement' as const, // Changed from 'suggestion' to 'improvement' which is a valid AISuggestion type
               confidence: 0.8 
             }))} // Convert strings to proper AISuggestion objects with all required properties
             onContentChange={handleContentChange}

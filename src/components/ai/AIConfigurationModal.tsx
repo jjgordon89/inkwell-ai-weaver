@@ -61,7 +61,7 @@ const AIConfigurationModal: React.FC<AIConfigurationModalProps> = ({ isOpen, onC
 
   const handleTestConnection = async () => {
     const result = await testConnection(selectedProvider);
-    setTestResult(result); // testConnection returns boolean, which matches the expected type
+    setTestResult(result); // This now correctly passes a boolean
     
     if (result) {
       toast({
