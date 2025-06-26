@@ -92,7 +92,7 @@ const EditorView = () => {
             selectedText={selectedText}
             selectionPosition={selectionPosition}
             showInlineSuggestions={showInlineSuggestions}
-            suggestions={suggestions}
+            suggestions={suggestions.map(text => ({ text, type: 'suggestion' as const }))} // Convert strings to AISuggestion objects
             onContentChange={handleContentChange}
             onApplyAISuggestion={handleApplyAISuggestion}
             onDismissInlineSuggestions={handleDismissInlineSuggestions}

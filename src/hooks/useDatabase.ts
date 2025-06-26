@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useProject } from '@/contexts/ProjectContext';
 import { database } from '@/lib/database';
 
 export interface Setting {
@@ -48,7 +49,7 @@ export const useDatabase = () => {
     try {
       const [allSettings, providers] = await Promise.all([
         database.getAllSettings(),
-        database.getAIProviders()
+        database.listAIProviders() // Changed from getAIProviders to listAIProviders
       ]);
       
       setSettings(allSettings);
@@ -179,7 +180,7 @@ export const useDatabase = () => {
     
     try {
       const allSettings = await database.getAllSettings();
-      const allProviders = await database.getAIProviders();
+      const allProviders = await database.listAIProviders();
       
       const exportData = {
         version: '1.0',
@@ -221,6 +222,16 @@ export const useDatabase = () => {
       throw new Error('Failed to import settings: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }
   }, [isInitialized, loadAllData]);
+
+    // Get all provider configurations
+    static async getProviderConfigs() {
+      try {
+        return await database.listAIProviders(); // Changed from getAIProviders to listAIProviders
+      } catch (error) {
+        console.error('Failed to get provider configurations:', error);
+        return [];
+      }
+    }
 
   const clearError = useCallback(() => {
     setError(null);

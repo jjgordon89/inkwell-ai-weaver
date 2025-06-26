@@ -559,44 +559,6 @@ export class SQLiteDatabase {
   }
 
   /**
-   * Save or update an AI provider.
-   * @param provider - The provider object.
-   * @throws Error if configuration is not valid JSON or input is invalid.
-   */
-  async saveAIProvider(provider: {
-    name: string;
-    api_key?: string;
-    endpoint?: string;
-    model?: string;
-    is_active?: boolean;
-    is_local?: boolean;
-    configuration?: object;
-  }): Promise<void> {
-    await this.initialize();
-    if (provider.configuration && !isValidJSON(provider.configuration)) {
-      throw new Error('Invalid JSON for AI provider configuration');
-    }
-    // Sanitize user input
-    const name = sanitizeInput(provider.name);
-    const endpoint = sanitizeInput(provider.endpoint ?? '');
-    const model = sanitizeInput(provider.model ?? '');
-    const api_key = provider.api_key ? obfuscate(provider.api_key) : null;
-    await this.callWorker<void>('run', {
-      sql: `INSERT OR REPLACE INTO ai_providers (name, api_key, endpoint, model, is_active, is_local, configuration, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-      params: [
-        name,
-        api_key,
-        endpoint,
-        model,
-        provider.is_active ? 1 : 0,
-        provider.is_local ? 1 : 0,
-        provider.configuration ? JSON.stringify(provider.configuration) : null
-      ]
-    });
-    this.debouncedSave();
-  }
-
-  /**
    * List all AI providers, masking API keys and parsing configuration as JSON.
    * @returns Array of AI providers with masked api_key and parsed configuration.
    */
@@ -736,6 +698,44 @@ export class SQLiteDatabase {
       params: [id]
     });
     this.debouncedSave();
+  }
+
+  /**
+   * Get all projects from the database.
+   */
+  async getProjects(): Promise<Array<{
+    id: number;
+    name: string;
+    description: string;
+    createdAt: string;
+    updatedAt: string;
+    lastOpened: string | null;
+  }>> {
+    await this.initialize();
+    const rows = await this.callWorker<SQLJsExecResult[]>('exec', {
+      sql: 'SELECT id, name, description, created_at, updated_at, last_opened FROM projects ORDER BY updated_at DESC'
+    });
+    const results: Array<{
+      id: number;
+      name: string;
+      description: string;
+      createdAt: string;
+      updatedAt: string;
+      lastOpened: string | null;
+    }> = [];
+    if (rows[0]) {
+      for (const row of rows[0].values) {
+        results.push({
+          id: row[0] as number,
+          name: row[1] as string,
+          description: row[2] as string,
+          createdAt: row[3] as string,
+          updatedAt: row[4] as string,
+          lastOpened: row[5] as string | null,
+        });
+      }
+    }
+    return results;
   }
 
   // --- Web Worker Setup ---
