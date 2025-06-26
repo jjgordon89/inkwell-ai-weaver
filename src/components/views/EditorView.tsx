@@ -1,4 +1,6 @@
+
 import React, { useCallback } from 'react';
+import { useProject } from '@/contexts/ProjectContext';
 import { useEditorViewState } from './editor/useEditorViewState';
 import EditorViewHeader from './editor/EditorViewHeader';
 import EditorTextarea from './editor/EditorTextarea';
@@ -7,8 +9,14 @@ import EditorEmptyState from './editor/EditorEmptyState';
 import ProjectSettings from '@/components/ProjectSettings';
 
 const EditorView = () => {
+  const { state } = useProject();
+  
+  // Get the active document from the project state
+  const activeDocument = state.activeDocumentId 
+    ? state.flatDocuments.find(doc => doc.id === state.activeDocumentId)
+    : null;
+
   const {
-    activeDocument,
     hasUnsavedChanges,
     wordCount,
     selectedText,
@@ -95,7 +103,6 @@ const EditorView = () => {
           <ProjectSettings />
         </div>
       </div>
-      <EditorEmptyState />
     </div>
   );
 };
