@@ -1,175 +1,77 @@
 
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import type { AIProvider } from '@/hooks/ai/types';
 
 export interface AIState {
-  // Provider and model settings
   selectedProvider: string;
   selectedModel: string;
-  availableProviders: AIProvider[];
-  
-  // API keys and configuration
   apiKeys: Record<string, string>;
-  
-  // Processing states
   isProcessing: boolean;
   isTestingConnection: boolean;
-  isGenerating: boolean;
-  
-  // Error handling
-  error: Error | null;
-  lastOperation: string | null;
-  
-  // Results cache
-  resultsCache: Map<string, { result: string; timestamp: number }>;
-  
-  // Settings
+  error: { error: Error | null; operation?: string } | null;
   settings: {
-    autoSuggest: boolean;
-    realTimeProcessing: boolean;
-    maxTokens: string;
-    temperature: string;
     cacheEnabled: boolean;
-    cacheExpiryMs: number;
+    cacheExpiry: number;
+    maxTokens: number;
+    temperature: number;
   };
 }
 
-export type AIContextAction = 
+export type AIContextAction =
   | { type: 'SET_PROVIDER'; payload: string }
   | { type: 'SET_MODEL'; payload: string }
   | { type: 'SET_API_KEY'; payload: { provider: string; key: string } }
   | { type: 'SET_PROCESSING'; payload: boolean }
   | { type: 'SET_TESTING_CONNECTION'; payload: boolean }
-  | { type: 'SET_GENERATING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: { error: Error | null; operation?: string } }
   | { type: 'CLEAR_ERROR' }
-  | { type: 'UPDATE_SETTINGS'; payload: Partial<AIState['settings']> }
-  | { type: 'CACHE_RESULT'; payload: { key: string; result: string } }
-  | { type: 'CLEAR_CACHE' }
-  | { type: 'LOAD_INITIAL_STATE'; payload: Partial<AIState> };
+  | { type: 'UPDATE_SETTINGS'; payload: Partial<AIState['settings']> };
 
 const initialState: AIState = {
   selectedProvider: 'OpenAI',
-  selectedModel: 'gpt-4.1-2025-04-14',
-  availableProviders: [],
+  selectedModel: 'gpt-4',
   apiKeys: {},
   isProcessing: false,
   isTestingConnection: false,
-  isGenerating: false,
   error: null,
-  lastOperation: null,
-  resultsCache: new Map(),
   settings: {
-    autoSuggest: true,
-    realTimeProcessing: false,
-    maxTokens: '1000',
-    temperature: '0.7',
     cacheEnabled: true,
-    cacheExpiryMs: 300000 // 5 minutes
+    cacheExpiry: 3600000, // 1 hour
+    maxTokens: 2048,
+    temperature: 0.7
   }
 };
 
-function aiReducer(state: AIState, action: AIContextAction): AIState {
+const aiReducer = (state: AIState, action: AIContextAction): AIState => {
   switch (action.type) {
     case 'SET_PROVIDER':
-      return {
-        ...state,
-        selectedProvider: action.payload,
-        error: null
-      };
-      
+      return { ...state, selectedProvider: action.payload };
     case 'SET_MODEL':
-      return {
-        ...state,
-        selectedModel: action.payload,
-        error: null
-      };
-      
+      return { ...state, selectedModel: action.payload };
     case 'SET_API_KEY':
       return {
         ...state,
         apiKeys: {
           ...state.apiKeys,
           [action.payload.provider]: action.payload.key
-        },
-        error: null
+        }
       };
-      
     case 'SET_PROCESSING':
-      return {
-        ...state,
-        isProcessing: action.payload,
-        error: action.payload ? null : state.error
-      };
-      
+      return { ...state, isProcessing: action.payload };
     case 'SET_TESTING_CONNECTION':
-      return {
-        ...state,
-        isTestingConnection: action.payload,
-        error: action.payload ? null : state.error
-      };
-      
-    case 'SET_GENERATING':
-      return {
-        ...state,
-        isGenerating: action.payload,
-        error: action.payload ? null : state.error
-      };
-      
+      return { ...state, isTestingConnection: action.payload };
     case 'SET_ERROR':
-      return {
-        ...state,
-        error: action.payload.error,
-        lastOperation: action.payload.operation || state.lastOperation,
-        isProcessing: false,
-        isTestingConnection: false,
-        isGenerating: false
-      };
-      
+      return { ...state, error: action.payload };
     case 'CLEAR_ERROR':
-      return {
-        ...state,
-        error: null,
-        lastOperation: null
-      };
-      
+      return { ...state, error: null };
     case 'UPDATE_SETTINGS':
       return {
         ...state,
-        settings: {
-          ...state.settings,
-          ...action.payload
-        }
+        settings: { ...state.settings, ...action.payload }
       };
-      
-    case 'CACHE_RESULT': {
-      const newCache = new Map(state.resultsCache);
-      newCache.set(action.payload.key, {
-        result: action.payload.result,
-        timestamp: Date.now()
-      });
-      return {
-        ...state,
-        resultsCache: newCache
-      };
-    }
-      
-    case 'CLEAR_CACHE':
-      return {
-        ...state,
-        resultsCache: new Map()
-      };
-      
-    case 'LOAD_INITIAL_STATE':
-      return {
-        ...state,
-        ...action.payload
-      };
-      
     default:
       return state;
   }
-}
+};
 
 interface AIContextType {
   state: AIState;
@@ -178,24 +80,8 @@ interface AIContextType {
 
 const AIContext = createContext<AIContextType | undefined>(undefined);
 
-interface AIProviderProps {
-  children: ReactNode;
-}
-
-export const AIContextProvider = ({ children }: AIProviderProps) => {
+export const AIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(aiReducer, initialState);
-
-  // Initialize cache as Map if it's not already
-  React.useEffect(() => {
-    if (!(state.resultsCache instanceof Map)) {
-      dispatch({
-        type: 'LOAD_INITIAL_STATE',
-        payload: {
-          resultsCache: new Map()
-        }
-      });
-    }
-  }, [state.resultsCache]);
 
   return (
     <AIContext.Provider value={{ state, dispatch }}>
@@ -207,7 +93,7 @@ export const AIContextProvider = ({ children }: AIProviderProps) => {
 export const useAIContext = () => {
   const context = useContext(AIContext);
   if (context === undefined) {
-    throw new Error('useAIContext must be used within an AIContextProvider');
+    throw new Error('useAIContext must be used within an AIProvider');
   }
   return context;
 };

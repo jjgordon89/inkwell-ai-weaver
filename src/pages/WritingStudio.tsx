@@ -1,14 +1,18 @@
 
 import React, { useEffect } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
+import { useAppIntegration } from '@/hooks/useAppIntegration';
 import WritingStudioLayout from '@/components/layout/WritingStudioLayout';
 import type { DocumentNode } from '@/types/document';
 
 const WritingStudio = () => {
   const { state, dispatch } = useProject();
+  const { isReady } = useAppIntegration();
 
   // Initialize with sample document structure - Manuscript folder is permanent
   useEffect(() => {
+    if (!isReady) return;
+
     // Only initialize if no documents exist
     if (state.documentTree.length === 0) {
       const sampleDocuments: DocumentNode[] = [
@@ -123,7 +127,18 @@ const WritingStudio = () => {
         dispatch({ type: 'ADD_DOCUMENT', payload: manuscriptFolder });
       }
     }
-  }, [dispatch, state.documentTree.length]);
+  }, [dispatch, state.documentTree.length, isReady]);
+
+  if (!isReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading writing studio...</p>
+        </div>
+      </div>
+    );
+  }
 
   return <WritingStudioLayout />;
 };
