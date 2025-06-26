@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -61,9 +60,11 @@ const AIConfigurationModal: React.FC<AIConfigurationModalProps> = ({ isOpen, onC
 
   const handleTestConnection = async () => {
     const result = await testConnection(selectedProvider);
-    setTestResult(result); // This now correctly passes a boolean
+    // Extract boolean result from the returned object
+    const success = typeof result === 'boolean' ? result : result?.success || false;
+    setTestResult(success);
     
-    if (result) {
+    if (success) {
       toast({
         title: "Connection Successful",
         description: `Successfully connected to ${selectedProvider}`,
