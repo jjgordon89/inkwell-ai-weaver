@@ -7,7 +7,7 @@ export interface AIState {
   apiKeys: Record<string, string>;
   isProcessing: boolean;
   isTestingConnection: boolean;
-  error: { error: Error | null; operation?: string } | null;
+  error: string | null;
   settings: {
     cacheEnabled: boolean;
     cacheExpiry: number;
@@ -22,7 +22,7 @@ export type AIContextAction =
   | { type: 'SET_API_KEY'; payload: { provider: string; key: string } }
   | { type: 'SET_PROCESSING'; payload: boolean }
   | { type: 'SET_TESTING_CONNECTION'; payload: boolean }
-  | { type: 'SET_ERROR'; payload: { error: Error | null; operation?: string } }
+  | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'CLEAR_ERROR' }
   | { type: 'UPDATE_SETTINGS'; payload: Partial<AIState['settings']> };
 

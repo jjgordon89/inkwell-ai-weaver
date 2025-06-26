@@ -1,6 +1,28 @@
 
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 
+export interface Character {
+  id: string;
+  name: string;
+  description: string;
+  tags: string[];
+  notes?: string;
+}
+
+export interface StoryArc {
+  id: string;
+  title: string;
+  description: string;
+  completed: boolean;
+}
+
+export interface WorldElement {
+  id: string;
+  name: string;
+  type: 'location' | 'culture' | 'technology' | 'magic' | 'other';
+  description: string;
+}
+
 export interface Document {
   id: string;
   title: string;
@@ -17,6 +39,10 @@ export interface WritingState {
   selectedText: string;
   isProcessing: boolean;
   autoSaveEnabled: boolean;
+  activeSection: string;
+  characters: Character[];
+  storyArcs: StoryArc[];
+  worldElements: WorldElement[];
 }
 
 export type WritingAction =
@@ -26,14 +52,28 @@ export type WritingAction =
   | { type: 'SET_PROCESSING'; payload: boolean }
   | { type: 'SET_AUTO_SAVE'; payload: boolean }
   | { type: 'ADD_DOCUMENT'; payload: Document }
-  | { type: 'SET_DOCUMENTS'; payload: Document[] };
+  | { type: 'SET_DOCUMENTS'; payload: Document[] }
+  | { type: 'SET_ACTIVE_SECTION'; payload: string }
+  | { type: 'ADD_CHARACTER'; payload: Character }
+  | { type: 'UPDATE_CHARACTER'; payload: Character }
+  | { type: 'DELETE_CHARACTER'; payload: string }
+  | { type: 'ADD_STORY_ARC'; payload: StoryArc }
+  | { type: 'UPDATE_STORY_ARC'; payload: StoryArc }
+  | { type: 'DELETE_STORY_ARC'; payload: string }
+  | { type: 'ADD_WORLD_ELEMENT'; payload: WorldElement }
+  | { type: 'UPDATE_WORLD_ELEMENT'; payload: WorldElement }
+  | { type: 'DELETE_WORLD_ELEMENT'; payload: string };
 
 const initialState: WritingState = {
   currentDocument: null,
   documents: [],
   selectedText: '',
   isProcessing: false,
-  autoSaveEnabled: true
+  autoSaveEnabled: true,
+  activeSection: 'story',
+  characters: [],
+  storyArcs: [],
+  worldElements: []
 };
 
 const writingReducer = (state: WritingState, action: WritingAction): WritingState => {
@@ -74,6 +114,50 @@ const writingReducer = (state: WritingState, action: WritingAction): WritingStat
       return { ...state, documents: [...state.documents, action.payload] };
     case 'SET_DOCUMENTS':
       return { ...state, documents: action.payload };
+    case 'SET_ACTIVE_SECTION':
+      return { ...state, activeSection: action.payload };
+    case 'ADD_CHARACTER':
+      return { ...state, characters: [...state.characters, action.payload] };
+    case 'UPDATE_CHARACTER':
+      return {
+        ...state,
+        characters: state.characters.map(char =>
+          char.id === action.payload.id ? action.payload : char
+        )
+      };
+    case 'DELETE_CHARACTER':
+      return {
+        ...state,
+        characters: state.characters.filter(char => char.id !== action.payload)
+      };
+    case 'ADD_STORY_ARC':
+      return { ...state, storyArcs: [...state.storyArcs, action.payload] };
+    case 'UPDATE_STORY_ARC':
+      return {
+        ...state,
+        storyArcs: state.storyArcs.map(arc =>
+          arc.id === action.payload.id ? action.payload : arc
+        )
+      };
+    case 'DELETE_STORY_ARC':
+      return {
+        ...state,
+        storyArcs: state.storyArcs.filter(arc => arc.id !== action.payload)
+      };
+    case 'ADD_WORLD_ELEMENT':
+      return { ...state, worldElements: [...state.worldElements, action.payload] };
+    case 'UPDATE_WORLD_ELEMENT':
+      return {
+        ...state,
+        worldElements: state.worldElements.map(element =>
+          element.id === action.payload.id ? action.payload : element
+        )
+      };
+    case 'DELETE_WORLD_ELEMENT':
+      return {
+        ...state,
+        worldElements: state.worldElements.filter(element => element.id !== action.payload)
+      };
     default:
       return state;
   }

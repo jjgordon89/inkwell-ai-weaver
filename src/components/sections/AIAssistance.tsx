@@ -55,7 +55,7 @@ const AIAssistance = () => {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="flex items-center justify-between">
-              <span>{error.message}</span>
+              <span>{error}</span>
               <button 
                 onClick={clearError}
                 className="text-sm underline hover:no-underline"
