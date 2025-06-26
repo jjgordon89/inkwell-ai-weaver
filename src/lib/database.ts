@@ -211,7 +211,7 @@ export class SQLiteDatabase {
   private initPromise: Promise<void> | null = null;
 
   constructor() {
-    this.worker = new Worker(DB_WORKER_PATH, { type: 'module' });
+    this.worker = new Worker(DB_WORKER_PATH, { type: 'classic' });
     this.worker.onmessage = (event: MessageEvent) => {
       const { id, result, error } = event.data as WorkerResponse;
       const pending = this.pending.get(id);

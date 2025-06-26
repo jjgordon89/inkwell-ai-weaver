@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { FileText } from 'lucide-react';
-import { Droppable } from 'react-beautiful-dnd';
 import { Button } from "@/components/ui/button";
 import BinderItem from './BinderItem';
+import DroppableWrapper from './DroppableWrapper';
 import type { DocumentNode } from '@/types/document';
 
 interface BinderTreeProps {
@@ -53,7 +53,7 @@ const BinderTree = ({
   }
 
   return (
-    <Droppable droppableId="root" type="DOCUMENT">
+    <DroppableWrapper droppableId="root" type="DOCUMENT">
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
@@ -80,7 +80,7 @@ const BinderTree = ({
           {provided.placeholder}
         </div>
       )}
-    </Droppable>
+    </DroppableWrapper>
   );
 };
 

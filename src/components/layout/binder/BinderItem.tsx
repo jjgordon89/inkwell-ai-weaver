@@ -1,9 +1,10 @@
 
 import React from 'react';
 import { ChevronRight, ChevronDown, FileText, Folder, BookOpen, MoreHorizontal, Trash2, Edit3, Plus, GripVertical } from 'lucide-react';
-import { Draggable, Droppable } from 'react-beautiful-dnd';
+import { Draggable } from 'react-beautiful-dnd';
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import DroppableWrapper from './DroppableWrapper';
 import type { DocumentNode } from '@/types/document';
 
 interface BinderItemProps {
@@ -159,7 +160,7 @@ const BinderItem = ({
           </div>
           
           {hasChildren && isExpanded && canHaveChildren && (
-            <Droppable droppableId={node.id} type="DOCUMENT">
+            <DroppableWrapper droppableId={node.id} type="DOCUMENT">
               {(provided, snapshot) => (
                 <div
                   ref={provided.innerRef}
@@ -186,7 +187,7 @@ const BinderItem = ({
                   {provided.placeholder}
                 </div>
               )}
-            </Droppable>
+            </DroppableWrapper>
           )}
         </div>
       )}
