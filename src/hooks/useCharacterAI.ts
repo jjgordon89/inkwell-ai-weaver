@@ -29,6 +29,7 @@ export const useCharacterAI = () => {
         personality: 'Interesting personality',
         backstory: 'Rich backstory',
         tags: ['ai-generated'],
+        relationships: [],
         createdWith: 'ai' as const
       };
     }, 'generate character');
@@ -38,7 +39,9 @@ export const useCharacterAI = () => {
       name: 'Generated Character',
       description: 'AI-generated character',
       age: 25,
-      occupation: 'Unknown'
+      occupation: 'Unknown',
+      relationships: [],
+      createdWith: 'ai' as const
     };
   };
 

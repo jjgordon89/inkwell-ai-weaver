@@ -1,12 +1,28 @@
 
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 
+export interface CharacterRelationship {
+  id: string;
+  targetCharacterId: string;
+  type: 'friend' | 'enemy' | 'family' | 'romantic' | 'mentor' | 'rival' | 'other';
+  description: string;
+}
+
 export interface Character {
   id: string;
   name: string;
+  age?: number;
+  occupation?: string;
+  appearance?: string;
+  personality?: string;
   description: string;
+  backstory?: string;
   tags: string[];
   notes?: string;
+  relationships: CharacterRelationship[];
+  createdWith?: 'manual' | 'ai';
+  voiceNotes?: string;
+  arcProgress?: Record<string, number>;
 }
 
 export interface StoryArc {
@@ -19,7 +35,7 @@ export interface StoryArc {
 export interface WorldElement {
   id: string;
   name: string;
-  type: 'location' | 'culture' | 'technology' | 'magic' | 'other';
+  type: 'location' | 'culture' | 'technology' | 'magic' | 'organization' | 'concept' | 'other';
   description: string;
 }
 
