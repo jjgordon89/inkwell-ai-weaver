@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -85,7 +86,7 @@ const AIWorldBuildingGeneratorContent = ({ onWorldElementGenerated, currentEleme
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              {error.message}
+              {error}
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -106,8 +107,10 @@ const AIWorldBuildingGeneratorContent = ({ onWorldElementGenerated, currentEleme
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="location">Location</SelectItem>
-                <SelectItem value="organization">Organization</SelectItem>
-                <SelectItem value="concept">Concept</SelectItem>
+                <SelectItem value="culture">Culture</SelectItem>
+                <SelectItem value="technology">Technology</SelectItem>
+                <SelectItem value="magic">Magic</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
             <Input
