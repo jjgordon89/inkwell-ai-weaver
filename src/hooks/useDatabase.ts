@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import { database } from '@/lib/database';
@@ -16,7 +15,7 @@ export interface AIProviderData {
   model?: string;
   is_active: boolean;
   is_local: boolean;
-  configuration?: object;
+  configuration?: object | undefined; // Changed from object | null to object | undefined to match interface
 }
 
 export const useDatabase = () => {
@@ -54,7 +53,12 @@ export const useDatabase = () => {
       ]);
       
       setSettings(allSettings);
-      setAIProviders(providers);
+      // Transform the data to match our interface expectations
+      const transformedProviders = providers.map(provider => ({
+        ...provider,
+        configuration: provider.configuration || undefined // Convert null to undefined
+      }));
+      setAIProviders(transformedProviders);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
       console.error('Failed to load database data:', err);
