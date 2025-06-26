@@ -172,29 +172,24 @@ function debouncedSaveToStorage(db: SQLiteDatabase) {
 // --- Schema Migration Placeholder ---
 async function migrateSchema(db: SQLiteDatabase) {
   // Placeholder: implement schema migrations here if needed in the future
-  // Example: ALTER TABLE, add columns, etc.
-  // Log migration steps
   console.log('[DB] Schema migration check (no migrations applied)');
 }
 
-// Utility to sanitize user input (basic XSS/injection protection)
+// Utility functions
 function sanitizeInput(input: string): string {
-  // Remove script tags and encode special characters
   return input.replace(/<script.*?>.*?<\/script>/gi, '')
     .replace(/[<>"'`]/g, c => ({ '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;' }[c] || c));
 }
 
-// Utility to sanitize strings for database/storage (remove dangerous characters, trim, limit length)
 function sanitizeString(input: string | undefined | null): string {
   if (!input) return '';
-  // Remove dangerous characters, trim, and limit length
   return input.replace(/[<>"'`\\]/g, '').trim().slice(0, 256);
 }
 
-// Optionally, simple obfuscation for API keys (not strong encryption, just for browser storage)
 function obfuscate(str: string): string {
   return btoa(unescape(encodeURIComponent(str)));
 }
+
 function deobfuscate(str: string): string {
   try {
     return decodeURIComponent(escape(atob(str)));
@@ -204,32 +199,62 @@ function deobfuscate(str: string): string {
 }
 
 export class SQLiteDatabase {
-  private worker: Worker;
+  private worker: Worker | null = null;
   private requestId = 0;
   private pending: Map<number, { resolve: (v: WorkerResult) => void; reject: (e: Error) => void }> = new Map();
   private isInitialized = false;
   private initPromise: Promise<void> | null = null;
 
   constructor() {
-    this.worker = new Worker(DB_WORKER_PATH, { type: 'classic' });
-    this.worker.onmessage = (event: MessageEvent) => {
-      const { id, result, error } = event.data as WorkerResponse;
-      const pending = this.pending.get(id);
-      if (!pending) return;
-      if (error) pending.reject(new Error(error));
-      else pending.resolve(result as WorkerResult);
-      this.pending.delete(id);
-    };
+    this.initializeWorker();
   }
 
-  // --- Improved error handling for worker communication ---
+  private initializeWorker() {
+    try {
+      this.worker = new Worker(DB_WORKER_PATH, { type: 'module' });
+      
+      this.worker.onmessage = (event: MessageEvent) => {
+        const { id, result, error } = event.data as WorkerResponse;
+        const pending = this.pending.get(id);
+        if (!pending) return;
+        
+        if (error) {
+          console.error('[DB] Worker error for request', id, ':', error);
+          pending.reject(new Error(error));
+        } else {
+          pending.resolve(result as WorkerResult);
+        }
+        this.pending.delete(id);
+      };
+
+      this.worker.onerror = (error) => {
+        console.error('[DB] Worker error:', error);
+      };
+
+      console.log('[DB] Worker initialized');
+    } catch (error) {
+      console.error('[DB] Failed to initialize worker:', error);
+      this.worker = null;
+    }
+  }
+
+  // Improved worker communication with better timeout and retry logic
   private callWorker<T extends WorkerResult>(action: WorkerAction, args?: WorkerRequestArgs): Promise<T> {
+    if (!this.worker) {
+      return Promise.reject(new Error('[DB] Worker not available'));
+    }
+
     const id = ++this.requestId;
     return new Promise<T>((resolve, reject) => {
+      // Increased timeout for initialization
+      const timeoutMs = action === 'init' ? 15000 : 10000;
+      
       const timeout = setTimeout(() => {
         this.pending.delete(id);
+        console.error(`[DB] Worker timeout for action: ${action} (${timeoutMs}ms)`);
         reject(new Error(`[DB] Worker response timeout for action: ${action}`));
-      }, 10000); // 10s timeout
+      }, timeoutMs);
+
       this.pending.set(id, {
         resolve: (v: WorkerResult) => {
           clearTimeout(timeout);
@@ -240,59 +265,101 @@ export class SQLiteDatabase {
           reject(e);
         }
       });
-      this.worker.postMessage({ id, action, args });
+
+      try {
+        this.worker!.postMessage({ id, action, args });
+      } catch (error) {
+        clearTimeout(timeout);
+        this.pending.delete(id);
+        reject(new Error(`[DB] Failed to send message to worker: ${error}`));
+      }
     });
   }
 
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
     if (this.initPromise) return this.initPromise;
+
     this.initPromise = (async () => {
-      // Load DB from localStorage if present
-      const savedDb = localStorage.getItem('inkwell-db');
-      let data: Uint8Array | undefined = undefined;
-      if (savedDb) {
-        try {
-          data = new Uint8Array(JSON.parse(savedDb));
-        } catch (error) {
-          console.warn('Failed to load saved database, creating new one:', error);
+      try {
+        console.log('[DB] Starting database initialization...');
+        
+        // Load DB from localStorage if present
+        const savedDb = localStorage.getItem('inkwell-db');
+        let data: Uint8Array | undefined = undefined;
+        
+        if (savedDb) {
+          try {
+            data = new Uint8Array(JSON.parse(savedDb));
+            console.log('[DB] Loaded existing database from localStorage');
+          } catch (error) {
+            console.warn('[DB] Failed to load saved database, creating new one:', error);
+          }
         }
-      }
-      await this.callWorker<void>('init', { data });
-      // Create tables and indexes
-      for (const schema of Object.values(DB_SCHEMA)) {
-        await this.callWorker<void>('run', { sql: schema });
-      }
-      for (const index of DB_INDEXES) {
-        await this.callWorker<void>('run', { sql: index });
-      }
-      // --- Schema migration step ---
-      await migrateSchema(this);
-      // Insert default settings if new DB
-      if (!savedDb) {
-        const defaultSettings = [
-          { key: 'theme', value: 'system', category: 'appearance' },
-          { key: 'auto_save', value: 'true', category: 'editor' },
-          { key: 'auto_save_interval', value: '30000', category: 'editor' },
-          { key: 'font_family', value: 'Inter', category: 'appearance' },
-          { key: 'font_size', value: '14', category: 'appearance' },
-          { key: 'editor_theme', value: 'default', category: 'editor' },
-          { key: 'default_ai_provider', value: 'OpenAI', category: 'ai' },
-          { key: 'ai_cache_enabled', value: 'true', category: 'ai' },
-          { key: 'ai_cache_expiry', value: '3600000', category: 'ai' },
-          { key: 'analytics_enabled', value: 'false', category: 'privacy' },
-          { key: 'crash_reporting', value: 'false', category: 'privacy' }
-        ];
-        for (const setting of defaultSettings) {
-          await this.callWorker<void>('run', {
-            sql: `INSERT OR REPLACE INTO settings (key, value, category) VALUES (?, ?, ?)` ,
-            params: [setting.key, setting.value, setting.category]
-          });
+
+        // Initialize the worker database
+        await this.callWorker<void>('init', { data });
+        console.log('[DB] Worker database initialized');
+
+        // Create tables and indexes
+        for (const [name, schema] of Object.entries(DB_SCHEMA)) {
+          try {
+            await this.callWorker<void>('run', { sql: schema });
+            console.log(`[DB] Created table: ${name}`);
+          } catch (error) {
+            console.error(`[DB] Failed to create table ${name}:`, error);
+            throw error;
+          }
         }
+
+        for (const index of DB_INDEXES) {
+          try {
+            await this.callWorker<void>('run', { sql: index });
+          } catch (error) {
+            console.error('[DB] Failed to create index:', error);
+            // Don't throw for index creation failures
+          }
+        }
+
+        // Schema migration
+        await migrateSchema(this);
+
+        // Insert default settings if new DB
+        if (!savedDb) {
+          console.log('[DB] Inserting default settings...');
+          const defaultSettings = [
+            { key: 'theme', value: 'system', category: 'appearance' },
+            { key: 'auto_save', value: 'true', category: 'editor' },
+            { key: 'auto_save_interval', value: '30000', category: 'editor' },
+            { key: 'font_family', value: 'Inter', category: 'appearance' },
+            { key: 'font_size', value: '14', category: 'appearance' },
+            { key: 'editor_theme', value: 'default', category: 'editor' },
+            { key: 'default_ai_provider', value: 'OpenAI', category: 'ai' },
+            { key: 'ai_cache_enabled', value: 'true', category: 'ai' },
+            { key: 'ai_cache_expiry', value: '3600000', category: 'ai' },
+            { key: 'analytics_enabled', value: 'false', category: 'privacy' },
+            { key: 'crash_reporting', value: 'false', category: 'privacy' }
+          ];
+
+          for (const setting of defaultSettings) {
+            await this.callWorker<void>('run', {
+              sql: `INSERT OR REPLACE INTO settings (key, value, category) VALUES (?, ?, ?)`,
+              params: [setting.key, setting.value, setting.category]
+            });
+          }
+          console.log('[DB] Default settings inserted');
+        }
+
+        this.isInitialized = true;
+        console.log('[DB] Database initialization completed successfully');
+      } catch (error) {
+        console.error('[DB] Database initialization failed:', error);
+        this.isInitialized = false;
+        this.initPromise = null;
+        throw error;
       }
-      this.isInitialized = true;
-      console.log('[DB] Database initialized');
     })();
+
     return this.initPromise;
   }
 
@@ -740,9 +807,13 @@ export class SQLiteDatabase {
 
   // --- Web Worker Setup ---
   close(): void {
-    this.worker.terminate();
+    if (this.worker) {
+      this.worker.terminate();
+      this.worker = null;
+    }
     this.isInitialized = false;
     this.initPromise = null;
+    console.log('[DB] Database connection closed');
   }
 }
 

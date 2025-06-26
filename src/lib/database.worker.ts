@@ -1,34 +1,61 @@
-// SQLite Web Worker for sql.js
-importScripts('https://sql.js.org/dist/sql-wasm.js');
 
-// importScripts is a web worker global, not in TypeScript DOM lib
-declare function importScripts(...urls: string[]): void;
-// postMessage is a web worker global, not in TypeScript DOM lib
-declare function postMessage(message: Record<string, unknown>): void;
+// SQLite Web Worker for sql.js
+// Use self instead of importScripts for better compatibility
+self.importScripts = self.importScripts || function() {};
+
+// Import sql.js
+self.importScripts('https://sql.js.org/dist/sql-wasm.js');
 
 import type { Database, SqlJsStatic } from 'sql.js';
 
 let db: Database | null = null;
 let SQL: SqlJsStatic | null = null;
 
-// 'self' is a web worker global, not typed as Worker
-const ctx: Worker = self as unknown as Worker;
+// Define worker context properly
+const ctx: Worker = self as any;
 
+// Message handler
 ctx.onmessage = async (event: MessageEvent) => {
   const { id, action, args } = event.data;
+  
   try {
+    // Initialize SQL.js if not already done
     if (!SQL) {
-      // sql.js injects initSqlJs at runtime on the worker global; not typed in TypeScript
-      const injected = (ctx as unknown as { initSqlJs?: (opts: { locateFile: (file: string) => string }) => Promise<SqlJsStatic> });
-      if (!injected.initSqlJs) throw new Error('initSqlJs not found on worker context');
-      SQL = await injected.initSqlJs({ locateFile: (file: string) => `https://sql.js.org/dist/${file}` });
+      try {
+        const initSqlJs = (self as any).initSqlJs;
+        if (!initSqlJs) {
+          throw new Error('initSqlJs not found - sql.js may not have loaded properly');
+        }
+        
+        SQL = await initSqlJs({ 
+          locateFile: (file: string) => `https://sql.js.org/dist/${file}` 
+        });
+        console.log('[DB Worker] SQL.js initialized successfully');
+      } catch (error) {
+        console.error('[DB Worker] Failed to initialize SQL.js:', error);
+        throw error;
+      }
     }
+
+    // Handle different actions
     if (action === 'init') {
-      db = SQL ? new SQL.Database(args && args.data ? new Uint8Array(args.data) : undefined) : null;
-      postMessage({ id, result: true });
+      try {
+        if (!SQL) throw new Error('SQL.js not initialized');
+        
+        db = new SQL.Database(args && args.data ? new Uint8Array(args.data) : undefined);
+        console.log('[DB Worker] Database initialized');
+        ctx.postMessage({ id, result: true });
+      } catch (error) {
+        console.error('[DB Worker] Database initialization failed:', error);
+        throw error;
+      }
       return;
     }
-    if (!db) throw new Error('Database not initialized');
+
+    if (!db) {
+      throw new Error('Database not initialized');
+    }
+
     let result;
     switch (action) {
       case 'exec':
@@ -49,8 +76,20 @@ ctx.onmessage = async (event: MessageEvent) => {
       default:
         throw new Error('Unknown action: ' + action);
     }
-    postMessage({ id, result });
+    
+    ctx.postMessage({ id, result });
   } catch (error) {
-    postMessage({ id, error: (error as Error)?.message || String(error) });
+    console.error('[DB Worker] Operation failed:', error);
+    ctx.postMessage({ 
+      id, 
+      error: (error as Error)?.message || String(error) 
+    });
   }
 };
+
+// Handle worker errors
+ctx.onerror = (error) => {
+  console.error('[DB Worker] Worker error:', error);
+};
+
+console.log('[DB Worker] Worker script loaded');
