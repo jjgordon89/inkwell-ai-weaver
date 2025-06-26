@@ -30,7 +30,7 @@ globs: *
 *   `/projects/new` displays a project creation form (with name, description, and buttons).
 *   Submitting the form or clicking "Cancel" on the new project page returns the user to the Projects page.
 *   A workflow (state machine, wizard, or explicit process manager) should be implemented to improve user experience, reliability, and extensibility.
-    *   The project creation process should use a workflow (state machine) to manage steps: idle → editing → validating → saving → success/error. This workflow should support navigation (cancel, submit, back) and integrate with the database for persistence, and be extensible for future steps (e.g., AI project setup, template selection). This workflow must be implemented in the `/projects/new` page/component.
+    *   The project creation process should use a workflow (state machine) to manage steps: idle → editing → validating → saving → success/error. This workflow should support navigation (cancel, submit, back) and integrate with the database for persistence, and be extensible for future steps (e.g., AI project setup, template selection, etc.). This workflow must be implemented in the `/projects/new` page/component.
 *   New projects must be persisted to the database.
 *   The Projects page must fetch and display the list of projects dynamically from the database. The page must not use hardcoded mock data.
 *   The project creation workflow should incorporate a template selection step before editing project details.
@@ -70,6 +70,18 @@ globs: *
     *   Expand logging and profiling for easier debugging and performance monitoring.
     *   Improve error handling for worker communication (e.g., adding timeouts).
 *   When debugging Typescript `addProject` method recognition errors, ensure that the `addProject` method is present and correctly typed on the `SQLiteDatabase` class, and that the default export is used consistently, including adding JSDoc comments to the `addProject` method. Also ensure `SQLiteDatabase` is exported from `database.ts`.
+*   When debugging SQL.js initialization failures in Web Workers:
+    *   Prioritize loading the UMD build of SQL.js. The worker should first attempt to load `/sql-wasm.js` from the project's `public` directory. This file must be manually downloaded from the official UMD build and placed in the `public` directory: https://github.com/sql-js/sql.js/releases/download/1.8.0/sql-wasm.js
+    *   **Do not use the GitHub releases URL directly from a browser-based worker due to CORS restrictions.**
+    *   After loading the script with `eval`, check for `initSqlJs` on:
+        *   `self.initSqlJs`
+        *   `self.Module.initSqlJs`
+        *   `self.exports.initSqlJs`
+        *   `self.sqlJs.initSqlJs`
+    *   If still not found, try to find any function named `initSqlJs` in all global keys, and assign it to `self.initSqlJs`.
+    *   Add more detailed logging of all global keys and their types if not found, to help debug future issues.
+    *   If all fail, provide a clear error message about the CDN build and suggest using a UMD build.
+    *   If `initSqlJs` is still not available after loading the SQL.js script with `eval`, explicitly assign `self.initSqlJs` if it is not already present but is available as a property of `self` or the evaluated script. After loading the script with `eval`, check for `self.Module` or any global object that may contain `initSqlJs`. If still not found, log all global keys for debugging and provide a clear error message about CDN build incompatibility.
 
 ## AI PROVIDER MANAGEMENT
 *   API keys must be stored securely (never hardcoded).
