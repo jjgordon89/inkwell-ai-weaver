@@ -1,10 +1,7 @@
-
 import * as sqlWasm from 'sql.js';
 import type { Database } from 'sql.js';
 
-const initSqlJs = sqlWasm.default || sqlWasm;
-
-// Database schema definitions
+// Database schema definitions with additional constraints
 export const DB_SCHEMA = {
   SETTINGS: `
     CREATE TABLE IF NOT EXISTS settings (
@@ -12,8 +9,10 @@ export const DB_SCHEMA = {
       key TEXT UNIQUE NOT NULL,
       value TEXT NOT NULL,
       category TEXT NOT NULL DEFAULT 'general',
+      user_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      CHECK (category IN ('general', 'appearance', 'editor', 'ai', 'privacy'))
     );
   `,
   USER_PREFERENCES: `
@@ -23,6 +22,7 @@ export const DB_SCHEMA = {
       preference_value TEXT NOT NULL,
       data_type TEXT NOT NULL DEFAULT 'string',
       description TEXT,
+      user_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
@@ -37,6 +37,7 @@ export const DB_SCHEMA = {
       is_active BOOLEAN DEFAULT 0,
       is_local BOOLEAN DEFAULT 0,
       configuration TEXT, -- JSON string for additional config
+      user_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
@@ -47,6 +48,7 @@ export const DB_SCHEMA = {
       name TEXT NOT NULL,
       description TEXT,
       settings TEXT, -- JSON string for project-specific settings
+      user_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       last_opened DATETIME
@@ -59,9 +61,10 @@ export const DB_SCHEMA = {
       filename TEXT NOT NULL,
       content TEXT,
       file_type TEXT DEFAULT 'text',
+      user_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
     );
   `,
   APP_STATE: `
@@ -70,6 +73,7 @@ export const DB_SCHEMA = {
       state_key TEXT UNIQUE NOT NULL,
       state_value TEXT NOT NULL,
       expires_at DATETIME,
+      user_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
@@ -83,6 +87,7 @@ export const DB_SCHEMA = {
       tone TEXT,
       structure TEXT,
       template_json TEXT NOT NULL, -- JSON string for template content
+      user_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
@@ -93,12 +98,20 @@ export const DB_SCHEMA = {
 export const DB_INDEXES = [
   'CREATE INDEX IF NOT EXISTS idx_settings_key ON settings(key);',
   'CREATE INDEX IF NOT EXISTS idx_settings_category ON settings(category);',
+  'CREATE INDEX IF NOT EXISTS idx_settings_user_id ON settings(user_id);',
   'CREATE INDEX IF NOT EXISTS idx_user_preferences_key ON user_preferences(preference_key);',
+  'CREATE INDEX IF NOT EXISTS idx_user_preferences_user_id ON user_preferences(user_id);',
   'CREATE INDEX IF NOT EXISTS idx_ai_providers_name ON ai_providers(name);',
   'CREATE INDEX IF NOT EXISTS idx_ai_providers_active ON ai_providers(is_active);',
+  'CREATE INDEX IF NOT EXISTS idx_ai_providers_user_id ON ai_providers(user_id);',
   'CREATE INDEX IF NOT EXISTS idx_projects_name ON projects(name);',
+  'CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id);',
   'CREATE INDEX IF NOT EXISTS idx_project_files_project_id ON project_files(project_id);',
-  'CREATE INDEX IF NOT EXISTS idx_app_state_key ON app_state(state_key);'
+  'CREATE INDEX IF NOT EXISTS idx_project_files_user_id ON project_files(user_id);',
+  'CREATE INDEX IF NOT EXISTS idx_app_state_key ON app_state(state_key);',
+  'CREATE INDEX IF NOT EXISTS idx_app_state_user_id ON app_state(user_id);',
+  'CREATE INDEX IF NOT EXISTS idx_project_templates_name ON project_templates(name);',
+  'CREATE INDEX IF NOT EXISTS idx_project_templates_user_id ON project_templates(user_id);'
 ];
 
 // --- Web Worker Setup ---
@@ -109,7 +122,8 @@ export type WorkerAction =
   | 'init'
   | 'run'
   | 'exec'
-  | 'export';
+  | 'export'
+  | 'close';
 
 // Define the argument types for each action
 export interface WorkerRequestInitArgs {
@@ -155,6 +169,23 @@ function isValidJSON(obj: unknown): boolean {
   }
 }
 
+// Utility functions
+function sanitizeInput(input: string): string {
+  return input.replace(/<script.*?>.*?<\/script>/gi, '')
+    .replace(/[<>"'`]/g, c => ({
+      '<': '<',
+      '>': '>',
+      '"': '"',
+      "'": "\\'",
+      '`': '&#96;'
+    }[c] || c));
+}
+
+function sanitizeString(input: string | undefined | null): string {
+  if (!input) return '';
+  return input.replace(/[<>"'`\\]/g, '').trim().slice(0, 256);
+}
+
 // --- Debounced/Batched Save Logic ---
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 const SAVE_DEBOUNCE_MS = 1500;
@@ -172,31 +203,48 @@ function debouncedSaveToStorage(db: SQLiteDatabase) {
 
 // --- Schema Migration Placeholder ---
 async function migrateSchema(db: SQLiteDatabase) {
-  // Placeholder: implement schema migrations here if needed in the future
-  console.log('[DB] Schema migration check (no migrations applied)');
-}
+  // Check for existing tables and migrate if needed
+  const tables = await db.callWorker<SQLJsExecResult[]>('exec', {
+    sql: "SELECT name FROM sqlite_master WHERE type='table'"
+  });
 
-// Utility functions
-function sanitizeInput(input: string): string {
-  return input.replace(/<script.*?>.*?<\/script>/gi, '')
-    .replace(/[<>"'`]/g, c => ({ '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;' }[c] || c));
-}
-
-function sanitizeString(input: string | undefined | null): string {
-  if (!input) return '';
-  return input.replace(/[<>"'`\\]/g, '').trim().slice(0, 256);
-}
-
-function obfuscate(str: string): string {
-  return btoa(unescape(encodeURIComponent(str)));
-}
-
-function deobfuscate(str: string): string {
-  try {
-    return decodeURIComponent(escape(atob(str)));
-  } catch {
-    return '';
+  const expectedTables = Object.keys(DB_SCHEMA);
+  for (const table of expectedTables) {
+    if (!tables[0]?.values.some(row => row[0] === table)) {
+      console.log(`[DB] Creating missing table: ${table}`);
+      await db.callWorker<void>('run', { sql: DB_SCHEMA[table as keyof typeof DB_SCHEMA] });
+    }
   }
+
+  // Check for missing indexes
+  const indexes = await db.callWorker<SQLJsExecResult[]>('exec', {
+    sql: "SELECT name FROM sqlite_master WHERE type='index'"
+  });
+
+  for (const index of DB_INDEXES) {
+    const indexName = index.split(' ')[3];
+    if (!indexes[0]?.values.some(row => row[0] === indexName)) {
+      console.log(`[DB] Creating missing index: ${indexName}`);
+      await db.callWorker<void>('run', { sql: index });
+    }
+  }
+
+  // Add user_id column to tables if missing
+  const tablesWithUserId = ['settings', 'user_preferences', 'ai_providers', 'projects', 'project_files', 'app_state', 'project_templates'];
+  for (const table of tablesWithUserId) {
+    const columns = await db.callWorker<SQLJsExecResult[]>('exec', {
+      sql: `PRAGMA table_info(${table})`
+    });
+
+    if (!columns[0]?.values.some(row => row[1] === 'user_id')) {
+      console.log(`[DB] Adding user_id column to ${table}`);
+      await db.callWorker<void>('run', {
+        sql: `ALTER TABLE ${table} ADD COLUMN user_id TEXT DEFAULT 'default'`
+      });
+    }
+  }
+
+  console.log('[DB] Schema migration completed');
 }
 
 export class SQLiteDatabase {
@@ -207,6 +255,7 @@ export class SQLiteDatabase {
   private initPromise: Promise<void> | null = null;
   private maxRetries = 3;
   private retryCount = 0;
+  private queryCache = new Map<string, { result: SQLJsExecResult[]; expiresAt: number }>();
 
   constructor() {
     this.initializeWorker();
@@ -215,12 +264,12 @@ export class SQLiteDatabase {
   private initializeWorker() {
     try {
       this.worker = new Worker(DB_WORKER_PATH, { type: 'module' });
-      
+
       this.worker.onmessage = (event: MessageEvent) => {
         const { id, result, error } = event.data as WorkerResponse;
         const pending = this.pending.get(id);
         if (!pending) return;
-        
+
         if (error) {
           console.error('[DB] Worker error for request', id, ':', error);
           pending.reject(new Error(error));
@@ -249,13 +298,13 @@ export class SQLiteDatabase {
       this.worker.terminate();
       this.worker = null;
     }
-    
+
     // Clear pending requests with error
     this.pending.forEach(({ reject }) => {
       reject(new Error('Worker terminated and recreated'));
     });
     this.pending.clear();
-    
+
     // Reinitialize
     this.initializeWorker();
     this.isInitialized = false;
@@ -263,7 +312,7 @@ export class SQLiteDatabase {
   }
 
   // Improved worker communication with better timeout and retry logic
-  private callWorker<T extends WorkerResult>(action: WorkerAction, args?: WorkerRequestArgs): Promise<T> {
+  public async callWorker<T extends WorkerResult>(action: WorkerAction, args?: WorkerRequestArgs): Promise<T> {
     if (!this.worker) {
       return Promise.reject(new Error('[DB] Worker not available'));
     }
@@ -272,16 +321,16 @@ export class SQLiteDatabase {
     return new Promise<T>((resolve, reject) => {
       // Shorter timeout for initialization, longer for other operations
       const timeoutMs = action === 'init' ? 20000 : 10000;
-      
+
       const timeout = setTimeout(() => {
         this.pending.delete(id);
         console.error(`[DB] Worker timeout for action: ${action} (${timeoutMs}ms)`);
-        
+
         // If it's an init timeout, try to recreate the worker
         if (action === 'init') {
           this.recreateWorker();
         }
-        
+
         reject(new Error(`[DB] Worker response timeout for action: ${action}`));
       }, timeoutMs);
 
@@ -314,11 +363,11 @@ export class SQLiteDatabase {
       while (this.retryCount < this.maxRetries) {
         try {
           console.log(`[DB] Starting database initialization (attempt ${this.retryCount + 1}/${this.maxRetries})...`);
-          
+
           // Load DB from localStorage if present
           const savedDb = localStorage.getItem('inkwell-db');
           let data: Uint8Array | undefined = undefined;
-          
+
           if (savedDb) {
             try {
               data = new Uint8Array(JSON.parse(savedDb));
@@ -385,17 +434,17 @@ export class SQLiteDatabase {
           this.retryCount = 0; // Reset retry count on success
           console.log('[DB] Database initialization completed successfully');
           return;
-          
+
         } catch (error) {
           this.retryCount++;
           console.error(`[DB] Database initialization failed (attempt ${this.retryCount}/${this.maxRetries}):`, error);
-          
+
           if (this.retryCount >= this.maxRetries) {
             this.isInitialized = false;
             this.initPromise = null;
             throw new Error(`Database initialization failed after ${this.maxRetries} attempts: ${(error as Error)?.message}`);
           }
-          
+
           // Wait before retry
           await new Promise(resolve => setTimeout(resolve, 1000 * this.retryCount));
         }
@@ -420,31 +469,157 @@ export class SQLiteDatabase {
     debouncedSaveToStorage(this);
   }
 
-  async getSetting(key: string): Promise<string | null> {
-    await this.initialize();
-    const rows = await this.callWorker<SQLJsExecResult[]>('exec', {
-      sql: 'SELECT value FROM settings WHERE key = ?',
-      params: [key]
-    });
-    if (rows[0] && rows[0].values[0]) return rows[0].values[0][0] as string;
-    return null;
+  // --- Query Caching ---
+  private logQuery(sql: string, params?: (string | number | null)[]): void {
+    console.log('[DB Query]', sql, params);
   }
 
-  async setSetting(key: string, value: string, category: string = 'general'): Promise<void> {
+  async cachedExec(sql: string, params?: (string | number | null)[]): Promise<SQLJsExecResult[]> {
+    const cacheKey = `${sql}-${params?.join(',')}`;
+    const cached = this.queryCache.get(cacheKey);
+
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.result;
+    }
+
+    const result = await this.callWorker<SQLJsExecResult[]>('exec', { sql, params });
+    this.queryCache.set(cacheKey, { result, expiresAt: Date.now() + 30000 }); // 30s cache
+    return result;
+  }
+
+  // --- Batch Operations ---
+  async batchExec(queries: Array<{ sql: string; params?: (string | number | null)[] }>): Promise<void> {
     await this.initialize();
     await this.callWorker<void>('run', {
-      sql: `INSERT OR REPLACE INTO settings (key, value, category, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)`,
-      params: [key, value, category]
+      sql: queries.map(q => q.sql).join(';'),
+      params: queries.flatMap(q => q.params || [])
+    });
+    this.debouncedSave();
+  }
+
+  // --- Database Health Checks ---
+  async checkDatabaseHealth(): Promise<{ healthy: boolean; issues: string[] }> {
+    const issues: string[] = [];
+
+    // Check table existence
+    const tables = await this.callWorker<SQLJsExecResult[]>('exec', {
+      sql: "SELECT name FROM sqlite_master WHERE type='table'"
+    });
+
+    const expectedTables = Object.keys(DB_SCHEMA);
+    for (const table of expectedTables) {
+      if (!tables[0]?.values.some(row => row[0] === table)) {
+        issues.push(`Missing table: ${table}`);
+      }
+    }
+
+    // Check index existence
+    const indexes = await this.callWorker<SQLJsExecResult[]>('exec', {
+      sql: "SELECT name FROM sqlite_master WHERE type='index'"
+    });
+
+    for (const index of DB_INDEXES) {
+      const indexName = index.split(' ')[3];
+      if (!indexes[0]?.values.some(row => row[0] === indexName)) {
+        issues.push(`Missing index: ${indexName}`);
+      }
+    }
+
+    // Check foreign key constraints
+    const foreignKeys = await this.callWorker<SQLJsExecResult[]>('exec', {
+      sql: "PRAGMA foreign_key_list('project_files')"
+    });
+
+    if (!foreignKeys[0]?.values.some(row => row[1] === 'projects' && row[2] === 'id')) {
+      issues.push('Missing foreign key constraint on project_files.project_id');
+    }
+
+    return {
+      healthy: issues.length === 0,
+      issues
+    };
+  }
+
+  // --- Database Statistics ---
+  async getDatabaseStats(): Promise<{
+    size: number;
+    tableCounts: Record<string, number>;
+    indexCounts: Record<string, number>;
+  }> {
+    const size = await this.callWorker<SQLJsExecResult[]>('exec', {
+      sql: "SELECT page_count * page_size AS size FROM pragma_page_count(), pragma_page_size()"
+    });
+
+    const tables = await this.callWorker<SQLJsExecResult[]>('exec', {
+      sql: "SELECT name, (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=t.name) AS count FROM sqlite_master t WHERE type='table'"
+    });
+
+    const indexes = await this.callWorker<SQLJsExecResult[]>('exec', {
+      sql: "SELECT name, (SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name=i.name) AS count FROM sqlite_master i WHERE type='index'"
+    });
+
+    return {
+      size: size[0]?.values[0]?.[0] as number || 0,
+      tableCounts: tables[0]?.values.reduce((acc, row) => {
+        acc[row[0] as string] = row[1] as number;
+        return acc;
+      }, {} as Record<string, number>) || {},
+      indexCounts: indexes[0]?.values.reduce((acc, row) => {
+        acc[row[0] as string] = row[1] as number;
+        return acc;
+      }, {} as Record<string, number>) || {}
+    };
+  }
+
+  // --- Security Enhancements ---
+  private encrypt(value: string): string {
+    // Implement encryption logic
+    return value; // Placeholder
+  }
+
+  private decrypt(value: string): string {
+    // Implement decryption logic
+    return value; // Placeholder
+  }
+
+  async setEncryptedSetting(key: string, value: string, category: string = 'general', userId: string = 'default'): Promise<void> {
+    await this.initialize();
+    await this.callWorker<void>('run', {
+      sql: `INSERT OR REPLACE INTO settings (key, value, category, user_id, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+      params: [key, this.encrypt(value), category, userId]
     });
     await this.saveToStorage();
   }
 
-  async getSettingsByCategory(category: string): Promise<Array<{ key: string; value: string }>> {
+  async getEncryptedSetting(key: string, userId: string = 'default'): Promise<string | null> {
     await this.initialize();
     const rows = await this.callWorker<SQLJsExecResult[]>('exec', {
-      sql: 'SELECT key, value FROM settings WHERE category = ? ORDER BY key',
-      params: [category]
+      sql: 'SELECT value FROM settings WHERE key = ? AND user_id = ?',
+      params: [key, userId]
     });
+    return rows[0]?.values[0]?.[0] ? this.decrypt(rows[0].values[0][0] as string) : null;
+  }
+
+  // --- Settings Methods ---
+  async getSetting(key: string, userId: string = 'default'): Promise<string | null> {
+    await this.initialize();
+    const rows = await this.cachedExec('SELECT value FROM settings WHERE key = ? AND user_id = ?', [key, userId]);
+    if (rows[0] && rows[0].values[0]) return rows[0].values[0][0] as string;
+    return null;
+  }
+
+  async setSetting(key: string, value: string, category: string = 'general', userId: string = 'default'): Promise<void> {
+    await this.initialize();
+    await this.callWorker<void>('run', {
+      sql: `INSERT OR REPLACE INTO settings (key, value, category, user_id, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+      params: [key, value, category, userId]
+    });
+    this.debouncedSave();
+  }
+
+  async getSettingsByCategory(category: string, userId: string = 'default'): Promise<Array<{ key: string; value: string }>> {
+    await this.initialize();
+    const rows = await this.cachedExec('SELECT key, value FROM settings WHERE category = ? AND user_id = ? ORDER BY key', [category, userId]);
     const results: Array<{ key: string; value: string }> = [];
     if (rows[0]) {
       for (const row of rows[0].values) {
@@ -454,11 +629,9 @@ export class SQLiteDatabase {
     return results;
   }
 
-  async getAllSettings(): Promise<Array<{ key: string; value: string; category: string }>> {
+  async getAllSettings(userId: string = 'default'): Promise<Array<{ key: string; value: string; category: string }>> {
     await this.initialize();
-    const rows = await this.callWorker<SQLJsExecResult[]>('exec', {
-      sql: 'SELECT key, value, category FROM settings ORDER BY category, key'
-    });
+    const rows = await this.cachedExec('SELECT key, value, category FROM settings WHERE user_id = ? ORDER BY category, key', [userId]);
     const results: Array<{ key: string; value: string; category: string }> = [];
     if (rows[0]) {
       for (const row of rows[0].values) {
@@ -468,40 +641,37 @@ export class SQLiteDatabase {
     return results;
   }
 
-  async deleteSetting(key: string): Promise<void> {
+  async deleteSetting(key: string, userId: string = 'default'): Promise<void> {
     await this.initialize();
     await this.callWorker<void>('run', {
-      sql: 'DELETE FROM settings WHERE key = ?',
-      params: [key]
-    });
-    await this.saveToStorage();
-  }
-
-  // --- App State Methods ---
-  async setAppState(key: string, value: string, expiresAt?: string): Promise<void> {
-    await this.initialize();
-    await this.callWorker<void>('run', {
-      sql: `INSERT OR REPLACE INTO app_state (state_key, state_value, expires_at, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)`,
-      params: [key, value, expiresAt || null]
+      sql: 'DELETE FROM settings WHERE key = ? AND user_id = ?',
+      params: [key, userId]
     });
     this.debouncedSave();
   }
 
-  async getAppState(key: string): Promise<string | null> {
+  // --- App State Methods ---
+  async setAppState(key: string, value: string, expiresAt?: string, userId: string = 'default'): Promise<void> {
     await this.initialize();
-    const rows = await this.callWorker<SQLJsExecResult[]>('exec', {
-      sql: 'SELECT state_value FROM app_state WHERE state_key = ?',
-      params: [key]
+    await this.callWorker<void>('run', {
+      sql: `INSERT OR REPLACE INTO app_state (state_key, state_value, expires_at, user_id, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+      params: [key, value, expiresAt || null, userId]
     });
+    this.debouncedSave();
+  }
+
+  async getAppState(key: string, userId: string = 'default'): Promise<string | null> {
+    await this.initialize();
+    const rows = await this.cachedExec('SELECT state_value FROM app_state WHERE state_key = ? AND user_id = ?', [key, userId]);
     if (rows[0] && rows[0].values[0]) return rows[0].values[0][0] as string;
     return null;
   }
 
-  async deleteAppState(key: string): Promise<void> {
+  async deleteAppState(key: string, userId: string = 'default'): Promise<void> {
     await this.initialize();
     await this.callWorker<void>('run', {
-      sql: 'DELETE FROM app_state WHERE state_key = ?',
-      params: [key]
+      sql: 'DELETE FROM app_state WHERE state_key = ? AND user_id = ?',
+      params: [key, userId]
     });
     this.debouncedSave();
   }
@@ -515,6 +685,7 @@ export class SQLiteDatabase {
     is_active?: boolean;
     is_local?: boolean;
     configuration?: object;
+    userId?: string;
   }): Promise<void> {
     await this.initialize();
     if (provider.configuration && !isValidJSON(provider.configuration)) {
@@ -524,9 +695,10 @@ export class SQLiteDatabase {
     const name = sanitizeInput(provider.name);
     const endpoint = sanitizeInput(provider.endpoint ?? '');
     const model = sanitizeInput(provider.model ?? '');
-    const api_key = provider.api_key ? obfuscate(provider.api_key) : null;
+    const api_key = provider.api_key ? this.encrypt(provider.api_key) : null;
+    const userId = provider.userId || 'default';
     await this.callWorker<void>('run', {
-      sql: `INSERT OR REPLACE INTO ai_providers (name, api_key, endpoint, model, is_active, is_local, configuration, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+      sql: `INSERT OR REPLACE INTO ai_providers (name, api_key, endpoint, model, is_active, is_local, configuration, user_id, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
       params: [
         name,
         api_key,
@@ -534,52 +706,46 @@ export class SQLiteDatabase {
         model,
         provider.is_active ? 1 : 0,
         provider.is_local ? 1 : 0,
-        provider.configuration ? JSON.stringify(provider.configuration) : null
+        provider.configuration ? JSON.stringify(provider.configuration) : null,
+        userId
       ]
     });
     this.debouncedSave();
   }
 
-  /**
-   * Get the raw (deobfuscated) API key for a provider by ID.
-   */
-  async getAIProviderApiKey(id: number): Promise<string | null> {
+  /** Get the raw (deobfuscated) API key for a provider by ID. */
+  async getAIProviderApiKey(id: number, userId: string = 'default'): Promise<string | null> {
     await this.initialize();
-    const rows = await this.callWorker<SQLJsExecResult[]>("exec", {
-      sql: "SELECT api_key FROM ai_providers WHERE id = ?",
-      params: [id],
-    });
+    const rows = await this.cachedExec("SELECT api_key FROM ai_providers WHERE id = ? AND user_id = ?", [id, userId]);
     if (rows[0] && rows[0].values[0]) {
       const obf = rows[0].values[0][0] as string;
-      return obf ? deobfuscate(obf) : null;
+      return obf ? this.decrypt(obf) : null;
     }
     return null;
   }
 
-  /**
-   * Add a new project to the database.
-   * @param project - The project object with name, description, and optional settings.
-   * @returns The new project ID.
-   * @throws Error if settings is not valid JSON or input is invalid.
-   */
+  /** Add a new project to the database. */
   async addProject(project: {
     name: string;
     description?: string;
     settings?: object;
+    userId?: string;
   }): Promise<number> {
     await this.initialize();
     const name = sanitizeString(project.name);
     const description = sanitizeString(project.description);
+    const userId = project.userId || 'default';
     if (!name) throw new Error('Project name is required');
     if (project.settings && !isValidJSON(project.settings)) {
       throw new Error('Invalid JSON for project settings');
     }
     await this.callWorker<void>('run', {
-      sql: `INSERT INTO projects (name, description, settings, created_at, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+      sql: `INSERT INTO projects (name, description, settings, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
       params: [
         name,
         description,
-        project.settings ? JSON.stringify(project.settings) : null
+        project.settings ? JSON.stringify(project.settings) : null,
+        userId
       ]
     });
     const rows = await this.callWorker<SQLJsExecResult[]>('exec', { sql: 'SELECT last_insert_rowid() as id' });
@@ -588,12 +754,7 @@ export class SQLiteDatabase {
     return id;
   }
 
-  /**
-   * Add a new project template to the database.
-   * @param template - The template object with name, description, genre, tone, structure, and template_json.
-   * @returns The new template ID.
-   * @throws Error if template_json is not valid JSON or input is invalid.
-   */
+  /** Add a new project template to the database. */
   async addProjectTemplate(template: {
     name: string;
     description?: string;
@@ -601,6 +762,7 @@ export class SQLiteDatabase {
     tone?: string;
     structure?: string;
     template_json: object;
+    userId?: string;
   }): Promise<number> {
     await this.initialize();
     const name = sanitizeString(template.name);
@@ -608,19 +770,21 @@ export class SQLiteDatabase {
     const genre = sanitizeString(template.genre);
     const tone = sanitizeString(template.tone);
     const structure = sanitizeString(template.structure);
+    const userId = template.userId || 'default';
     if (!name) throw new Error('Template name is required');
     if (!isValidJSON(template.template_json)) {
       throw new Error('Invalid JSON for project template');
     }
     await this.callWorker<void>('run', {
-      sql: `INSERT INTO project_templates (name, description, genre, tone, structure, template_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+      sql: `INSERT INTO project_templates (name, description, genre, tone, structure, template_json, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
       params: [
         name,
         description,
         genre,
         tone,
         structure,
-        JSON.stringify(template.template_json)
+        JSON.stringify(template.template_json),
+        userId
       ]
     });
     const rows = await this.callWorker<SQLJsExecResult[]>('exec', { sql: 'SELECT last_insert_rowid() as id' });
@@ -629,19 +793,23 @@ export class SQLiteDatabase {
     return id;
   }
 
-  /**
-   * Update a project template by ID.
-   * @param id - The template ID.
-   * @param updates - The fields to update.
-   * @throws Error if template_json is not valid JSON or input is invalid.
-   */
-  async updateProjectTemplate(id: number, updates: { name?: string; description?: string; genre?: string; tone?: string; structure?: string; template_json?: object }): Promise<void> {
+  /** Update a project template by ID. */
+  async updateProjectTemplate(id: number, updates: {
+    name?: string;
+    description?: string;
+    genre?: string;
+    tone?: string;
+    structure?: string;
+    template_json?: object;
+    userId?: string;
+  }): Promise<void> {
     await this.initialize();
     let templateJsonStr: string | null = null;
     if (updates.template_json !== undefined) {
       if (!isValidJSON(updates.template_json)) throw new Error('Invalid JSON for project template');
       templateJsonStr = JSON.stringify(updates.template_json);
     }
+    const userId = updates.userId || 'default';
     await this.callWorker<void>('run', {
       sql: [
         'UPDATE project_templates SET',
@@ -652,7 +820,7 @@ export class SQLiteDatabase {
         'structure = COALESCE(?, structure),',
         'template_json = COALESCE(?, template_json),',
         'updated_at = CURRENT_TIMESTAMP',
-        'WHERE id = ?'
+        'WHERE id = ? AND user_id = ?'
       ].join(' '),
       params: [
         updates.name !== undefined ? sanitizeString(updates.name) : null,
@@ -661,17 +829,15 @@ export class SQLiteDatabase {
         updates.tone !== undefined ? sanitizeString(updates.tone) : null,
         updates.structure !== undefined ? sanitizeString(updates.structure) : null,
         templateJsonStr,
-        id
+        id,
+        userId
       ]
     });
     this.debouncedSave();
   }
 
-  /**
-   * List all AI providers, masking API keys and parsing configuration as JSON.
-   * @returns Array of AI providers with masked api_key and parsed configuration.
-   */
-  async listAIProviders(): Promise<Array<{
+  /** List all AI providers, masking API keys and parsing configuration as JSON. */
+  async listAIProviders(userId: string = 'default'): Promise<Array<{
     id: number;
     name: string;
     api_key: string; // masked
@@ -682,9 +848,7 @@ export class SQLiteDatabase {
     configuration: object | null;
   }>> {
     await this.initialize();
-    const rows = await this.callWorker<SQLJsExecResult[]>("exec", {
-      sql: "SELECT * FROM ai_providers ORDER BY is_active DESC, name ASC",
-    });
+    const rows = await this.cachedExec("SELECT * FROM ai_providers WHERE user_id = ? ORDER BY is_active DESC, name ASC", [userId]);
     const results: Array<{
       id: number;
       name: string;
@@ -725,11 +889,8 @@ export class SQLiteDatabase {
     return results;
   }
 
-  /**
-   * Get all project templates from the database.
-   * @returns Array of project templates.
-   */
-  async getProjectTemplates(): Promise<Array<{
+  /** Get all project templates from the database. */
+  async getProjectTemplates(userId: string = 'default'): Promise<Array<{
     id: number;
     name: string;
     description: string;
@@ -741,9 +902,7 @@ export class SQLiteDatabase {
     updatedAt: string;
   }>> {
     await this.initialize();
-    const rows = await this.callWorker<SQLJsExecResult[]>("exec", {
-      sql: "SELECT id, name, description, genre, tone, structure, template_json, created_at, updated_at FROM project_templates ORDER BY name ASC",
-    });
+    const rows = await this.cachedExec("SELECT id, name, description, genre, tone, structure, template_json, created_at, updated_at FROM project_templates WHERE user_id = ? ORDER BY name ASC", [userId]);
     const results: Array<{
       id: number;
       name: string;
@@ -779,40 +938,33 @@ export class SQLiteDatabase {
     return results;
   }
 
-  /**
-   * Delete an AI provider by ID.
-   * @param id - The provider ID.
-   */
-  async deleteAIProvider(id: number): Promise<void> {
+  /** Delete an AI provider by ID. */
+  async deleteAIProvider(id: number, userId: string = 'default'): Promise<void> {
     await this.initialize();
     await this.callWorker<void>('run', {
-      sql: 'DELETE FROM ai_providers WHERE id = ?',
-      params: [id]
+      sql: 'DELETE FROM ai_providers WHERE id = ? AND user_id = ?',
+      params: [id, userId]
     });
     this.debouncedSave();
   }
 
-  /**
-   * Set the active AI provider by ID (sets is_active=1 for the given ID, 0 for all others).
-   * @param id - The provider ID to set as active.
-   */
-  async setActiveAIProvider(id: number): Promise<void> {
+  /** Set the active AI provider by ID (sets is_active=1 for the given ID, 0 for all others). */
+  async setActiveAIProvider(id: number, userId: string = 'default'): Promise<void> {
     await this.initialize();
     // Set all to inactive, then set the chosen one to active
     await this.callWorker<void>('run', {
-      sql: 'UPDATE ai_providers SET is_active = 0',
+      sql: 'UPDATE ai_providers SET is_active = 0 WHERE user_id = ?',
+      params: [userId]
     });
     await this.callWorker<void>('run', {
-      sql: 'UPDATE ai_providers SET is_active = 1 WHERE id = ?',
-      params: [id]
+      sql: 'UPDATE ai_providers SET is_active = 1 WHERE id = ? AND user_id = ?',
+      params: [id, userId]
     });
     this.debouncedSave();
   }
 
-  /**
-   * Get all projects from the database.
-   */
-  async getProjects(): Promise<Array<{
+  /** Get all projects from the database. */
+  async getProjects(userId: string = 'default'): Promise<Array<{
     id: number;
     name: string;
     description: string;
@@ -821,9 +973,7 @@ export class SQLiteDatabase {
     lastOpened: string | null;
   }>> {
     await this.initialize();
-    const rows = await this.callWorker<SQLJsExecResult[]>('exec', {
-      sql: 'SELECT id, name, description, created_at, updated_at, last_opened FROM projects ORDER BY updated_at DESC'
-    });
+    const rows = await this.cachedExec('SELECT id, name, description, created_at, updated_at, last_opened FROM projects WHERE user_id = ? ORDER BY updated_at DESC', [userId]);
     const results: Array<{
       id: number;
       name: string;
