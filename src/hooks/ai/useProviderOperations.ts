@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { AI_PROVIDERS } from './constants';
 import type { AIState, AIContextAction } from '@/contexts/AIContext';
@@ -60,10 +59,7 @@ export const useProviderOperations = (
       const errorMessage = error instanceof Error ? error.message : 'Connection failed';
       dispatch({ 
         type: 'SET_ERROR', 
-        payload: { 
-          error: new Error(errorMessage), 
-          operation: 'testConnection' 
-        } 
+        payload: errorMessage
       });
       throw error;
     } finally {

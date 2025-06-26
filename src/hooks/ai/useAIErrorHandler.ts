@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { useAIContext } from '@/contexts/AIContext';
 
@@ -114,10 +113,7 @@ export const useAIErrorHandler = () => {
     if (lastError) {
       dispatch({
         type: 'SET_ERROR',
-        payload: {
-          error: lastError,
-          operation: `${errorType} operation`
-        }
+        payload: lastError.message
       });
     }
 
@@ -132,10 +128,7 @@ export const useAIErrorHandler = () => {
     console.error(`❌ ${operation} failed:`, error);
     dispatch({
       type: 'SET_ERROR',
-      payload: {
-        error: error instanceof Error ? error : new Error('Unknown error occurred'),
-        operation
-      }
+      payload: error instanceof Error ? error.message : 'Unknown error occurred'
     });
   }, [dispatch]);
 

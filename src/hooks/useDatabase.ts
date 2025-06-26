@@ -60,7 +60,7 @@ export const useDatabase = () => {
       return results.map(setting => ({
         key: setting.key,
         value: setting.value,
-        category: setting.category
+        category: setting.category || 'general'
       }));
     } catch (err) {
       console.error('Failed to get settings by category:', err);
@@ -125,7 +125,7 @@ export const useDatabase = () => {
       setSettings(allSettings.map(setting => ({
         key: setting.key,
         value: setting.value,
-        category: setting.category
+        category: setting.category || 'general'
       })));
     } catch (err) {
       console.error('Failed to load settings:', err);

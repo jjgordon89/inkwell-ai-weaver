@@ -29,7 +29,7 @@ export const useTextProcessingOperations = (
     }
 
     dispatch({ type: 'SET_PROCESSING', payload: true });
-    dispatch({ type: 'SET_ERROR', payload: { error: null } });
+    dispatch({ type: 'SET_ERROR', payload: null });
 
     try {
       const provider = AI_PROVIDERS.find(p => p.name === state.selectedProvider);
@@ -62,10 +62,7 @@ export const useTextProcessingOperations = (
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       dispatch({ 
         type: 'SET_ERROR', 
-        payload: { 
-          error: new Error(errorMessage), 
-          operation: `processText-${action}` 
-        } 
+        payload: errorMessage
       });
       throw error;
     } finally {

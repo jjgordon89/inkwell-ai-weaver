@@ -8,9 +8,12 @@ export interface AIState {
   isProcessing: boolean;
   isTestingConnection: boolean;
   error: string | null;
+  lastOperation?: string;
+  resultsCache: Map<string, { result: string; timestamp: number }>;
   settings: {
     cacheEnabled: boolean;
     cacheExpiry: number;
+    cacheExpiryMs: number;
     maxTokens: number;
     temperature: number;
   };
@@ -24,7 +27,10 @@ export type AIContextAction =
   | { type: 'SET_TESTING_CONNECTION'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'CLEAR_ERROR' }
-  | { type: 'UPDATE_SETTINGS'; payload: Partial<AIState['settings']> };
+  | { type: 'UPDATE_SETTINGS'; payload: Partial<AIState['settings']> }
+  | { type: 'CACHE_RESULT'; payload: { key: string; result: string } }
+  | { type: 'CLEAR_CACHE' }
+  | { type: 'LOAD_INITIAL_STATE'; payload: any };
 
 const initialState: AIState = {
   selectedProvider: 'OpenAI',
@@ -33,9 +39,12 @@ const initialState: AIState = {
   isProcessing: false,
   isTestingConnection: false,
   error: null,
+  lastOperation: undefined,
+  resultsCache: new Map(),
   settings: {
     cacheEnabled: true,
     cacheExpiry: 3600000, // 1 hour
+    cacheExpiryMs: 3600000,
     maxTokens: 2048,
     temperature: 0.7
   }
@@ -68,6 +77,17 @@ const aiReducer = (state: AIState, action: AIContextAction): AIState => {
         ...state,
         settings: { ...state.settings, ...action.payload }
       };
+    case 'CACHE_RESULT':
+      const newCache = new Map(state.resultsCache);
+      newCache.set(action.payload.key, {
+        result: action.payload.result,
+        timestamp: Date.now()
+      });
+      return { ...state, resultsCache: newCache };
+    case 'CLEAR_CACHE':
+      return { ...state, resultsCache: new Map() };
+    case 'LOAD_INITIAL_STATE':
+      return { ...state, ...action.payload };
     default:
       return state;
   }

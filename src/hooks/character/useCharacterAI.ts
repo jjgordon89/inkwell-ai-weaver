@@ -22,8 +22,8 @@ export const useCharacterAI = () => {
         personality: char.personality || '',
         occupation: char.occupation || '',
         relationships: char.relationships.map(rel => {
-          const relatedChar = state.characters.find(c => c.id === rel.relatedCharacterId);
-          return `${rel.relationshipType} with ${relatedChar?.name || 'Unknown'}`;
+          const relatedChar = state.characters.find(c => c.id === rel.targetCharacterId);
+          return `${rel.type} with ${relatedChar?.name || 'Unknown'}`;
         })
       }));
 
