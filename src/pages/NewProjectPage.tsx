@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import React, { useEffect, useState } from "react";
-import database, { SQLiteDatabase } from "@/lib/database";
+import database from "@/lib/database";
 import { useWorkflow, WorkflowState, WorkflowEvent } from "@/lib/workflow";
 
 // Add AI-powered template option
@@ -92,9 +92,7 @@ const reducer = (
 				};
 			}
 			if (event.payload.startsWith("user-")) {
-				// User template selection: extract ID and load from userTemplates
 				const userId = parseInt(event.payload.replace("user-", ""), 10);
-				// We'll load the template in the component and dispatch EDIT event
 				return {
 					...state,
 					step: "editing",
@@ -275,7 +273,6 @@ async function generateTemplateWithAI(
 
 const NewProjectPage = () => {
 	const navigate = useNavigate();
-	const db = database as typeof database & { addProject: SQLiteDatabase["addProject"] };
 	const [workflow, sendWorkflow] = useWorkflow<ProjectCreationData, ProjectCreationEvent>(
 		initialState,
 		reducer
@@ -285,8 +282,8 @@ const NewProjectPage = () => {
 	// --- Template Library State ---
 	const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([]);
 	useEffect(() => {
-		db.getProjectTemplates().then(setUserTemplates);
-	}, [db]);
+		database.getProjectTemplates().then(setUserTemplates);
+	}, []);
 
 	// Handle form field changes
 	const handleChange =
@@ -326,7 +323,7 @@ const NewProjectPage = () => {
 		if (!workflow.data.name.trim()) return;
 		sendWorkflow({ type: "SAVE" });
 		try {
-			await db.addProject({
+			await database.addProject({
 				name: workflow.data.name,
 				description: workflow.data.description,
 				settings: { templateId: workflow.data.templateId },
@@ -334,6 +331,7 @@ const NewProjectPage = () => {
 			sendWorkflow({ type: "SUCCESS" });
 			navigate("/projects");
 		} catch (error) {
+			console.error('Failed to create project:', error);
 			sendWorkflow({ type: "FAIL", payload: "Failed to create project. Please try again." });
 		}
 	};
@@ -451,7 +449,7 @@ const NewProjectPage = () => {
 	// --- AI-powered template preview & customization step ---
 	if (workflow.step === "ai-preview") {
 		const handleSaveTemplate = async () => {
-			await db.addProjectTemplate({
+			await database.addProjectTemplate({
 				name: workflow.data.name,
 				description: workflow.data.description,
 				genre: workflow.data.genre,
@@ -466,7 +464,7 @@ const NewProjectPage = () => {
 				},
 			});
 			// Refresh user templates
-			db.getProjectTemplates().then(setUserTemplates);
+			database.getProjectTemplates().then(setUserTemplates);
 			alert("Template saved to library!");
 		};
 		return (
