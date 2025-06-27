@@ -39,13 +39,15 @@ export const useTextProcessingOperations = (
 
       const apiKey = state.apiKeys[state.selectedProvider];
       if (provider.requiresApiKey && !apiKey) {
-        throw new Error(`API key required for ${state.selectedProvider}`);
+        throw new Error(`API key required for ${state.selectedProvider}. Please add your API key in the AI Assistance settings.`);
       }
+
+      console.log(`Processing text with ${state.selectedProvider} (${state.selectedModel}) - Action: ${action}`);
 
       // Generate the prompt for the action
       const prompt = getPromptForAction(action, text);
       
-      // Make the API request (this will use mock processing for now)
+      // Make the API request (this includes fallback to mock processing)
       const result = await makeAPIRequest(provider, apiKey, state.selectedModel, prompt, action);
       
       // Clean the response
@@ -56,18 +58,30 @@ export const useTextProcessingOperations = (
         cacheResult(cacheKey, cleanedResult);
       }
 
+      console.log(`✅ Text processing completed successfully with ${state.selectedProvider}`);
       return cleanedResult;
     } catch (error) {
       console.error('Text processing failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      // Enhanced error handling with more specific messages
+      let enhancedError = errorMessage;
+      if (errorMessage.includes('API key')) {
+        enhancedError = `${errorMessage} You can configure your API key in the AI Assistance settings.`;
+      } else if (errorMessage.includes('connection')) {
+        enhancedError = `${errorMessage} Please check your internet connection and try again.`;
+      } else if (errorMessage.includes('timeout')) {
+        enhancedError = `${errorMessage} The AI service took too long to respond. Please try again.`;
+      }
+      
       dispatch({ 
         type: 'SET_ERROR', 
         payload: { 
-          error: new Error(errorMessage), 
+          error: new Error(enhancedError), 
           operation: `processText-${action}` 
         } 
       });
-      throw error;
+      throw new Error(enhancedError);
     } finally {
       dispatch({ type: 'SET_PROCESSING', payload: false });
     }

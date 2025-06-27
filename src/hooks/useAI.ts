@@ -34,7 +34,7 @@ export const useAI = () => {
       }
       
       if (!isCurrentProviderConfigured()) {
-        throw new Error('AI provider not configured properly');
+        throw new Error('AI provider not configured properly. Please configure your AI provider in the AI Assistance settings.');
       }
 
       return await processText(text, action);
@@ -44,38 +44,46 @@ export const useAI = () => {
     }
   };
 
+  // Enhanced suggestions generator
+  const generateSuggestions = async (context: string): Promise<string[]> => {
+    try {
+      if (!context || context.trim().length === 0) {
+        return [];
+      }
+      
+      const result = await safeProcessText(
+        `Generate 3-5 writing suggestions based on this context: ${context}`,
+        'improve'
+      );
+      return result.split('\n').filter(line => line.trim().length > 0).slice(0, 5);
+    } catch (error) {
+      console.error('Failed to generate suggestions:', error);
+      return [];
+    }
+  };
+
   return {
+    // Core processing
     isProcessing,
     isTestingConnection,
+    processText: safeProcessText,
+    generateSuggestions,
+    
+    // Provider management
     selectedProvider,
     selectedModel,
     setSelectedProvider: setProvider,
     setSelectedModel: setModel,
-    apiKeys,
-    setApiKey,
-    testConnection,
-    processText: safeProcessText,
-    generateSuggestions: async (context: string): Promise<string[]> => {
-      try {
-        if (!context || context.trim().length === 0) {
-          return [];
-        }
-        
-        const result = await safeProcessText(
-          `Generate 3-5 writing suggestions based on this context: ${context}`,
-          'improve'
-        );
-        return result.split('\n').filter(line => line.trim().length > 0).slice(0, 5);
-      } catch (error) {
-        console.error('Failed to generate suggestions:', error);
-        return [];
-      }
-    },
     availableProviders,
     getCurrentProviderInfo,
     isCurrentProviderConfigured,
     
-    // Additional state management features
+    // Configuration
+    apiKeys,
+    setApiKey,
+    testConnection,
+    
+    // State management
     error,
     clearError,
     settings,
