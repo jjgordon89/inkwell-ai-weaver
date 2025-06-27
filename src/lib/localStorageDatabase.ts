@@ -1,4 +1,3 @@
-import isValidJSON from './database';
 import { sanitizeString } from '../utils/stringUtils';
 
 // Type definitions for IndexedDB

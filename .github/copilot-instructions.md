@@ -16,12 +16,13 @@ globs: *
 *   When fixing Typescript errors, ensure that workflow state machines are fully type-safe.
 *   When using Web Workers with TypeScript:
     *   Define types for the expected data structures passed between the main thread and the worker to avoid the use of `any` or `unknown` types, and add type assertions where needed.
-    *   Ensure that all database code, including SQL.js, in web workers is fully type-safe and ESLint-compliant. Replace `any` usages with type-safe assertions, type guards, or specific types, with comments explaining dynamic injections or type conversions where necessary.
+    *   Ensure that all database code, including SQL.js, in web workers is fully type-safe and ESLint-compliant. Replace `any` usages with type-safe assertions, type guards, or specific types, with comments explaining dynamic injections or type conversions where necessary. **NOTE:** This rule will be updated to reflect local storage/IndexedDB usage instead of `sql.js`.
     *   Remove any unused `@ts-expect-error` directives and unnecessary `eslint-disable` comments. If a `@ts-expect-error` is needed, add a description of at least 3 characters explaining why.
 *   When working with database interactions:
     *   Implement debounced and/or batched writes to `localStorage` for better performance, especially in AI or autosave scenarios.
     *   Add validation for JSON fields before saving to the database.
     *   Sanitize all user input before saving to the database.
+    *   All persistence, including user settings, preferences, projects, and templates, must be managed in localStorage (with IndexedDB for large datasets).
 *   When sanitizing string inputs, use a `sanitizeString` utility for all user-facing string fields (project/template/provider names, descriptions, etc.) to prevent XSS/injection.
 *   Ensure there is only one implementation of each method within a class. Remove any duplicate method implementations.
 
@@ -60,13 +61,14 @@ globs: *
     *   Encryption for sensitive data.
     *   Data validation and integrity checks.
     *   Backup/restore utilities for user data.
+*   The root route (`/`) in `App.tsx` should redirect to `/projects` so the Projects page is the default landing page. Any unknown route should also redirect to `/projects`.
 
 ## TECH STACK
-*   sql.js - SQLite compiled to WebAssembly **NOTE:** Will be removed as part of the backend elimination refactor.
+*   sql.js - SQLite compiled to WebAssembly **NOTE:** Removed as part of the backend elimination refactor.
 *   ReactQuill - Rich text editor component
 
 ## PROJECT DOCUMENTATION & CONTEXT SYSTEM
-*   Add JSDoc comments for all public methods in `database.ts` for better maintainability. **NOTE:** Much of `database.ts` will be removed as part of the backend elimination refactor. New data management modules will need similar documentation.
+*   Add JSDoc comments for all public methods in `database.ts` for better maintainability. **NOTE:** Much of `database.ts` will be updated as part of the backend elimination refactor. New data management modules will need similar documentation.
 
 ## DEBUGGING
 
@@ -95,6 +97,35 @@ globs: *
     *   Add more detailed logging of all global keys and their types if not found, to help debug future issues.
     *   If all fail, provide a clear error message about the CDN build and suggest using a UMD build.
     *   If `initSqlJs` is still not available after loading the SQL.js script with `eval`, explicitly assign `self.initSqlJs` if it is not already present but is available as a property of `self` or the evaluated script. After loading the script with `eval`, check for `self.Module` or any global object that may contain `initSqlJs`. If still not found, log all global keys for debugging and provide a clear error message about CDN build incompatibility. **NOTE:** This will be removed as the database dependency is removed.
+*   When debugging the "initializing database" message and error on app start, update the `useDatabase` hook to remove any references to SQL.js, workers, or legacy error messages. Ensure the initialization logic and error messages in `useDatabase` and any relevant UI components are updated to reflect the new localStorage-only approach. Remove or update any UI that displays "Initializing database..." to reflect loading settings or remove it entirely if not needed.
+*   When debugging app loading issues (blank screen or stuck on loading):
+    *   Ensure the `useDatabase()` hook is resolving and that `isLoading` becomes `false` to prevent the app from getting stuck on the loading spinner. Check for errors in the browser console related to localStorage, IndexedDB, or permissions.
+    *   Verify that `database.getProjects()` is implemented, returns real data from localStorage, and handles errors properly.
+    *   Check for import mismatches between `ProjectsPage.tsx` and `Projects.tsx`.
+    *   Ensure all async errors are surfaced in the UI, not just the console.
+*   When debugging the error `Uncaught Error: A custom element with name 'mce-autosize-textarea' has already been defined.`:
+    *   This error means a web component (custom element) is being registered more than once.
+    *   This usually happens when a third-party library (like TinyMCE, Quill, or a modal/overlay library) registers a custom element globally, and the app (or a dependency) tries to register it again.
+    *   Check for duplicate imports of the library that registers `mce-autosize-textarea`. Search the codebase for `mce-autosize-textarea`, `webcomponents-ce.js`, or the relevant overlay/modal library.
+    *   Ensure that any import of a bundle that registers custom elements is only done once, at the app root.
+    *   If using a third-party editor (like TinyMCE, Quill, etc.), ensure you are not importing the editor's web components bundle in multiple places.
+    *   If using Vite or hot reload, try a full browser refresh or restart your dev server.
+    *   If unable to identify the source of the duplicate registration, run `npm ls mce-autosize-textarea`, `npm ls tinymce`, `npm ls webcomponents-ce`, and `npm ls overlay` to identify potential problematic dependencies.
+    *   Check the `index.html` file for any direct `<script>` tags for `webcomponents-ce.js`, `overlay_bundle.js`, TinyMCE, or any other third-party editor or overlay library.
+    *   Run `npm ls` and look for any warnings about duplicate packages or version conflicts.
+    *   As a last resort, try deleting `node_modules` and `package-lock.json`, then run `npm install` again.
+*   When debugging file permission issues in node_modules:
+    *   Close all running dev servers, editors, and terminals that might be using the project.
+    *   Try deleting `node_modules` and `package-lock.json` again.
+    *   After successful deletion, run `npm install` to reinstall dependencies.
+*   When debugging Typescript or JSX errors similar to:
+    *   `Cannot find module 'react' or its corresponding type declarations.`
+    *   `Cannot find module 'react-router-dom' or its corresponding type declarations.`
+    *   `JSX element implicitly has type 'any' because no interface 'JSX.IntrinsicElements' exists.`
+    *   `This JSX tag requires the module path 'react/jsx-runtime' to exist, but none could be found. Make sure you have types for the appropriate package installed.`
+    Ensure that:
+        *   `react`, `react-router-dom`, and `@types/react` are installed as dependencies.
+        *   The file extension is `.tsx` if it contains JSX.
 
 ## AI PROVIDER MANAGEMENT
 *   API keys must be stored securely (never hardcoded).

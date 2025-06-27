@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import database from '@/lib/database';
 
@@ -17,14 +16,14 @@ export const useDatabase = () => {
   useEffect(() => {
     const initDatabase = async () => {
       try {
-        console.log('[useDatabase] Starting database initialization...');
+        // Only log for localStorage, not SQL.js
+        console.log('[useDatabase] Loading settings from localStorage...');
         await database.initialize();
-        console.log('[useDatabase] Database initialized successfully');
         setIsInitialized(true);
         setError(null);
       } catch (err) {
-        console.error('[useDatabase] Database initialization failed:', err);
-        setError(err instanceof Error ? err.message : 'Database initialization failed');
+        console.error('[useDatabase] Failed to load settings from localStorage:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load settings');
         setIsInitialized(false);
       } finally {
         setIsLoading(false);

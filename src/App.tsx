@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -19,7 +18,7 @@ const AppContent = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Initializing database...</p>
+          <p>Loading settings...</p>
         </div>
       </div>
     );
@@ -29,7 +28,7 @@ const AppContent = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Database Error</h2>
+          <h2 className="text-xl font-semibold mb-2">Settings Error</h2>
           <p className="text-muted-foreground mb-4">{error}</p>
           <button 
             onClick={() => window.location.reload()} 
@@ -45,11 +44,11 @@ const AppContent = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<Navigate to="/projects" replace />} />
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/projects/new" element={<NewProjectPage />} />
         <Route path="/studio" element={<WritingStudio />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/projects" replace />} />
       </Routes>
       <Toaster />
     </Router>
