@@ -32,7 +32,9 @@ globs: *
 *   A workflow (state machine, wizard, or explicit process manager) should be implemented to improve user experience, reliability, and extensibility.
     *   The project creation process should use a workflow (state machine) to manage steps: idle → editing → validating → saving → success/error. This workflow should support navigation (cancel, submit, back) and integrate with the database for persistence, and be extensible for future steps (e.g., AI project setup, template selection, etc.). This workflow must be implemented in the `/projects/new` page/component.
 *   New projects must be persisted to the database.
+    *   **NOTE:** With the elimination of the backend database dependency, persistence will be handled via browser local storage (or IndexedDB for larger datasets). All existing database persistence rules now apply to local storage persistence.
 *   The Projects page must fetch and display the list of projects dynamically from the database. The page must not use hardcoded mock data.
+    *   **NOTE:** With the elimination of the backend database dependency, the Projects page will now fetch project data from local storage (or IndexedDB).
 *   The project creation workflow should incorporate a template selection step before editing project details.
 *   The project creation workflow must support AI-powered template selection. This includes:
     *   An "AI-Powered Template" option in the template selection step.
@@ -47,29 +49,40 @@ globs: *
     *   The template selection UI should show a richer preview or allow inline editing before use.
 *   Fallback Logic: Add support for alternative AI providers or graceful fallback if the main API fails.
 *   Inline editing and richer previews are present, but template re-use (applying a template to a new/existing project) should be accessible from the project creation and editing flows.
+*   Implement hybrid synchronization strategies for seamless transitions between devices, using local storage as the primary source of truth.
+*   Implement versioning capabilities, conflict resolution mechanisms, and encrypted storage for sensitive data within the local storage management system.
+*   Develop comprehensive data integrity checks and backup/restore utilities to protect against local storage corruption or unpredictable device behaviors.
+*   Use browser localStorage as the main persistent store for all user data (settings, preferences, app state, etc.).
+*   Optionally leverage IndexedDB for large datasets, but always treat localStorage as the primary source of truth.
+*   Implement:
+    *   Versioning and schema migration for stored data.
+    *   Conflict resolution (for multi-device or concurrent access).
+    *   Encryption for sensitive data.
+    *   Data validation and integrity checks.
+    *   Backup/restore utilities for user data.
 
 ## TECH STACK
-*   sql.js - SQLite compiled to WebAssembly
+*   sql.js - SQLite compiled to WebAssembly **NOTE:** Will be removed as part of the backend elimination refactor.
 *   ReactQuill - Rich text editor component
 
 ## PROJECT DOCUMENTATION & CONTEXT SYSTEM
-*   Add JSDoc comments for all public methods in `database.ts` for better maintainability.
+*   Add JSDoc comments for all public methods in `database.ts` for better maintainability. **NOTE:** Much of `database.ts` will be removed as part of the backend elimination refactor. New data management modules will need similar documentation.
 
 ## DEBUGGING
 
 *   When debugging Typescript or JSX errors, always check the file extension. React components with JSX must use the `.tsx` extension.
 *   When debugging app freezing issues, especially when using AI Assistance:
-    *   **Database Blocking:** `sql.js` runs database operations synchronously on the main thread which can block the UI. To avoid blocking the main thread with `sql.js`, move all database operations into a Web Worker. This way, heavy queries and writes won't freeze the UI, especially during AI Assistance or autosave. The main thread should communicate with the worker using message passing and Promises.
+    *   **Database Blocking:** `sql.js` runs database operations synchronously on the main thread which can block the UI. To avoid blocking the main thread with `sql.js`, move all database operations into a Web Worker. This way, heavy queries and writes won't freeze the UI, especially during AI Assistance or autosave. The main thread should communicate with the worker using message passing and Promises. **NOTE:** This rule will be updated to reflect local storage/IndexedDB usage instead of `sql.js`.
     *   **AI Assistance Loops:** Heavy computations or loops in AI Assistance can freeze the UI.
-    *   **Unawaited Initialization:** Ensure `database.initialize()` is only called once at app startup and is awaited properly.
+    *   **Unawaited Initialization:** Ensure `database.initialize()` is only called once at app startup and is awaited properly. **NOTE:** `database.initialize()` and related rules will need to be updated or removed based on the refactor.
     *   **Debounce Saves:** Debounce database writes from AI Assistance (e.g., save every 1-2 seconds or after the user stops typing).
     *   **Profile:** Use `console.time`/`console.timeEnd` around database and AI Assistance calls to identify slow operations.
     *   **Log:** Log when `database.initialize()` is called to ensure it isn't called too often.
     *   **Batch Writes:** Batch database writes instead of writing after every AI event.
 *   When debugging database issues:
     *   Expand logging and profiling for easier debugging and performance monitoring.
-    *   Improve error handling for worker communication (e.g., adding timeouts).
-*   When debugging Typescript `addProject` method recognition errors, ensure that the `addProject` method is present and correctly typed on the `SQLiteDatabase` class, and that the default export is used consistently, including adding JSDoc comments to the `addProject` method. Also ensure `SQLiteDatabase` is exported from `database.ts`.
+    *   Improve error handling for worker communication (e.g., adding timeouts). **NOTE:** This will need to be updated to reflect local storage/IndexedDB and any worker communication changes.
+*   When debugging Typescript `addProject` method recognition errors, ensure that the `addProject` method is present and correctly typed on the `SQLiteDatabase` class, and that the default export is used consistently, including adding JSDoc comments to the `addProject` method. Also ensure `SQLiteDatabase` is exported from `database.ts`. **NOTE:** This will need to be updated as the database dependency will be removed.
 *   When debugging SQL.js initialization failures in Web Workers:
     *   Prioritize loading the UMD build of SQL.js. The worker should first attempt to load `/sql-wasm.js` from the project's `public` directory. This file must be manually downloaded from the official UMD build and placed in the `public` directory: https://github.com/sql-js/sql.js/releases/download/1.8.0/sql-wasm.js
     *   **Do not use the GitHub releases URL directly from a browser-based worker due to CORS restrictions.**
@@ -81,7 +94,7 @@ globs: *
     *   If still not found, try to find any function named `initSqlJs` in all global keys, and assign it to `self.initSqlJs`.
     *   Add more detailed logging of all global keys and their types if not found, to help debug future issues.
     *   If all fail, provide a clear error message about the CDN build and suggest using a UMD build.
-    *   If `initSqlJs` is still not available after loading the SQL.js script with `eval`, explicitly assign `self.initSqlJs` if it is not already present but is available as a property of `self` or the evaluated script. After loading the script with `eval`, check for `self.Module` or any global object that may contain `initSqlJs`. If still not found, log all global keys for debugging and provide a clear error message about CDN build incompatibility.
+    *   If `initSqlJs` is still not available after loading the SQL.js script with `eval`, explicitly assign `self.initSqlJs` if it is not already present but is available as a property of `self` or the evaluated script. After loading the script with `eval`, check for `self.Module` or any global object that may contain `initSqlJs`. If still not found, log all global keys for debugging and provide a clear error message about CDN build incompatibility. **NOTE:** This will be removed as the database dependency is removed.
 
 ## AI PROVIDER MANAGEMENT
 *   API keys must be stored securely (never hardcoded).
@@ -103,10 +116,15 @@ globs: *
 
 ## ERROR HANDLING & USER FEEDBACK
 *   Implement better error messages for AI failures, DB issues, etc.
+    *   **NOTE:** Update error handling to account for local storage/IndexedDB errors, as opposed to database errors.
 *   Implement more granular loading/progress indicators for long-running operations (AI, DB, etc.).
+    *   **NOTE:** Update loading indicators to reflect local storage/IndexedDB operations.
 *   Implement more robust handling of slow or failed AI/database operations with timeouts and retry mechanisms.
+    *   **NOTE:** Update timeouts and retry mechanisms to account for local storage/IndexedDB operations.
 *   Add user-friendly error messages and loading indicators for all async/template/AI/database actions.
+    *   **NOTE:** Update error messages and loading indicators to account for local storage/IndexedDB operations.
 *   Ensure errors from the database and AI calls are surfaced in the UI, not just the console.
+    *   **NOTE:** Ensure errors from local storage, IndexedDB, and AI calls are surfaced in the UI.
 
 ## SETTINGS & CUSTOMIZATION
 *   Implement a User Preferences UI for changing app settings (theme, autosave, etc.).
@@ -115,6 +133,7 @@ globs: *
 
 ## TESTING & VALIDATION
 *   Implement comprehensive unit/integration tests for workflows, DB, and AI integration.
+    *   **NOTE:** Update tests to reflect local storage/IndexedDB usage instead of the database.
 *   Ensure strict type safety everywhere, especially in worker communication and AI result parsing.
 
 ## DOCUMENTATION & ONBOARDING
@@ -123,11 +142,12 @@ globs: *
 
 ## PERFORMANCE & SCALABILITY
 *   Implement pagination or lazy loading for large project/template lists.
-*   Implement database migration logic.
+*   Implement database migration logic. **NOTE:** Database migration logic will be replaced with local storage/IndexedDB migration logic.
 
 ## SECURITY
 *   Implement more robust validation for all user inputs (not just JSON).
 *   Ensure all user-generated content is sanitized before rendering to prevent XSS/injection.
+*   Implement encrypted storage for sensitive data in local storage.
 
 ## UI COMPONENT & PAGE REVIEW
 *   The following components and pages must be reviewed and updated for compliance, input sanitization, async feedback, and documentation/testing:
@@ -140,18 +160,18 @@ globs: *
     *   `AIProviderSettings.tsx` (AI provider management UI)
     *   `UserSettings.tsx` (User preferences/settings)
     *   `AsyncFeedback.tsx` (Feedback UI)
-    *   All components/pages making async DB/AI calls.
+    *   All components/pages making async DB/AI calls. **NOTE:** Update to reflect local storage/IndexedDB calls.
 
 ## USER INPUT HANDLING
 *   For each form/editor (project, template, provider, settings, world/story elements, etc.):
     *   Ensure all string fields are sanitized with `sanitizeString` before saving or rendering.
-    *   Check for any direct use of user input in the UI or DB and update as needed.
+    *   Check for any direct use of user input in the UI or DB and update as needed. **NOTE:** Update to reflect local storage/IndexedDB instead of DB.
 
 ## ASYNC OPERATIONS AUDIT
 *   For each async operation (DB, AI, network):
     *   Confirm there is a loading/progress indicator.
     *   Ensure errors are caught and displayed to the user.
-    *   Add timeouts/retries where appropriate.
+    *   Add timeouts/retries where appropriate. **NOTE:** Update to reflect local storage/IndexedDB.
 
 ## TESTS & DOCUMENTATION
 *   Review the `test/` directory for coverage of:

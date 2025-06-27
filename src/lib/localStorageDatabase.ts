@@ -1,4 +1,5 @@
 import isValidJSON from './database';
+import { sanitizeString } from '../utils/stringUtils';
 
 // Type definitions for IndexedDB
 interface IDBOpenDBEventTarget extends EventTarget {
@@ -204,7 +205,7 @@ export class LocalStorageDatabase {
 
   async setSetting(key: string, value: string, category: string = 'general', userId: string = 'default'): Promise<void> {
     await this.initialize();
-    this.data.settings[`${userId}:${key}`] = { value, category, user_id: userId };
+    this.data.settings[`${userId}:${key}`] = { value: sanitizeString(value), category: sanitizeString(category), user_id: userId };
     this.saveToStorage();
   }
 
@@ -266,10 +267,10 @@ export class LocalStorageDatabase {
   }): Promise<void> {
     await this.initialize();
     const userId = provider.userId || 'default';
-    this.data.aiProviders[`${userId}:${provider.name}`] = {
-      api_key: provider.api_key ? this.encrypt(provider.api_key) : undefined,
-      endpoint: provider.endpoint,
-      model: provider.model,
+    this.data.aiProviders[`${userId}:${sanitizeString(provider.name)}`] = {
+      api_key: provider.api_key ? this.encrypt(sanitizeString(provider.api_key)) : undefined,
+      endpoint: provider.endpoint ? sanitizeString(provider.endpoint) : undefined,
+      model: provider.model ? sanitizeString(provider.model) : undefined,
       is_active: !!provider.is_active,
       is_local: !!provider.is_local,
       configuration: provider.configuration,
@@ -341,8 +342,8 @@ export class LocalStorageDatabase {
     const id = Date.now().toString();
     const userId = project.userId || 'default';
     this.data.projects[id] = {
-      name: project.name,
-      description: project.description,
+      name: sanitizeString(project.name),
+      description: sanitizeString(project.description ?? ''),
       settings: project.settings,
       user_id: userId,
       created_at: new Date().toISOString(),
@@ -387,11 +388,11 @@ export class LocalStorageDatabase {
     const id = Date.now().toString();
     const userId = template.userId || 'default';
     this.data.projectTemplates[id] = {
-      name: template.name,
-      description: template.description,
-      genre: template.genre,
-      tone: template.tone,
-      structure: template.structure,
+      name: sanitizeString(template.name),
+      description: sanitizeString(template.description ?? ''),
+      genre: sanitizeString(template.genre ?? ''),
+      tone: sanitizeString(template.tone ?? ''),
+      structure: sanitizeString(template.structure ?? ''),
       template_json: template.template_json,
       user_id: userId,
       created_at: new Date().toISOString(),
@@ -505,13 +506,11 @@ export class LocalStorageDatabase {
     if (!this.indexedDB) {
       throw new Error('IndexedDB not initialized');
     }
-
+    const db = this.indexedDB as IDBDatabase; // Type assertion to satisfy TS
     return new Promise((resolve, reject) => {
-      const transaction = this.indexedDB.transaction(['largeFiles'], 'readwrite');
+      const transaction = db.transaction(['largeFiles'], 'readwrite');
       const store = transaction.objectStore('largeFiles');
-
       const request = store.put({ id, content });
-
       request.onsuccess = () => resolve();
       request.onerror = () => reject(new Error('Failed to store large file'));
     });
@@ -521,18 +520,15 @@ export class LocalStorageDatabase {
     if (!this.indexedDB) {
       throw new Error('IndexedDB not initialized');
     }
-
+    const db = this.indexedDB as IDBDatabase; // Type assertion to satisfy TS
     return new Promise((resolve, reject) => {
-      const transaction = this.indexedDB.transaction(['largeFiles'], 'readonly');
+      const transaction = db.transaction(['largeFiles'], 'readonly');
       const store = transaction.objectStore('largeFiles');
-
       const request = store.get(id);
-
       request.onsuccess = () => {
         const result = request.result;
         resolve(result ? result.content : null);
       };
-
       request.onerror = () => reject(new Error('Failed to retrieve large file'));
     });
   }
