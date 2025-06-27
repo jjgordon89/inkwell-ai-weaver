@@ -1,1 +1,0 @@
-This file has been removed as part of the backend database elimination. All persistence is now handled by localStorageDatabase.ts. See README-legacy-database-removed.md for details.

@@ -1,154 +1,271 @@
-import { useEffect, useState } from 'react';
-import database from '@/lib/database';
+import { useState, useEffect, useCallback } from 'react';
+import { useProject } from '@/contexts/ProjectContext';
+import { database } from '@/lib/database';
 
-export interface DatabaseSetting {
+export interface Setting {
   key: string;
   value: string;
   category: string;
 }
 
+export interface AIProviderData {
+  name: string;
+  api_key?: string;
+  endpoint?: string;
+  model?: string;
+  is_active: boolean;
+  is_local: boolean;
+  configuration?: object | undefined; // Changed from object | null to object | undefined to match interface
+}
+
 export const useDatabase = () => {
   const [isInitialized, setIsInitialized] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [settings, setSettings] = useState<Setting[]>([]);
+  const [aiProviders, setAIProviders] = useState<AIProviderData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [settings, setSettings] = useState<DatabaseSetting[]>([]);
 
+  // Initialize database on first load
   useEffect(() => {
     const initDatabase = async () => {
       try {
-        // Only log for localStorage, not SQL.js
-        console.log('[useDatabase] Loading settings from localStorage...');
+        setLoading(true);
         await database.initialize();
         setIsInitialized(true);
-        setError(null);
+        await loadAllData();
       } catch (err) {
-        console.error('[useDatabase] Failed to load settings from localStorage:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load settings');
-        setIsInitialized(false);
+        setError(err instanceof Error ? err.message : 'Database initialization failed');
+        console.error('Database initialization failed:', err);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
     initDatabase();
   }, []);
 
-  const getSetting = async (key: string): Promise<string | null> => {
+  // Load all settings and data
+  const loadAllData = useCallback(async () => {
+    try {
+      const [allSettings, providers] = await Promise.all([
+        database.getAllSettings(),
+        database.listAIProviders()
+      ]);
+      
+      setSettings(allSettings);
+      // Transform the data to match our interface expectations
+      const transformedProviders = providers.map(provider => ({
+        ...provider,
+        configuration: provider.configuration || undefined // Convert null to undefined
+      }));
+      setAIProviders(transformedProviders);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load data');
+      console.error('Failed to load database data:', err);
+    }
+  }, []);
+
+  // Setting management functions
+  const getSetting = useCallback(async (key: string): Promise<string | null> => {
+    if (!isInitialized) return null;
     try {
       return await database.getSetting(key);
     } catch (err) {
-      console.error('Failed to get setting:', err);
+      console.error(`Failed to get setting ${key}:`, err);
       return null;
     }
-  };
+  }, [isInitialized]);
 
-  const setSetting = async (key: string, value: string, category: string = 'general'): Promise<void> => {
+  const setSetting = useCallback(async (key: string, value: string, category: string = 'general'): Promise<void> => {
+    if (!isInitialized) throw new Error('Database not initialized');
+    
     try {
       await database.setSetting(key, value, category);
-      // Refresh settings list
-      await loadSettings();
+      await loadAllData(); // Refresh settings
     } catch (err) {
-      console.error('Failed to set setting:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save setting');
       throw err;
     }
-  };
+  }, [isInitialized, loadAllData]);
 
-  const getSettingsByCategory = async (category: string): Promise<DatabaseSetting[]> => {
+  const getSettingsByCategory = useCallback(async (category: string): Promise<Array<{key: string, value: string}>> => {
+    if (!isInitialized) return [];
+    
     try {
-      const results = await database.getSettingsByCategory(category);
-      return results.map(setting => ({
-        key: setting.key,
-        value: setting.value,
-        category: category // Use the category parameter since the database method filters by category
-      }));
+      return await database.getSettingsByCategory(category);
     } catch (err) {
-      console.error('Failed to get settings by category:', err);
+      console.error(`Failed to get settings for category ${category}:`, err);
       return [];
     }
-  };
+  }, [isInitialized]);
 
-  const deleteSetting = async (key: string): Promise<void> => {
+  const deleteSetting = useCallback(async (key: string): Promise<void> => {
+    if (!isInitialized) throw new Error('Database not initialized');
+    
     try {
       await database.deleteSetting(key);
-      await loadSettings();
+      await loadAllData(); // Refresh settings
     } catch (err) {
-      console.error('Failed to delete setting:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete setting');
       throw err;
     }
-  };
+  }, [isInitialized, loadAllData]);
 
-  const updateMultipleSettings = async (settingsToUpdate: Array<{key: string; value: string; category: string}>): Promise<void> => {
+  // AI Provider management functions
+  const saveAIProvider = useCallback(async (provider: AIProviderData): Promise<void> => {
+    if (!isInitialized) throw new Error('Database not initialized');
+    
     try {
-      for (const setting of settingsToUpdate) {
-        await database.setSetting(setting.key, setting.value, setting.category);
-      }
-      await loadSettings();
+      await database.saveAIProvider(provider);
+      await loadAllData(); // Refresh providers
     } catch (err) {
-      console.error('Failed to update multiple settings:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save AI provider');
       throw err;
     }
-  };
+  }, [isInitialized, loadAllData]);
 
-  const exportSettings = async (): Promise<string> => {
+  // Utility functions for common settings
+  const getTheme = useCallback(async (): Promise<string> => {
+    const theme = await getSetting('theme');
+    return theme || 'system';
+  }, [getSetting]);
+
+  const setTheme = useCallback(async (theme: string): Promise<void> => {
+    await setSetting('theme', theme, 'appearance');
+  }, [setSetting]);
+
+  const getAutoSave = useCallback(async (): Promise<boolean> => {
+    const autoSave = await getSetting('auto_save');
+    return autoSave === 'true';
+  }, [getSetting]);
+
+  const setAutoSave = useCallback(async (enabled: boolean): Promise<void> => {
+    await setSetting('auto_save', enabled.toString(), 'editor');
+  }, [setSetting]);
+
+  const getAutoSaveInterval = useCallback(async (): Promise<number> => {
+    const interval = await getSetting('auto_save_interval');
+    return parseInt(interval || '30000', 10);
+  }, [getSetting]);
+
+  const setAutoSaveInterval = useCallback(async (interval: number): Promise<void> => {
+    await setSetting('auto_save_interval', interval.toString(), 'editor');
+  }, [setSetting]);
+
+  const getDefaultAIProvider = useCallback(async (): Promise<string> => {
+    const provider = await getSetting('default_ai_provider');
+    return provider || 'OpenAI';
+  }, [getSetting]);
+
+  const setDefaultAIProvider = useCallback(async (provider: string): Promise<void> => {
+    await setSetting('default_ai_provider', provider, 'ai');
+  }, [setSetting]);
+
+  // Bulk settings operations
+  const updateMultipleSettings = useCallback(async (settingsToUpdate: Array<{key: string, value: string, category?: string}>): Promise<void> => {
+    if (!isInitialized) throw new Error('Database not initialized');
+    
+    try {
+      // Use a transaction-like approach by updating all settings first, then refreshing
+      await Promise.all(
+        settingsToUpdate.map(setting => 
+          database.setSetting(setting.key, setting.value, setting.category || 'general')
+        )
+      );
+      await loadAllData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update settings');
+      throw err;
+    }
+  }, [isInitialized, loadAllData]);
+
+  // Export/Import functionality
+  const exportSettings = useCallback(async (): Promise<string> => {
+    if (!isInitialized) throw new Error('Database not initialized');
+    
     try {
       const allSettings = await database.getAllSettings();
-      return JSON.stringify(allSettings, null, 2);
+      const allProviders = await database.listAIProviders();
+      
+      const exportData = {
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+        settings: allSettings,
+        aiProviders: allProviders
+      };
+      
+      return JSON.stringify(exportData, null, 2);
     } catch (err) {
-      console.error('Failed to export settings:', err);
-      throw err;
+      throw new Error('Failed to export settings');
     }
-  };
+  }, [isInitialized]);
 
-  const importSettings = async (jsonData: string): Promise<void> => {
+  const importSettings = useCallback(async (data: string): Promise<void> => {
+    if (!isInitialized) throw new Error('Database not initialized');
+    
     try {
-      const parsedSettings = JSON.parse(jsonData);
-      if (!Array.isArray(parsedSettings)) {
-        throw new Error('Invalid settings format');
+      const importData = JSON.parse(data);
+      
+      if (!importData.settings || !Array.isArray(importData.settings)) {
+        throw new Error('Invalid settings data format');
       }
       
-      for (const setting of parsedSettings) {
-        if (setting.key && setting.value && setting.category) {
-          await database.setSetting(setting.key, setting.value, setting.category);
+      // Import settings
+      for (const setting of importData.settings) {
+        await database.setSetting(setting.key, setting.value, setting.category);
+      }
+      
+      // Import AI providers if available
+      if (importData.aiProviders && Array.isArray(importData.aiProviders)) {
+        for (const provider of importData.aiProviders) {
+          await database.saveAIProvider(provider);
         }
       }
-      await loadSettings();
+      
+      await loadAllData();
     } catch (err) {
-      console.error('Failed to import settings:', err);
-      throw err;
+      throw new Error('Failed to import settings: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }
-  };
+  }, [isInitialized, loadAllData]);
 
-  const loadSettings = async () => {
-    try {
-      const allSettings = await database.getAllSettings();
-      setSettings(allSettings.map(setting => ({
-        key: setting.key,
-        value: setting.value,
-        category: setting.category || 'general' // Provide fallback for category
-      })));
-    } catch (err) {
-      console.error('Failed to load settings:', err);
-    }
-  };
-
-  const clearError = () => {
+  const clearError = useCallback(() => {
     setError(null);
-  };
+  }, []);
 
   return {
+    // State
     isInitialized,
-    isLoading: isLoading,
-    loading: isLoading, // Alias for compatibility
-    error,
     settings,
-    database,
+    aiProviders,
+    loading,
+    error,
+    
+    // Basic operations
     getSetting,
     setSetting,
     getSettingsByCategory,
     deleteSetting,
+    saveAIProvider,
+    
+    // Utility functions for common settings
+    getTheme,
+    setTheme,
+    getAutoSave,
+    setAutoSave,
+    getAutoSaveInterval,
+    setAutoSaveInterval,
+    getDefaultAIProvider,
+    setDefaultAIProvider,
+    
+    // Bulk operations
     updateMultipleSettings,
+    
+    // Data management
+    loadAllData,
     exportSettings,
     importSettings,
     clearError
   };
 };
+
+export default useDatabase;

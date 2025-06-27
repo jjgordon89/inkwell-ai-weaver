@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -84,7 +83,7 @@ const AIStoryArcGeneratorContent = ({ onStoryArcGenerated, currentArcs }: AIStor
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              {error}
+              {error.message}
               <Button 
                 variant="outline" 
                 size="sm" 

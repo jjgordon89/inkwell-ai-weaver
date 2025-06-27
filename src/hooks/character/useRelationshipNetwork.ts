@@ -16,8 +16,8 @@ export const useRelationshipNetwork = () => {
     const links = state.characters.flatMap(char =>
       char.relationships.map(rel => ({
         source: char.id,
-        target: rel.targetCharacterId,
-        type: rel.type,
+        target: rel.relatedCharacterId,
+        type: rel.relationshipType,
         description: rel.description || ''
       }))
     );
@@ -27,15 +27,16 @@ export const useRelationshipNetwork = () => {
 
   const addRelationship = (
     characterId: string,
-    targetCharacterId: string,
-    type: string,
+    relatedCharacterId: string,
+    relationshipType: string,
     description?: string
   ) => {
     const relationship: CharacterRelationship = {
       id: Date.now().toString(),
-      targetCharacterId,
-      type: type as CharacterRelationship['type'],
-      description: description || ''
+      characterId,
+      relatedCharacterId,
+      relationshipType,
+      description
     };
 
     const character = state.characters.find(c => c.id === characterId);

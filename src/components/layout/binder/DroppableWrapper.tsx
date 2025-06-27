@@ -1,22 +1,20 @@
 import React from 'react';
 import { Droppable, DroppableProps } from 'react-beautiful-dnd';
 
-interface DroppableWrapperProps extends Omit<DroppableProps, 'children'> {
-  children: DroppableProps['children'];
-}
-
-export const DroppableWrapper: React.FC<DroppableWrapperProps> = React.memo(({
+// This wrapper component uses default parameters instead of defaultProps
+// to fix the warning: "Support for defaultProps will be removed from memo components"
+const DroppableWrapper = ({
   droppableId,
-  type = "DEFAULT",
-  direction = "vertical",
-  ignoreContainerClipping = false,
-  isDropDisabled = false,
-  isCombineEnabled = false,
+  type = "DEFAULT", // Using default parameter instead of defaultProps
+  direction = "vertical", // Using default parameter instead of defaultProps
+  ignoreContainerClipping = false, // Using default parameter instead of defaultProps
+  isDropDisabled = false, // Using default parameter instead of defaultProps
+  isCombineEnabled = false, // Using default parameter instead of defaultProps
   renderClone,
   getContainerForClone,
   children,
   ...rest
-}) => {
+}: DroppableProps) => {
   return (
     <Droppable
       droppableId={droppableId}
@@ -32,8 +30,6 @@ export const DroppableWrapper: React.FC<DroppableWrapperProps> = React.memo(({
       {children}
     </Droppable>
   );
-});
-
-DroppableWrapper.displayName = 'DroppableWrapper';
+};
 
 export default DroppableWrapper;
