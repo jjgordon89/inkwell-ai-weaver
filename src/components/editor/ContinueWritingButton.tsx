@@ -46,10 +46,13 @@ const ContinueWritingButton: React.FC<ContinueWritingButtonProps> = ({
     try {
       // Get the last 200 characters as context for continuation
       const contextText = content.slice(-200);
+      console.log('Continuing writing with context:', contextText.substring(0, 50) + '...');
+      
       const continuation = await processText(contextText, 'continue');
+      console.log('Generated continuation:', continuation);
 
       if (continuation && continuation.trim()) {
-        const newContent = content + ' ' + continuation.trim();
+        const newContent = content + (content.endsWith(' ') ? '' : ' ') + continuation.trim();
         
         dispatch({
           type: 'UPDATE_DOCUMENT_CONTENT',

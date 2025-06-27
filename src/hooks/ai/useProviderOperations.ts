@@ -22,13 +22,7 @@ export const useProviderOperations = (
   }, [dispatch]);
 
   const setApiKey = useCallback((provider: string, key: string) => {
-    dispatch({ 
-      type: 'SET_API_KEY', 
-      payload: { provider, key } 
-    });
-    
-    // Store in localStorage for persistence
-    localStorage.setItem(`ai-api-key-${provider}`, key);
+    dispatch({ type: 'SET_API_KEY', payload: { provider, key } });
   }, [dispatch]);
 
   const testConnection = useCallback(async (provider?: string) => {
@@ -45,26 +39,15 @@ export const useProviderOperations = (
       // Mock connection test for now
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (providerInfo.type === 'local') {
-        // For local providers, just return success
-        return { success: true, message: 'Local provider ready' };
+      const hasApiKey = !!state.apiKeys[targetProvider];
+      if (providerInfo.requiresApiKey && !hasApiKey) {
+        throw new Error(`API key required for ${targetProvider}`);
       }
       
-      const apiKey = state.apiKeys[targetProvider];
-      if (providerInfo.requiresApiKey && !apiKey) {
-        throw new Error('API key required');
-      }
-      
-      return { success: true, message: 'Connection successful' };
+      console.log(`✅ Connection test passed for ${targetProvider}`);
+      return true;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Connection failed';
-      dispatch({ 
-        type: 'SET_ERROR', 
-        payload: { 
-          error: new Error(errorMessage), 
-          operation: 'testConnection' 
-        } 
-      });
+      console.error(`❌ Connection test failed for ${targetProvider}:`, error);
       throw error;
     } finally {
       dispatch({ type: 'SET_TESTING_CONNECTION', payload: false });
@@ -79,16 +62,16 @@ export const useProviderOperations = (
     const provider = getCurrentProviderInfo();
     if (!provider) return false;
     
-    if (provider.type === 'local') {
-      return true;
-    }
+    // Local providers don't need API keys
+    if (provider.type === 'local') return true;
     
+    // Cloud providers need API keys
     if (provider.requiresApiKey) {
       return !!state.apiKeys[state.selectedProvider];
     }
     
     return true;
-  }, [getCurrentProviderInfo, state.apiKeys, state.selectedProvider]);
+  }, [state.selectedProvider, state.apiKeys, getCurrentProviderInfo]);
 
   return {
     setProvider,

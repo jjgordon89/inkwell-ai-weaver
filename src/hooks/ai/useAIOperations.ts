@@ -89,11 +89,20 @@ export const useAIOperations = () => {
     });
   }, []);
 
+  // Initialize providers in state if not already set
+  const availableProviders = getAvailableProviders();
+  if (state.availableProviders.length === 0) {
+    dispatch({ 
+      type: 'LOAD_INITIAL_STATE', 
+      payload: { availableProviders } 
+    });
+  }
+
   return {
     // State
     selectedProvider: state.selectedProvider,
     selectedModel: state.selectedModel,
-    availableProviders: getAvailableProviders(),
+    availableProviders,
     apiKeys: state.apiKeys,
     isProcessing: state.isProcessing,
     isTestingConnection: state.isTestingConnection,

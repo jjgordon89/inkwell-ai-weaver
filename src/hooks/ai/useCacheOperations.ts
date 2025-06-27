@@ -12,10 +12,10 @@ export const useCacheOperations = (
     const cached = state.resultsCache.get(key);
     if (!cached) return null;
     
-    // Check if cache entry is expired
-    const isExpired = Date.now() - cached.timestamp > state.settings.cacheExpiryMs;
-    if (isExpired) {
-      // Remove expired entry
+    // Check if cache is expired
+    const now = Date.now();
+    if (now - cached.timestamp > state.settings.cacheExpiryMs) {
+      // Remove expired cache entry
       const newCache = new Map(state.resultsCache);
       newCache.delete(key);
       dispatch({ type: 'CLEAR_CACHE' });
@@ -23,7 +23,7 @@ export const useCacheOperations = (
     }
     
     return cached.result;
-  }, [state.settings.cacheEnabled, state.settings.cacheExpiryMs, state.resultsCache, dispatch]);
+  }, [state.resultsCache, state.settings.cacheEnabled, state.settings.cacheExpiryMs, dispatch]);
 
   const cacheResult = useCallback((key: string, result: string) => {
     if (!state.settings.cacheEnabled) return;
@@ -34,13 +34,5 @@ export const useCacheOperations = (
     });
   }, [state.settings.cacheEnabled, dispatch]);
 
-  const clearCache = useCallback(() => {
-    dispatch({ type: 'CLEAR_CACHE' });
-  }, [dispatch]);
-
-  return {
-    getCachedResult,
-    cacheResult,
-    clearCache
-  };
+  return { getCachedResult, cacheResult };
 };
