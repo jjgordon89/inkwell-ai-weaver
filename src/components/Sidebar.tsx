@@ -1,4 +1,5 @@
-import { Book, Users, GitMerge, Globe, Link as LinkIcon, Bot, List, Layers, Plus, Search, Settings, Folder, Pen, Sparkles, Wrench } from 'lucide-react';
+
+import { Book, Users, GitMerge, Globe, Link as LinkIcon, Bot, List, Layers, Plus, Search, Settings, Folder, Pen, Sparkles, Wrench, ArrowLeft } from 'lucide-react';
 import { useWriting } from '@/contexts/WritingContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,10 +14,6 @@ type NavItem = {
 
 const Sidebar = () => {
   const { state, dispatch } = useWriting();
-
-  const projectItems = [
-    { name: 'All Projects', icon: Folder, path: '/projects' },
-  ];
 
   const writingItems: NavItem[] = [
     { name: 'Story', icon: Book, section: 'story' },
@@ -105,6 +102,16 @@ const Sidebar = () => {
 
   return (
     <div className="h-full bg-card/30 p-6 flex flex-col border-r border-border/50">
+      {/* Back to Projects Navigation */}
+      <div className="mb-6 pb-4 border-b border-border/20">
+        <Link to="/projects" className="block">
+          <Button variant="ghost" className="w-full justify-start p-3 hover:bg-accent/50">
+            <ArrowLeft className="h-4 w-4 mr-3" />
+            <span className="font-medium">Back to Projects</span>
+          </Button>
+        </Link>
+      </div>
+
       {/* Header Section */}
       <div className="mb-8 pb-6 border-b border-border/20">
         <h1 className="text-2xl font-bold text-foreground mb-1">Manuscript</h1>
@@ -124,30 +131,6 @@ const Sidebar = () => {
 
       {/* Navigation */}
       <nav className="flex-grow space-y-8">
-        {/* Projects Section */}
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2 mb-4">
-            <div className="w-3 h-3 rounded-full bg-green-500/20"></div>
-            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Projects
-            </h2>
-          </div>
-          <ul className="space-y-1">
-            {projectItems.map((item) => (
-              <li key={item.name}>
-                <Link to={item.path} className="block">
-                  <button
-                    className={`w-full flex items-center p-3 rounded-lg transition-all duration-200 group text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground border border-transparent hover:scale-102`}
-                  >
-                    <item.icon className={`h-5 w-5 mr-3 transition-colors text-muted-foreground group-hover:text-accent-foreground`} />
-                    <span className="font-medium">{item.name}</span>
-                  </button>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
         {/* Writing Section */}
         {renderNavSection('Writing', writingItems, 'bg-blue-500/20', <Pen className="h-4 w-4" />)}
 
