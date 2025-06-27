@@ -102,14 +102,18 @@ const Sidebar = () => {
 
   return (
     <div className="h-full bg-card/30 p-6 flex flex-col border-r border-border/50">
-      {/* Back to Projects Navigation */}
-      <div className="mb-6 pb-4 border-b border-border/20">
+      {/* Back to Projects Navigation - Made more prominent */}
+      <div className="mb-6">
         <Link to="/projects" className="block">
-          <Button variant="ghost" className="w-full justify-start p-3 hover:bg-accent/50">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start p-3 mb-4 bg-background/50 hover:bg-accent border-border/50 transition-all duration-200"
+          >
             <ArrowLeft className="h-4 w-4 mr-3" />
-            <span className="font-medium">Back to Projects</span>
+            <span className="font-medium">← Back to Projects</span>
           </Button>
         </Link>
+        <div className="border-b border-border/20"></div>
       </div>
 
       {/* Header Section */}
