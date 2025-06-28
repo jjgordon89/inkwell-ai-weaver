@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -59,17 +60,26 @@ const AIConfigurationModal: React.FC<AIConfigurationModalProps> = ({ isOpen, onC
   };
 
   const handleTestConnection = async () => {
-    const result = await testConnection(selectedProvider);
-    // Extract boolean result from the returned object
-    const success = typeof result === 'boolean' ? result : result?.success || false;
-    setTestResult(success);
-    
-    if (success) {
-      toast({
-        title: "Connection Successful",
-        description: `Successfully connected to ${selectedProvider}`,
-      });
-    } else {
+    try {
+      const result = await testConnection(selectedProvider);
+      // Handle the case where testConnection might return different types
+      const success = typeof result === 'boolean' ? result : (result as any)?.success === true;
+      setTestResult(success);
+      
+      if (success) {
+        toast({
+          title: "Connection Successful",
+          description: `Successfully connected to ${selectedProvider}`,
+        });
+      } else {
+        toast({
+          title: "Connection Failed",
+          description: `Failed to connect to ${selectedProvider}. Please check your settings.`,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      setTestResult(false);
       toast({
         title: "Connection Failed",
         description: `Failed to connect to ${selectedProvider}. Please check your settings.`,

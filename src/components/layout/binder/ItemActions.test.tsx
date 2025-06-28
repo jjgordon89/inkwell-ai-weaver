@@ -1,3 +1,4 @@
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -30,7 +31,7 @@ describe('ItemActions', () => {
   beforeEach(() => {
     // Clear mocks before each test
     vi.clearAllMocks();
-    (ActionsMenu as jest.Mock).mockClear();
+    (ActionsMenu as any).mockClear();
   });
 
   it('should render the ActionsMenu component', () => {
@@ -81,7 +82,7 @@ describe('ItemActions', () => {
     render(<ItemActions node={mockNode} onStartEditing={mockOnStartEditing} />);
     
     // Extract the onRename function passed to ActionsMenu
-    const onRenameFunction = (ActionsMenu as jest.Mock).mock.calls[0][0].onRename;
+    const onRenameFunction = (ActionsMenu as any).mock.calls[0][0].onRename;
     
     // Call the onRename function directly
     onRenameFunction();
@@ -94,7 +95,7 @@ describe('ItemActions', () => {
     render(<ItemActions node={mockNode} />);
     
     // Extract the onRename function passed to ActionsMenu
-    const onRenameFunction = (ActionsMenu as jest.Mock).mock.calls[0][0].onRename;
+    const onRenameFunction = (ActionsMenu as any).mock.calls[0][0].onRename;
     
     // This should not throw an error
     expect(() => onRenameFunction()).not.toThrow();
@@ -110,10 +111,10 @@ describe('ItemActions', () => {
     fireEvent.mouseEnter(containerDiv!);
     
     // Reset the mock to track new calls
-    (ActionsMenu as jest.Mock).mockClear();
+    (ActionsMenu as any).mockClear();
     
     // Extract and call the onRename function
-    const onRenameFunction = (ActionsMenu as jest.Mock).mock.calls[0][0].onRename;
+    const onRenameFunction = (ActionsMenu as any).mock.calls[0][0].onRename;
     onRenameFunction();
     
     // Component should re-render with isMenuOpen set to false
