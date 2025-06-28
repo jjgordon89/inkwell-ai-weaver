@@ -1,3 +1,4 @@
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -48,15 +49,15 @@ describe('BinderItemContent', () => {
 
   const mockProps = {
     node: mockNode,
+    level: 0,
     isSelected: false,
     isExpanded: false,
     hasChildren: false,
-    onSelect: vi.fn(),
+    isPermanentManuscript: false,
     onToggle: vi.fn(),
-    onDelete: vi.fn(),
-    onAddChild: vi.fn(),
-    onEdit: vi.fn(),
-    onStartEditing: vi.fn()
+    onStartEditing: vi.fn(),
+    onTitleChange: vi.fn(),
+    onEditComplete: vi.fn()
   };
 
   beforeEach(() => {

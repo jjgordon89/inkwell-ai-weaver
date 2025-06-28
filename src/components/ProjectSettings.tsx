@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import database from '../lib/database';
 import { useProject } from '@/contexts/ProjectContext';
@@ -5,7 +6,7 @@ import { AsyncFeedback } from '@/components/AsyncFeedback';
 
 export default function ProjectSettings() {
   const { state, dispatch } = useProject();
-  const [name, setName] = useState('');
+  const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [settings, setSettings] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,7 +15,7 @@ export default function ProjectSettings() {
 
   useEffect(() => {
     if (state.currentProject) {
-      setName(state.currentProject.name || '');
+      setTitle(state.currentProject.title || '');
       setDescription(state.currentProject.description || '');
       setSettings(state.currentProject.settings ? JSON.stringify(state.currentProject.settings, null, 2) : '');
     }
@@ -38,11 +39,20 @@ export default function ProjectSettings() {
       }
       // @ts-expect-error: updateProject is implemented on SQLiteDatabase
       await database.updateProject(state.currentProject.id, {
-        name,
+        title,
         description,
         settings: parsedSettings,
       });
-      dispatch({ type: 'UPDATE_PROJECT', payload: { id: state.currentProject.id, updates: { name, description, settings: parsedSettings } } });
+      
+      // Update the current project in state
+      const updatedProject = {
+        ...state.currentProject,
+        title,
+        description,
+        settings: parsedSettings,
+        lastModified: new Date()
+      };
+      dispatch({ type: 'SET_CURRENT_PROJECT', payload: updatedProject });
       setSuccess('Project settings saved!');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to save project settings');
@@ -59,8 +69,8 @@ export default function ProjectSettings() {
       <AsyncFeedback loading={loading} error={error} success={success} />
       <div className="space-y-3">
         <div>
-          <label className="block font-medium mb-1">Name</label>
-          <input className="border p-1 w-full" value={name} onChange={e => setName(e.target.value)} />
+          <label className="block font-medium mb-1">Title</label>
+          <input className="border p-1 w-full" value={title} onChange={e => setTitle(e.target.value)} />
         </div>
         <div>
           <label className="block font-medium mb-1">Description</label>

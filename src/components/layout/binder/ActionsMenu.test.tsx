@@ -1,3 +1,4 @@
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -18,7 +19,6 @@ describe('ActionsMenu', () => {
   };
 
   const mockOnRename = vi.fn();
-  const mockOnDelete = vi.fn();
   const mockOnDuplicate = vi.fn();
   const mockOnAddChild = vi.fn();
 
@@ -31,7 +31,6 @@ describe('ActionsMenu', () => {
       <ActionsMenu 
         node={mockNode}
         onRename={mockOnRename}
-        onDelete={mockOnDelete} 
         onDuplicate={mockOnDuplicate}
         onAddChild={mockOnAddChild}
       />

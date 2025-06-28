@@ -38,7 +38,8 @@ export type ProjectAction =
   | { type: 'ADD_DOCUMENT'; payload: DocumentNode }
   | { type: 'UPDATE_DOCUMENT'; payload: { id: string; updates: Partial<DocumentNode> } }
   | { type: 'DELETE_DOCUMENT'; payload: string }
-  | { type: 'MOVE_DOCUMENT'; payload: { documentId: string; newParentId?: string; newPosition: number } };
+  | { type: 'MOVE_DOCUMENT'; payload: { documentId: string; newParentId?: string; newPosition: number } }
+  | { type: 'SET_DOCUMENT_TREE'; payload: DocumentNode[] };
 
 const initialState: ProjectState = {
   projects: [],
@@ -96,6 +97,12 @@ function projectReducer(state: ProjectState, action: ProjectAction): ProjectStat
     case 'MOVE_DOCUMENT':
       // Simple implementation - in a real app this would be more complex
       return state;
+    case 'SET_DOCUMENT_TREE':
+      return {
+        ...state,
+        documentTree: action.payload,
+        flatDocuments: flattenDocumentTree(action.payload)
+      };
     default:
       return state;
   }
@@ -125,6 +132,22 @@ function buildDocumentTree(documents: DocumentNode[]): DocumentNode[] {
   });
 
   return rootDocuments;
+}
+
+function flattenDocumentTree(documents: DocumentNode[]): DocumentNode[] {
+  const flattened: DocumentNode[] = [];
+  
+  const flatten = (nodes: DocumentNode[]) => {
+    nodes.forEach(node => {
+      flattened.push(node);
+      if (node.children) {
+        flatten(node.children);
+      }
+    });
+  };
+  
+  flatten(documents);
+  return flattened;
 }
 
 const ProjectContext = createContext<{

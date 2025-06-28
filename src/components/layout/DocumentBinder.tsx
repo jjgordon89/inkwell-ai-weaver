@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { useProject } from '@/contexts/ProjectContext';
@@ -215,17 +214,8 @@ const DocumentBinder = () => {
       <div className="flex-1 overflow-auto p-2">
         <DragDropContext onDragEnd={handleDragEnd}>
           <BinderTree
-            documents={filteredTree}
-            expandedNodes={expandedNodes}
-            selectedId={state.activeDocumentId || undefined}
-            onSelect={handleDocumentSelect}
-            onToggle={handleNodeToggle}
-            onDelete={handleDeleteDocument}
-            onAddChild={handleAddChild}
-            onEdit={handleEditDocument}
-            searchQuery={searchQuery}
-            statusFilter={statusFilter}
-            onClearFilters={handleClearFilters}
+            nodes={filteredTree}
+            useVirtualization={false}
           />
         </DragDropContext>
       </div>
