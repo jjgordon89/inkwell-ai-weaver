@@ -1,77 +1,65 @@
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import { useEditorViewState } from './editor/useEditorViewState';
 import EditorViewHeader from './editor/EditorViewHeader';
 import EditorTextarea from './editor/EditorTextarea';
-import EditorAIComponents from './editor/EditorAIComponents';
 import EditorEmptyState from './editor/EditorEmptyState';
-import ProjectSettings from '@/components/ProjectSettings';
+import EditorAIComponents from './editor/EditorAIComponents';
 
 const EditorView = () => {
-  const { state } = useProject();
-  
-  // Get the active document from the project state
-  const activeDocument = state.activeDocumentId 
-    ? state.flatDocuments.find(doc => doc.id === state.activeDocumentId)
-    : null;
-
   const {
+    activeDocument,
     hasUnsavedChanges,
     wordCount,
     selectedText,
-    setSelectedText,
     selectionPosition,
-    setSelectionPosition,
     showInlineSuggestions,
-    setShowInlineSuggestions,
     suggestions,
     handleContentChange,
-    handleSave
+    handleSave,
+    setSelectedText,
+    setSelectionPosition,
+    setShowInlineSuggestions
   } = useEditorViewState();
 
-  const handleTextSelection = useCallback((e: React.SyntheticEvent<HTMLTextAreaElement>) => {
-    const textarea = e.target as HTMLTextAreaElement;
+  if (!activeDocument) {
+    return <EditorEmptyState />;
+  }
+
+  const handleTextSelection = (e: React.SyntheticEvent<HTMLTextAreaElement>) => {
+    const textarea = e.currentTarget;
     const selection = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
-    const hasSelection = selection.trim().length > 0;
     
-    setSelectedText(hasSelection ? selection.trim() : '');
-    
-    if (hasSelection) {
+    if (selection.length > 0) {
+      setSelectedText(selection);
+      
+      // Calculate position for inline suggestions
       const rect = textarea.getBoundingClientRect();
       setSelectionPosition({
-        x: rect.left + textarea.selectionStart * 8, // Approximate character width
+        x: rect.left + 20,
         y: rect.top - 60
       });
       setShowInlineSuggestions(true);
     } else {
       setShowInlineSuggestions(false);
     }
-  }, [setSelectedText, setSelectionPosition, setShowInlineSuggestions]);
+  };
 
-  const handleApplyAISuggestion = useCallback((newText: string) => {
-    if (!activeDocument) return;
-    
-    const currentContent = activeDocument.content || '';
-    // Simple replacement for now - in real implementation, you'd track exact positions
-    const newContent = currentContent.replace(selectedText, newText);
-    
-    handleContentChange(newContent);
+  const handleApplyAISuggestion = (text: string) => {
+    if (selectedText && activeDocument.content) {
+      const newContent = activeDocument.content.replace(selectedText, text);
+      handleContentChange(newContent);
+    }
     setShowInlineSuggestions(false);
-    setSelectedText('');
-  }, [activeDocument, selectedText, handleContentChange, setShowInlineSuggestions, setSelectedText]);
+  };
 
-  const handleDismissInlineSuggestions = useCallback(() => {
+  const handleDismissInlineSuggestions = () => {
     setShowInlineSuggestions(false);
-    setSelectedText('');
-  }, [setShowInlineSuggestions, setSelectedText]);
-
-  if (!activeDocument) {
-    return <EditorEmptyState />;
-  }
+  };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-background">
       <EditorViewHeader
         title={activeDocument.title}
         status={activeDocument.status}
@@ -80,33 +68,29 @@ const EditorView = () => {
         suggestionsCount={suggestions.length}
         onSave={handleSave}
       />
-      <div className="flex-1 flex flex-row overflow-hidden">
-        <div className="flex-1">
-          <EditorTextarea
-            content={activeDocument.content || ''}
-            onChange={handleContentChange}
-            onTextSelection={handleTextSelection}
-          />
-          <EditorAIComponents
-            activeDocument={activeDocument}
-            selectedText={selectedText}
-            selectionPosition={selectionPosition}
-            showInlineSuggestions={showInlineSuggestions}
-            suggestions={suggestions.map((text, index) => ({ 
-              id: `suggestion-${index}`, 
-              text, 
-              type: 'improvement' as const, // Changed from 'suggestion' to 'improvement' which is a valid AISuggestion type
-              confidence: 0.8 
-            }))} // Convert strings to proper AISuggestion objects with all required properties
-            onContentChange={handleContentChange}
-            onApplyAISuggestion={handleApplyAISuggestion}
-            onDismissInlineSuggestions={handleDismissInlineSuggestions}
-          />
-        </div>
-        {/* Project Settings Tab/Panel */}
-        <div className="w-96 border-l bg-gray-50 p-4 overflow-y-auto hidden md:block">
-          <ProjectSettings />
-        </div>
+      
+      <div className="flex-1 relative">
+        <EditorTextarea
+          content={activeDocument.content || ''}
+          onChange={handleContentChange}
+          onTextSelection={handleTextSelection}
+        />
+        
+        <EditorAIComponents
+          activeDocument={activeDocument}
+          selectedText={selectedText}
+          selectionPosition={selectionPosition}
+          showInlineSuggestions={showInlineSuggestions}
+          suggestions={suggestions.map(s => ({
+            id: s,
+            text: `AI suggestion for: "${selectedText}"`,
+            type: 'improvement' as const,
+            confidence: 0.8
+          }))}
+          onContentChange={handleContentChange}
+          onApplyAISuggestion={handleApplyAISuggestion}
+          onDismissInlineSuggestions={handleDismissInlineSuggestions}
+        />
       </div>
     </div>
   );

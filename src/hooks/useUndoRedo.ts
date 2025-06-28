@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 
 interface HistoryState {
   content: string;
@@ -11,61 +11,40 @@ export const useUndoRedo = (initialContent: string = '') => {
     { content: initialContent, cursorPosition: 0 }
   ]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const isUndoRedoAction = useRef(false);
-
-  const canUndo = currentIndex > 0;
-  const canRedo = currentIndex < history.length - 1;
 
   const addToHistory = useCallback((content: string, cursorPosition: number) => {
-    if (isUndoRedoAction.current) {
-      isUndoRedoAction.current = false;
-      return;
-    }
-
     setHistory(prev => {
       const newHistory = prev.slice(0, currentIndex + 1);
       newHistory.push({ content, cursorPosition });
-      
-      // Limit history to 50 entries to prevent memory issues
-      if (newHistory.length > 50) {
-        newHistory.shift();
-        return newHistory;
-      }
-      
-      return newHistory;
+      return newHistory.slice(-50); // Keep only last 50 states
     });
-    
     setCurrentIndex(prev => Math.min(prev + 1, 49));
   }, [currentIndex]);
 
   const undo = useCallback(() => {
-    if (canUndo) {
-      isUndoRedoAction.current = true;
+    if (currentIndex > 0) {
       setCurrentIndex(prev => prev - 1);
       return history[currentIndex - 1];
     }
     return null;
-  }, [canUndo, history, currentIndex]);
+  }, [currentIndex, history]);
 
   const redo = useCallback(() => {
-    if (canRedo) {
-      isUndoRedoAction.current = true;
+    if (currentIndex < history.length - 1) {
       setCurrentIndex(prev => prev + 1);
       return history[currentIndex + 1];
     }
     return null;
-  }, [canRedo, history, currentIndex]);
+  }, [currentIndex, history]);
 
-  const getCurrentState = useCallback(() => {
-    return history[currentIndex];
-  }, [history, currentIndex]);
+  const canUndo = currentIndex > 0;
+  const canRedo = currentIndex < history.length - 1;
 
   return {
     addToHistory,
     undo,
     redo,
     canUndo,
-    canRedo,
-    getCurrentState
+    canRedo
   };
 };

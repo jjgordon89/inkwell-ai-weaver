@@ -1,34 +1,30 @@
 
 import React, { useState } from 'react';
-import { List, ChevronRight, ChevronDown, FileText, Folder, BookOpen, Plus } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useProject } from '@/contexts/ProjectContext';
-import type { DocumentNode } from '@/types/document';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Plus, FileText, Folder, Edit } from 'lucide-react';
 
-interface OutlineItemProps {
-  node: DocumentNode;
-  level: number;
-  onSelect: (node: DocumentNode) => void;
-  selectedId?: string;
-}
+const OutlineView = () => {
+  const { state, dispatch } = useProject();
+  const [searchQuery, setSearchQuery] = useState('');
 
-const OutlineItem = ({ node, level, onSelect, selectedId }: OutlineItemProps) => {
-  const [isExpanded, setIsExpanded] = useState(true);
-  const hasChildren = node.children && node.children.length > 0;
-  const isSelected = selectedId === node.id;
+  const filteredDocuments = state.flatDocuments.filter(doc =>
+    doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    doc.synopsis?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const getTypeIcon = () => {
-    switch (node.type) {
-      case 'folder': return <Folder className="h-4 w-4 text-blue-500" />;
-      case 'chapter': return <BookOpen className="h-4 w-4 text-primary" />;
-      case 'scene': return <FileText className="h-4 w-4 text-muted-foreground" />;
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'folder': return <Folder className="h-4 w-4" />;
       default: return <FileText className="h-4 w-4" />;
     }
   };
 
-  const getStatusColor = () => {
-    switch (node.status) {
+  const getStatusColor = (status: string) => {
+    switch (status) {
       case 'final': return 'bg-green-100 text-green-800';
       case 'revised': return 'bg-blue-100 text-blue-800';
       case 'first-draft': return 'bg-yellow-100 text-yellow-800';
@@ -37,73 +33,12 @@ const OutlineItem = ({ node, level, onSelect, selectedId }: OutlineItemProps) =>
     }
   };
 
-  return (
-    <div>
-      <div
-        className={`flex items-center gap-2 px-3 py-2 hover:bg-muted/50 cursor-pointer rounded-sm ${
-          isSelected ? 'bg-muted' : ''
-        }`}
-        style={{ paddingLeft: `${level * 20 + 12}px` }}
-        onClick={() => onSelect(node)}
-      >
-        {hasChildren ? (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsExpanded(!isExpanded);
-            }}
-            className="p-0 h-4 w-4 flex items-center justify-center"
-          >
-            {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-          </button>
-        ) : (
-          <div className="w-4" />
-        )}
-        
-        {getTypeIcon()}
-        
-        <span className="flex-1 text-sm font-medium">{node.title}</span>
-        
-        {node.wordCount > 0 && (
-          <span className="text-xs text-muted-foreground">
-            {node.wordCount.toLocaleString()}w
-          </span>
-        )}
-        
-        <Badge variant="outline" className={`text-xs ${getStatusColor()}`}>
-          {node.status.replace('-', ' ')}
-        </Badge>
-      </div>
-      
-      {hasChildren && isExpanded && (
-        <div>
-          {node.children!.map((child) => (
-            <OutlineItem
-              key={child.id}
-              node={child}
-              level={level + 1}
-              onSelect={onSelect}
-              selectedId={selectedId}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const OutlineView = () => {
-  const { state, dispatch } = useProject();
-
-  const handleDocumentSelect = (node: DocumentNode) => {
-    dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: node.id });
-    // Switch to editor view when selecting a document
-    if (node.type !== 'folder') {
-      dispatch({ 
-        type: 'SET_ACTIVE_VIEW', 
-        payload: { id: 'editor', name: 'Editor', type: 'editor' } 
-      });
-    }
+  const handleDocumentSelect = (doc: any) => {
+    dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: doc.id });
+    dispatch({ 
+      type: 'SET_ACTIVE_VIEW', 
+      payload: { id: 'editor', name: 'Editor', type: 'editor' } 
+    });
   };
 
   const handleAddDocument = () => {
@@ -116,80 +51,89 @@ const OutlineView = () => {
       labels: [],
       createdAt: new Date(),
       lastModified: new Date(),
-      position: state.documentTree.length
+      position: state.flatDocuments.length,
+      synopsis: ''
     };
     
     dispatch({ type: 'ADD_DOCUMENT', payload: newDoc });
   };
 
-  const getTotalWordCount = () => {
-    return state.flatDocuments.reduce((total, doc) => total + (doc.wordCount || 0), 0);
-  };
-
-  const getDocumentStats = () => {
-    const stats = {
-      total: state.flatDocuments.length,
-      chapters: state.flatDocuments.filter(d => d.type === 'chapter').length,
-      scenes: state.flatDocuments.filter(d => d.type === 'scene').length,
-      completed: state.flatDocuments.filter(d => d.status === 'final').length
-    };
-    return stats;
-  };
-
-  const stats = getDocumentStats();
-
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-4 border-b bg-muted/30">
+    <div className="h-full p-6 bg-background">
+      <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <List className="h-4 w-4" />
-            <h2 className="font-semibold">Outline</h2>
-          </div>
-          <Button size="sm" onClick={handleAddDocument}>
+          <h1 className="text-2xl font-bold">Outline</h1>
+          <Button onClick={handleAddDocument}>
             <Plus className="h-4 w-4 mr-2" />
             Add Document
           </Button>
         </div>
         
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div className="space-y-1">
-            <div className="text-muted-foreground">Total Words</div>
-            <div className="font-semibold">{getTotalWordCount().toLocaleString()}</div>
-          </div>
-          <div className="space-y-1">
-            <div className="text-muted-foreground">Documents</div>
-            <div className="font-semibold">{stats.total}</div>
-          </div>
-        </div>
+        <Input
+          placeholder="Search documents..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="max-w-md"
+        />
       </div>
-      
-      <div className="flex-1 overflow-auto p-2">
-        {state.documentTree.length === 0 ? (
-          <div className="text-center text-muted-foreground py-8">
-            <List className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-semibold mb-2">No Documents Yet</h3>
-            <p className="mb-4">Create your first document to get started</p>
+
+      <div className="grid gap-4">
+        {filteredDocuments.map((doc) => (
+          <Card 
+            key={doc.id} 
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handleDocumentSelect(doc)}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  {getTypeIcon(doc.type)}
+                  {doc.title}
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Badge className={getStatusColor(doc.status)}>
+                    {doc.status.replace('-', ' ')}
+                  </Badge>
+                  <Button variant="ghost" size="sm">
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            
+            {doc.synopsis && (
+              <CardContent className="pt-0">
+                <p className="text-muted-foreground text-sm">
+                  {doc.synopsis}
+                </p>
+              </CardContent>
+            )}
+            
+            <CardContent className="pt-0">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>{doc.wordCount?.toLocaleString() || 0} words</span>
+                <span>{doc.lastModified.toLocaleDateString()}</span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {filteredDocuments.length === 0 && (
+        <div className="text-center py-12">
+          <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-medium mb-2">No Documents Found</h3>
+          <p className="text-muted-foreground mb-4">
+            {searchQuery ? 'Try adjusting your search terms.' : 'Create your first document to get started.'}
+          </p>
+          {!searchQuery && (
             <Button onClick={handleAddDocument}>
               <Plus className="h-4 w-4 mr-2" />
-              Add First Document
+              Create Document
             </Button>
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {state.documentTree.map((node) => (
-              <OutlineItem
-                key={node.id}
-                node={node}
-                level={0}
-                onSelect={handleDocumentSelect}
-                selectedId={state.activeDocumentId || undefined}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

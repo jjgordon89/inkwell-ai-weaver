@@ -1,108 +1,102 @@
 
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import type { DocumentNode } from '@/types/document';
+import type { DocumentNode, Project, DocumentView } from '@/types/document';
 
-export interface Project {
-  id: string;
-  title: string;
-  description: string;
-  genre?: string;
-  createdAt: Date;
-  lastModified: Date;
-  wordCount: number;
-  settings: Record<string, unknown>;
-}
-
-export interface DocumentView {
-  id: string;
-  name: string;
-  type: 'editor' | 'corkboard' | 'outline' | 'timeline' | 'research';
-  activeDocumentId?: string;
-  viewSettings?: Record<string, unknown>;
-}
-
-export interface ProjectState {
-  projects: Project[];
+interface ProjectState {
   currentProject: Project | null;
   documentTree: DocumentNode[];
   flatDocuments: DocumentNode[];
   activeDocumentId: string | null;
   activeView: DocumentView;
+  isLoading: boolean;
+  error: string | null;
 }
 
-export type ProjectAction =
-  | { type: 'ADD_PROJECT'; payload: Project }
-  | { type: 'SET_CURRENT_PROJECT'; payload: Project }
-  | { type: 'SET_ACTIVE_DOCUMENT'; payload: string }
-  | { type: 'SET_ACTIVE_VIEW'; payload: DocumentView }
+type ProjectAction = 
+  | { type: 'SET_PROJECT'; payload: Project }
   | { type: 'ADD_DOCUMENT'; payload: DocumentNode }
   | { type: 'UPDATE_DOCUMENT'; payload: { id: string; updates: Partial<DocumentNode> } }
   | { type: 'DELETE_DOCUMENT'; payload: string }
   | { type: 'MOVE_DOCUMENT'; payload: { documentId: string; newParentId?: string; newPosition: number } }
-  | { type: 'SET_DOCUMENT_TREE'; payload: DocumentNode[] };
+  | { type: 'SET_ACTIVE_DOCUMENT'; payload: string }
+  | { type: 'SET_ACTIVE_VIEW'; payload: DocumentView }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_ERROR'; payload: string | null };
 
 const initialState: ProjectState = {
-  projects: [],
   currentProject: null,
   documentTree: [],
   flatDocuments: [],
   activeDocumentId: null,
-  activeView: { id: 'editor', name: 'Editor', type: 'editor' }
+  activeView: { id: 'editor', name: 'Editor', type: 'editor' },
+  isLoading: false,
+  error: null
 };
 
 function projectReducer(state: ProjectState, action: ProjectAction): ProjectState {
   switch (action.type) {
-    case 'ADD_PROJECT':
+    case 'SET_PROJECT':
       return {
         ...state,
-        projects: [...state.projects, action.payload]
+        currentProject: action.payload,
+        documentTree: buildDocumentTree(action.payload.documents || []),
+        flatDocuments: action.payload.documents || []
       };
-    case 'SET_CURRENT_PROJECT':
-      return {
-        ...state,
-        currentProject: action.payload
-      };
-    case 'SET_ACTIVE_DOCUMENT':
-      return {
-        ...state,
-        activeDocumentId: action.payload
-      };
-    case 'SET_ACTIVE_VIEW':
-      return {
-        ...state,
-        activeView: action.payload
-      };
+
     case 'ADD_DOCUMENT':
+      const newFlatDocs = [...state.flatDocuments, action.payload];
       return {
         ...state,
-        flatDocuments: [...state.flatDocuments, action.payload],
-        documentTree: buildDocumentTree([...state.flatDocuments, action.payload])
+        flatDocuments: newFlatDocs,
+        documentTree: buildDocumentTree(newFlatDocs)
       };
+
     case 'UPDATE_DOCUMENT':
-      const updatedDocs = state.flatDocuments.map(doc =>
-        doc.id === action.payload.id ? { ...doc, ...action.payload.updates } : doc
+      const updatedFlatDocs = state.flatDocuments.map(doc =>
+        doc.id === action.payload.id
+          ? { ...doc, ...action.payload.updates, lastModified: new Date() }
+          : doc
       );
       return {
         ...state,
-        flatDocuments: updatedDocs,
-        documentTree: buildDocumentTree(updatedDocs)
+        flatDocuments: updatedFlatDocs,
+        documentTree: buildDocumentTree(updatedFlatDocs)
       };
+
     case 'DELETE_DOCUMENT':
       const filteredDocs = state.flatDocuments.filter(doc => doc.id !== action.payload);
       return {
         ...state,
         flatDocuments: filteredDocs,
-        documentTree: buildDocumentTree(filteredDocs)
+        documentTree: buildDocumentTree(filteredDocs),
+        activeDocumentId: state.activeDocumentId === action.payload ? null : state.activeDocumentId
       };
+
     case 'MOVE_DOCUMENT':
-      // Simple implementation - in a real app this would be more complex
-      return state;
-    case 'SET_DOCUMENT_TREE':
+      const { documentId, newParentId, newPosition } = action.payload;
+      const movedDocs = state.flatDocuments.map(doc =>
+        doc.id === documentId
+          ? { ...doc, parentId: newParentId, position: newPosition }
+          : doc
+      );
       return {
         ...state,
-        documentTree: action.payload,
-        flatDocuments: flattenDocumentTree(action.payload)
+        flatDocuments: movedDocs,
+        documentTree: buildDocumentTree(movedDocs)
       };
+
+    case 'SET_ACTIVE_DOCUMENT':
+      return { ...state, activeDocumentId: action.payload };
+
+    case 'SET_ACTIVE_VIEW':
+      return { ...state, activeView: action.payload };
+
+    case 'SET_LOADING':
+      return { ...state, isLoading: action.payload };
+
+    case 'SET_ERROR':
+      return { ...state, error: action.payload };
+
     default:
       return state;
   }
@@ -110,50 +104,45 @@ function projectReducer(state: ProjectState, action: ProjectAction): ProjectStat
 
 function buildDocumentTree(documents: DocumentNode[]): DocumentNode[] {
   const documentMap = new Map<string, DocumentNode>();
-  const rootDocuments: DocumentNode[] = [];
+  const rootNodes: DocumentNode[] = [];
 
-  // Create a map of all documents
+  // Create map and initialize children arrays
   documents.forEach(doc => {
     documentMap.set(doc.id, { ...doc, children: [] });
   });
 
-  // Build the tree structure
+  // Build tree structure
   documents.forEach(doc => {
-    const docWithChildren = documentMap.get(doc.id)!;
-    if (doc.parentId) {
-      const parent = documentMap.get(doc.parentId);
-      if (parent) {
-        parent.children = parent.children || [];
-        parent.children.push(docWithChildren);
-      }
+    const node = documentMap.get(doc.id)!;
+    if (doc.parentId && documentMap.has(doc.parentId)) {
+      const parent = documentMap.get(doc.parentId)!;
+      parent.children = parent.children || [];
+      parent.children.push(node);
     } else {
-      rootDocuments.push(docWithChildren);
+      rootNodes.push(node);
     }
   });
 
-  return rootDocuments;
-}
-
-function flattenDocumentTree(documents: DocumentNode[]): DocumentNode[] {
-  const flattened: DocumentNode[] = [];
-  
-  const flatten = (nodes: DocumentNode[]) => {
+  // Sort by position
+  const sortByPosition = (nodes: DocumentNode[]) => {
+    nodes.sort((a, b) => (a.position || 0) - (b.position || 0));
     nodes.forEach(node => {
-      flattened.push(node);
       if (node.children) {
-        flatten(node.children);
+        sortByPosition(node.children);
       }
     });
   };
-  
-  flatten(documents);
-  return flattened;
+
+  sortByPosition(rootNodes);
+  return rootNodes;
 }
 
-const ProjectContext = createContext<{
+interface ProjectContextValue {
   state: ProjectState;
   dispatch: React.Dispatch<ProjectAction>;
-} | null>(null);
+}
+
+const ProjectContext = createContext<ProjectContextValue | undefined>(undefined);
 
 export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(projectReducer, initialState);
@@ -167,7 +156,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 export const useProject = () => {
   const context = useContext(ProjectContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useProject must be used within a ProjectProvider');
   }
   return context;

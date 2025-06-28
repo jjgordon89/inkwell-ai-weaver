@@ -1,92 +1,78 @@
 
-import { useAIOperations } from './ai/useAIOperations';
-import type { AIProvider, AIAction } from './ai/types';
+import { useState, useCallback } from 'react';
 
-export type { AIProvider, AIAction } from './ai/types';
-export { AI_PROVIDERS } from './ai/constants';
+interface AIProvider {
+  name: string;
+  models: string[];
+  requiresApiKey: boolean;
+}
+
+const AI_PROVIDERS: AIProvider[] = [
+  { name: 'OpenAI', models: ['gpt-4', 'gpt-3.5-turbo'], requiresApiKey: true },
+  { name: 'Anthropic', models: ['claude-3-sonnet', 'claude-3-haiku'], requiresApiKey: true },
+  { name: 'Local', models: ['llama-2', 'mistral'], requiresApiKey: false }
+];
 
 export const useAI = () => {
-  const {
-    selectedProvider,
-    selectedModel,
-    availableProviders,
-    apiKeys,
-    isProcessing,
-    isTestingConnection,
-    error,
-    settings,
-    setProvider,
-    setModel,
-    setApiKey,
-    processText,
-    testConnection,
-    updateSettings,
-    clearError,
-    getCurrentProviderInfo,
-    isCurrentProviderConfigured
-  } = useAIOperations();
+  const [selectedProvider, setSelectedProvider] = useState('OpenAI');
+  const [selectedModel, setSelectedModel] = useState('gpt-4');
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Enhanced error handling wrapper for processText
-  const safeProcessText = async (text: string, action: AIAction): Promise<string> => {
+  const isCurrentProviderConfigured = useCallback(() => {
+    const provider = AI_PROVIDERS.find(p => p.name === selectedProvider);
+    if (!provider) return false;
+    
+    if (provider.requiresApiKey) {
+      return !!apiKeys[selectedProvider];
+    }
+    
+    return true;
+  }, [selectedProvider, apiKeys]);
+
+  const processText = useCallback(async (text: string, action: 'improve' | 'continue' | 'summarize') => {
+    if (!isCurrentProviderConfigured()) {
+      throw new Error('AI provider not configured');
+    }
+
+    setIsProcessing(true);
+    
     try {
-      if (!text || text.trim().length === 0) {
-        throw new Error('No text provided for processing');
-      }
+      // Mock implementation - in real app, this would call the actual AI API
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (!isCurrentProviderConfigured()) {
-        throw new Error('AI provider not configured properly. Please configure your AI provider in the AI Assistance settings.');
+      switch (action) {
+        case 'improve':
+          return `Improved version: ${text}`;
+        case 'continue':
+          return `${text} [AI continuation would go here...]`;
+        case 'summarize':
+          return `Summary: ${text.substring(0, 100)}...`;
+        default:
+          return text;
       }
-
-      return await processText(text, action);
     } catch (error) {
-      console.error('AI processing error:', error);
+      console.error('AI processing failed:', error);
       throw error;
+    } finally {
+      setIsProcessing(false);
     }
-  };
+  }, [isCurrentProviderConfigured]);
 
-  // Enhanced suggestions generator
-  const generateSuggestions = async (context: string): Promise<string[]> => {
-    try {
-      if (!context || context.trim().length === 0) {
-        return [];
-      }
-      
-      const result = await safeProcessText(
-        `Generate 3-5 writing suggestions based on this context: ${context}`,
-        'improve'
-      );
-      return result.split('\n').filter(line => line.trim().length > 0).slice(0, 5);
-    } catch (error) {
-      console.error('Failed to generate suggestions:', error);
-      return [];
-    }
-  };
+  const setApiKey = useCallback((provider: string, key: string) => {
+    setApiKeys(prev => ({ ...prev, [provider]: key }));
+  }, []);
 
   return {
-    // Core processing
-    isProcessing,
-    isTestingConnection,
-    processText: safeProcessText,
-    generateSuggestions,
-    
-    // Provider management
     selectedProvider,
+    setSelectedProvider,
     selectedModel,
-    setSelectedProvider: setProvider,
-    setSelectedModel: setModel,
-    availableProviders,
-    getCurrentProviderInfo,
-    isCurrentProviderConfigured,
-    
-    // Configuration
+    setSelectedModel,
+    availableProviders: AI_PROVIDERS,
     apiKeys,
     setApiKey,
-    testConnection,
-    
-    // State management
-    error,
-    clearError,
-    settings,
-    updateSettings
+    isProcessing,
+    processText,
+    isCurrentProviderConfigured
   };
 };

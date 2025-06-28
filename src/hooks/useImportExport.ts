@@ -1,81 +1,102 @@
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
-import type { DocumentNode } from '@/types/document';
+
+interface ExportPreset {
+  id: string;
+  name: string;
+  description: string;
+  format: 'docx' | 'pdf' | 'txt' | 'json';
+}
+
+const DEFAULT_EXPORT_PRESETS: ExportPreset[] = [
+  { id: 'manuscript', name: 'Manuscript', description: 'Standard manuscript format', format: 'docx' },
+  { id: 'pdf', name: 'PDF Document', description: 'Formatted PDF', format: 'pdf' },
+  { id: 'plain-text', name: 'Plain Text', description: 'Simple text file', format: 'txt' },
+  { id: 'backup', name: 'Project Backup', description: 'Complete project data', format: 'json' }
+];
 
 export const useImportExport = () => {
-  const { state, dispatch } = useProject();
-  const [isImporting, setIsImporting] = useState(false);
+  const { state } = useProject();
   const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [exportPresets] = useState(DEFAULT_EXPORT_PRESETS);
 
-  const exportProject = () => {
+  const exportProject = useCallback(async (format: string = 'json', options: any = {}) => {
     setIsExporting(true);
     try {
       const projectData = {
         project: state.currentProject,
         documents: state.flatDocuments,
-        documentTree: state.documentTree
+        exportedAt: new Date().toISOString()
       };
-      
-      const dataStr = JSON.stringify(projectData, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${state.currentProject?.title || 'project'}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+
+      const blob = new Blob([JSON.stringify(projectData, null, 2)], {
+        type: 'application/json'
+      });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${state.currentProject?.name || 'project'}-export.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } finally {
       setIsExporting(false);
     }
-  };
+  }, [state]);
 
-  const importProject = (file: File) => {
+  const importProject = useCallback(async (file: File) => {
     setIsImporting(true);
-    return new Promise<void>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = JSON.parse(e.target?.result as string);
-          if (data.documentTree) {
-            dispatch({
-              type: 'SET_DOCUMENT_TREE',
-              payload: data.documentTree as DocumentNode[]
-            });
-          }
-          resolve();
-        } catch (error) {
-          reject(error);
-        } finally {
-          setIsImporting(false);
-        }
-      };
-      reader.onerror = () => {
-        setIsImporting(false);
-        reject(new Error('Failed to read file'));
-      };
-      reader.readAsText(file);
-    });
-  };
+    try {
+      const text = await file.text();
+      const projectData = JSON.parse(text);
+      
+      // Here you would dispatch actions to load the project data
+      console.log('Import project data:', projectData);
+      
+      // For now, just log - in real implementation would restore project state
+    } catch (error) {
+      console.error('Import failed:', error);
+      throw error;
+    } finally {
+      setIsImporting(false);
+    }
+  }, []);
 
-  const importDocument = (file: File) => {
-    return importProject(file);
-  };
+  const importDocument = useCallback(async (file: File) => {
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      
+      // Create new document from imported content
+      const newDoc = {
+        id: crypto.randomUUID(),
+        title: file.name.replace(/\.[^/.]+$/, ''),
+        type: 'document' as const,
+        status: 'not-started' as const,
+        content: text,
+        wordCount: text.trim().split(/\s+/).filter(Boolean).length,
+        labels: [],
+        createdAt: new Date(),
+        lastModified: new Date(),
+        position: 0
+      };
 
-  const exportPresets = [
-    { id: 'json', name: 'JSON Format', description: 'Export as JSON file' },
-    { id: 'txt', name: 'Plain Text', description: 'Export as text file' }
-  ];
+      return newDoc;
+    } finally {
+      setIsImporting(false);
+    }
+  }, []);
 
   return {
     exportProject,
     importProject,
     importDocument,
-    isImporting,
+    exportPresets,
     isExporting,
-    exportPresets
+    isImporting
   };
 };
