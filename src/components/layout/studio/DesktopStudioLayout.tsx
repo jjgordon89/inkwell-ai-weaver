@@ -1,14 +1,13 @@
 
 import React from 'react';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { Button } from "@/components/ui/button";
-import { Settings } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import DocumentBinder from '../DocumentBinder';
-import InspectorPanel from '../InspectorPanel';
-import ViewManager from '../ViewManager';
-import OnboardingTour from '@/components/onboarding/OnboardingTour';
-import FloatingAISettings from '@/components/ai/FloatingAISettings';
+import { BinderProvider } from '../binder/BinderContext';
+import { useProject } from '@/contexts/ProjectContext';
 import type { DocumentView } from '@/types/document';
 
 interface DesktopStudioLayoutProps {
@@ -18,74 +17,60 @@ interface DesktopStudioLayoutProps {
   completeOnboarding: () => void;
 }
 
-const DesktopStudioLayout = ({ 
-  renderActiveView, 
-  onViewChange, 
-  showOnboarding, 
-  completeOnboarding 
-}: DesktopStudioLayoutProps) => {
-  return (
-    <div className="h-screen w-full flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="h-12 flex items-center justify-between px-6 border-b bg-background flex-shrink-0">
-        <h1 className="text-lg font-semibold">Manuscript</h1>
-        <Link to="/settings">
-          <Button variant="ghost" size="sm">
-            <Settings className="h-4 w-4" />
-          </Button>
-        </Link>
-      </div>
+const DesktopStudioLayout = ({ renderActiveView }: DesktopStudioLayoutProps) => {
+  const { state, dispatch } = useProject();
 
-      <div className="flex-shrink-0">
-        <ViewManager onViewChange={onViewChange} />
-      </div>
-      
-      <div className="flex-1 overflow-hidden">
-        <ResizablePanelGroup direction="horizontal" className="h-full">
-          {/* Document Binder */}
-          <ResizablePanel 
-            defaultSize={20} 
-            minSize={15} 
-            maxSize={35}
-            data-tour="binder"
-            className="overflow-hidden"
+  const handleNodeSelect = (nodeId: string) => {
+    dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: nodeId });
+  };
+
+  const handleNodeDelete = (nodeId: string) => {
+    dispatch({ type: 'DELETE_DOCUMENT', payload: nodeId });
+  };
+
+  const handleNodeAdd = (parentId: string) => {
+    const newDoc = {
+      id: crypto.randomUUID(),
+      title: 'New Document',
+      type: 'document' as const,
+      parentId,
+      status: 'not-started' as const,
+      wordCount: 0,
+      labels: [],
+      createdAt: new Date(),
+      lastModified: new Date(),
+      position: 0
+    };
+    
+    dispatch({ type: 'ADD_DOCUMENT', payload: newDoc });
+  };
+
+  const handleNodeEdit = (node: any) => {
+    // Handle node editing - could open a dialog or inline edit
+    console.log('Edit node:', node);
+  };
+
+  return (
+    <div className="h-screen w-full">
+      <ResizablePanelGroup direction="horizontal" className="h-full">
+        <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
+          <BinderProvider
+            initialSelectedNodeId={state.activeDocumentId || undefined}
+            onNodeSelect={handleNodeSelect}
+            onNodeDelete={handleNodeDelete}
+            onNodeAdd={handleNodeAdd}
+            onNodeEdit={handleNodeEdit}
           >
             <DocumentBinder />
-          </ResizablePanel>
-          
-          <ResizableHandle />
-          
-          {/* Main Content Area */}
-          <ResizablePanel defaultSize={60} data-tour="editor" className="overflow-hidden">
-            <div className="h-full overflow-hidden" data-tour="views">
-              {renderActiveView()}
-            </div>
-          </ResizablePanel>
-          
-          <ResizableHandle />
-          
-          {/* Inspector Panel */}
-          <ResizablePanel 
-            defaultSize={20} 
-            minSize={15} 
-            maxSize={30}
-            data-tour="inspector"
-            className="overflow-hidden"
-          >
-            <InspectorPanel />
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </div>
-      
-      {/* Floating AI Settings */}
-      <FloatingAISettings 
-        position="bottom-right"
-        showOnlyWhenNotConfigured={false}
-      />
-      
-      {showOnboarding && (
-        <OnboardingTour onComplete={completeOnboarding} />
-      )}
+          </BinderProvider>
+        </ResizablePanel>
+        
+        <ResizableHandle withHandle />
+        
+        <ResizablePanel defaultSize={75} minSize={50}>
+          {renderActiveView()}
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 };

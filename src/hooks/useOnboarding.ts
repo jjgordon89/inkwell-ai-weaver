@@ -1,36 +1,22 @@
 
-import { useState, useEffect } from 'react';
-
-const ONBOARDING_KEY = 'writing-studio-onboarding-completed';
+import { useState } from 'react';
 
 export const useOnboarding = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [isFirstVisit, setIsFirstVisit] = useState(false);
-
-  useEffect(() => {
-    const hasCompletedOnboarding = localStorage.getItem(ONBOARDING_KEY);
-    const firstVisit = !hasCompletedOnboarding;
-    
-    setIsFirstVisit(firstVisit);
-    setShowOnboarding(firstVisit);
-  }, []);
 
   const completeOnboarding = () => {
-    localStorage.setItem(ONBOARDING_KEY, 'true');
     setShowOnboarding(false);
-    setIsFirstVisit(false);
+    // Could store completion in localStorage
+    localStorage.setItem('onboarding-completed', 'true');
   };
 
-  const resetOnboarding = () => {
-    localStorage.removeItem(ONBOARDING_KEY);
+  const startOnboarding = () => {
     setShowOnboarding(true);
-    setIsFirstVisit(true);
   };
 
   return {
     showOnboarding,
-    isFirstVisit,
     completeOnboarding,
-    resetOnboarding
+    startOnboarding
   };
 };

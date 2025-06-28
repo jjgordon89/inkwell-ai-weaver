@@ -1,27 +1,28 @@
 
 import React from 'react';
-import { Edit3, Save, Clock, Brain } from 'lucide-react';
+import { Save, Lightbulb } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import type { DocumentStatus } from '@/types/document';
 
 interface EditorViewHeaderProps {
   title: string;
-  status: string;
+  status: DocumentStatus;
   hasUnsavedChanges: boolean;
   wordCount: number;
   suggestionsCount: number;
   onSave: () => void;
 }
 
-const EditorViewHeader: React.FC<EditorViewHeaderProps> = ({
+const EditorViewHeader = ({
   title,
   status,
   hasUnsavedChanges,
   wordCount,
   suggestionsCount,
   onSave
-}) => {
-  const getStatusColor = (status: string) => {
+}: EditorViewHeaderProps) => {
+  const getStatusColor = (status: DocumentStatus) => {
     switch (status) {
       case 'final': return 'bg-green-100 text-green-800';
       case 'revised': return 'bg-blue-100 text-blue-800';
@@ -35,33 +36,32 @@ const EditorViewHeader: React.FC<EditorViewHeaderProps> = ({
     <div className="p-4 border-b bg-muted/30">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Edit3 className="h-4 w-4" />
-          <h2 className="font-semibold">{title}</h2>
+          <h1 className="text-lg font-semibold truncate">{title}</h1>
           <Badge className={getStatusColor(status)}>
-            {status}
+            {status.replace('-', ' ')}
           </Badge>
           {hasUnsavedChanges && (
-            <Badge variant="outline" className="text-orange-600">
-              <Clock className="h-3 w-3 mr-1" />
+            <Badge variant="outline" className="text-xs">
               Unsaved
             </Badge>
           )}
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div className="text-sm text-muted-foreground">
             {wordCount.toLocaleString()} words
           </div>
           
           {suggestionsCount > 0 && (
-            <div className="text-sm text-muted-foreground flex items-center gap-1">
-              <Brain className="h-3 w-3" />
-              {suggestionsCount} AI suggestions
+            <div className="flex items-center gap-1 text-sm text-primary">
+              <Lightbulb className="h-4 w-4" />
+              {suggestionsCount}
             </div>
           )}
           
-          <Button 
-            size="sm" 
+          <Button
+            variant={hasUnsavedChanges ? "default" : "ghost"}
+            size="sm"
             onClick={onSave}
             disabled={!hasUnsavedChanges}
           >
