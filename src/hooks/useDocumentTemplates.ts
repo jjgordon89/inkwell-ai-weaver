@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import type { DocumentNode } from '@/types/document';
 
@@ -46,19 +47,27 @@ const BUILT_IN_TEMPLATES: Template[] = [
 
 export const useDocumentTemplates = () => {
   const { dispatch } = useProject();
+  const [isLoading, setIsLoading] = useState(false);
 
   const applyTemplate = (templateId: string) => {
-    const template = BUILT_IN_TEMPLATES.find(t => t.id === templateId);
-    if (template) {
-      dispatch({
-        type: 'SET_DOCUMENT_TREE',
-        payload: template.structure
-      });
+    setIsLoading(true);
+    try {
+      const template = BUILT_IN_TEMPLATES.find(t => t.id === templateId);
+      if (template) {
+        dispatch({
+          type: 'SET_DOCUMENT_TREE',
+          payload: template.structure
+        });
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return {
     templates: BUILT_IN_TEMPLATES,
-    applyTemplate
+    defaultTemplates: BUILT_IN_TEMPLATES,
+    applyTemplate,
+    isLoading
   };
 };

@@ -1,165 +1,153 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
+
+import { describe, it, expect, vi } from 'vitest';
+import { render, fireEvent } from '@testing-library/react';
 import ItemTitle from './ItemTitle';
+import type { DocumentNode } from '@/types/document';
+
+const mockNode: DocumentNode = {
+  id: '1',
+  title: 'Test Document',
+  type: 'document',
+  status: 'not-started',
+  wordCount: 0,
+  labels: [],
+  createdAt: new Date(),
+  lastModified: new Date(),
+  position: 0
+};
 
 describe('ItemTitle', () => {
-  const mockTitle = 'Test Title';
-  const mockOnTitleChange = vi.fn();
-  const mockOnEditComplete = vi.fn();
-
-  beforeEach(() => {
-    // Clear mocks before each test
-    mockOnTitleChange.mockClear();
-    mockOnEditComplete.mockClear();
+  it('renders title correctly when not editing', () => {
+    const { getByText } = render(
+      <ItemTitle node={mockNode} isEditing={false} />
+    );
+    
+    expect(getByText('Test Document')).toBeInTheDocument();
   });
 
-  it('should render the title correctly in non-editing mode', () => {
-    render(<ItemTitle title={mockTitle} isEditing={false} />);
-    
-    // Check that the title is displayed
-    expect(screen.getByText(mockTitle)).toBeInTheDocument();
-    
-    // Check that it's rendered as a span
-    const titleElement = screen.getByText(mockTitle);
-    expect(titleElement.tagName).toBe('SPAN');
-  });
-
-  it('should render an input field in editing mode', () => {
-    render(
+  it('renders input when editing', () => {
+    const { getByDisplayValue } = render(
       <ItemTitle 
-        title={mockTitle} 
+        node={mockNode} 
         isEditing={true} 
-        onTitleChange={mockOnTitleChange}
-        onEditComplete={mockOnEditComplete}
+        onTitleChange={vi.fn()} 
+        onEditComplete={vi.fn()} 
       />
     );
     
-    // Check that an input field is rendered
-    const inputElement = screen.getByRole('textbox');
-    expect(inputElement).toBeInTheDocument();
-    
-    // Check that the input has the correct value
-    expect(inputElement).toHaveValue(mockTitle);
+    expect(getByDisplayValue('Test Document')).toBeInTheDocument();
   });
 
-  it('should focus the input when entering edit mode', () => {
-    // Create a mock for document.activeElement
-    const originalActiveElement = document.activeElement;
+  it('calls onTitleChange when title is modified and submitted', () => {
+    const onTitleChange = vi.fn();
+    const onEditComplete = vi.fn();
     
-    render(
+    const { getByDisplayValue } = render(
       <ItemTitle 
-        title={mockTitle} 
+        node={mockNode} 
         isEditing={true} 
-        onTitleChange={mockOnTitleChange}
-        onEditComplete={mockOnEditComplete}
+        onTitleChange={onTitleChange} 
+        onEditComplete={onEditComplete} 
       />
     );
     
-    // Check that the input is focused
-    const inputElement = screen.getByRole('textbox');
-    expect(document.activeElement).toBe(inputElement);
+    const input = getByDisplayValue('Test Document');
+    fireEvent.change(input, { target: { value: 'New Title' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
     
-    // Restore original active element
-    if (originalActiveElement) {
-      (originalActiveElement as HTMLElement).focus();
-    }
+    expect(onTitleChange).toHaveBeenCalledWith('New Title');
+    expect(onEditComplete).toHaveBeenCalled();
   });
 
-  it('should call onTitleChange when input value changes', () => {
-    render(
+  it('handles escape key to cancel editing', () => {
+    const onTitleChange = vi.fn();
+    const onEditComplete = vi.fn();
+    
+    const { getByDisplayValue } = render(
       <ItemTitle 
-        title={mockTitle} 
+        node={mockNode} 
         isEditing={true} 
-        onTitleChange={mockOnTitleChange}
-        onEditComplete={mockOnEditComplete}
+        onTitleChange={onTitleChange} 
+        onEditComplete={onEditComplete} 
       />
     );
     
-    const inputElement = screen.getByRole('textbox');
-    const newTitle = 'New Title';
+    const input = getByDisplayValue('Test Document');
+    fireEvent.change(input, { target: { value: 'New Title' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
     
-    // Simulate typing in the input
-    fireEvent.change(inputElement, { target: { value: newTitle } });
-    
-    // Check that onTitleChange was called with the new value
-    expect(mockOnTitleChange).toHaveBeenCalledWith(newTitle);
-    expect(mockOnTitleChange).toHaveBeenCalledTimes(1);
+    expect(onTitleChange).not.toHaveBeenCalled();
+    expect(onEditComplete).toHaveBeenCalled();
   });
 
-  it('should call onEditComplete when Enter key is pressed', () => {
-    render(
+  it('calls onEditComplete on blur', () => {
+    const onTitleChange = vi.fn();
+    const onEditComplete = vi.fn();
+    
+    const { getByDisplayValue } = render(
       <ItemTitle 
-        title={mockTitle} 
+        node={mockNode} 
         isEditing={true} 
-        onTitleChange={mockOnTitleChange}
-        onEditComplete={mockOnEditComplete}
+        onTitleChange={onTitleChange} 
+        onEditComplete={onEditComplete} 
       />
     );
     
-    const inputElement = screen.getByRole('textbox');
+    const input = getByDisplayValue('Test Document');
+    fireEvent.change(input, { target: { value: 'New Title' } });
+    fireEvent.blur(input);
     
-    // Simulate pressing Enter
-    fireEvent.keyDown(inputElement, { key: 'Enter' });
-    
-    // Check that onEditComplete was called
-    expect(mockOnEditComplete).toHaveBeenCalledTimes(1);
+    expect(onTitleChange).toHaveBeenCalledWith('New Title');
+    expect(onEditComplete).toHaveBeenCalled();
   });
 
-  it('should reset to original title and call onEditComplete when Escape key is pressed', () => {
-    render(
+  it('does not call onTitleChange when title is unchanged', () => {
+    const onTitleChange = vi.fn();
+    const onEditComplete = vi.fn();
+    
+    const { getByDisplayValue } = render(
       <ItemTitle 
-        title={mockTitle} 
+        node={mockNode} 
         isEditing={true} 
-        onTitleChange={mockOnTitleChange}
-        onEditComplete={mockOnEditComplete}
+        onTitleChange={onTitleChange} 
+        onEditComplete={onEditComplete} 
       />
     );
     
-    const inputElement = screen.getByRole('textbox');
-    const newTitle = 'New Title';
+    const input = getByDisplayValue('Test Document');
+    fireEvent.blur(input);
     
-    // First change the title
-    fireEvent.change(inputElement, { target: { value: newTitle } });
-    
-    // Then press Escape
-    fireEvent.keyDown(inputElement, { key: 'Escape' });
-    
-    // Check that onEditComplete was called
-    expect(mockOnEditComplete).toHaveBeenCalledTimes(1);
-    
-    // Check that the title was reset to the original
-    // Note: We need to re-render to see the effect since the component state is reset
-    // but the DOM won't update in the test environment without a re-render
-    const { rerender } = render(
-      <ItemTitle 
-        title={mockTitle} 
-        isEditing={false} 
-        onTitleChange={mockOnTitleChange}
-        onEditComplete={mockOnEditComplete}
-      />
-    );
-    
-    // Check that the original title is displayed
-    expect(screen.getByText(mockTitle)).toBeInTheDocument();
+    expect(onTitleChange).not.toHaveBeenCalled();
+    expect(onEditComplete).toHaveBeenCalled();
   });
 
-  it('should call onEditComplete when input loses focus', () => {
-    render(
+  it('trims whitespace from title', () => {
+    const onTitleChange = vi.fn();
+    const onEditComplete = vi.fn();
+    
+    const { getByDisplayValue } = render(
       <ItemTitle 
-        title={mockTitle} 
+        node={mockNode} 
         isEditing={true} 
-        onTitleChange={mockOnTitleChange}
-        onEditComplete={mockOnEditComplete}
+        onTitleChange={onTitleChange} 
+        onEditComplete={onEditComplete} 
       />
     );
     
-    const inputElement = screen.getByRole('textbox');
+    const input = getByDisplayValue('Test Document');
+    fireEvent.change(input, { target: { value: '  New Title  ' } });
+    fireEvent.blur(input);
     
-    // Simulate blur event
-    fireEvent.blur(inputElement);
+    expect(onTitleChange).toHaveBeenCalledWith('New Title');
+  });
+
+  it('displays title as span when not editing', () => {
+    const { container } = render(
+      <ItemTitle node={mockNode} isEditing={false} />
+    );
     
-    // Check that onEditComplete was called
-    expect(mockOnEditComplete).toHaveBeenCalledTimes(1);
+    const span = container.querySelector('span');
+    expect(span).toBeInTheDocument();
+    expect(span).toHaveClass('text-sm', 'font-medium', 'truncate');
   });
 });

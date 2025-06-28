@@ -125,10 +125,12 @@ const EditDocumentDialog = ({ open, onOpenChange, document, onSave }: EditDocume
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="not-started">Not Started</SelectItem>
+                      <SelectItem value="in-progress">In Progress</SelectItem>
                       <SelectItem value="draft">Draft</SelectItem>
                       <SelectItem value="first-draft">First Draft</SelectItem>
                       <SelectItem value="revised">Revised</SelectItem>
                       <SelectItem value="final">Final</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
