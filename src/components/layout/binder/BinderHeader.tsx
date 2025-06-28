@@ -1,16 +1,10 @@
 
 import React from 'react';
-import { Search, Filter, Plus, FolderPlus, FileText, Download, Upload, Layers } from 'lucide-react';
-import { Button } from "@/components/ui/button";
+import { Search, Plus, FileText, Upload, Download, Folder } from 'lucide-react';
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 
 interface BinderHeaderProps {
   searchQuery: string;
@@ -36,65 +30,63 @@ const BinderHeader = ({
   onExportClick
 }: BinderHeaderProps) => {
   return (
-    <div className="p-4 border-b bg-muted/30 space-y-3">
-      <div className="flex items-center justify-between">
+    <div className="p-4 border-b bg-muted/30">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="font-semibold">Binder</h2>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={onAddDocument}>
-                <FileText className="h-4 w-4 mr-2" />
-                Add Document
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onAddFolder}>
-                <FolderPlus className="h-4 w-4 mr-2" />
-                Add Folder
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onTemplateClick}>
-                <Layers className="h-4 w-4 mr-2" />
-                Templates
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onImportClick}>
-                <Upload className="h-4 w-4 mr-2" />
-                Import
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onExportClick}>
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onAddFolder}>
+              <Folder className="h-4 w-4 mr-2" />
+              New Folder
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onTemplateClick}>
+              <FileText className="h-4 w-4 mr-2" />
+              New from Template
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onAddDocument}>
+              <FileText className="h-4 w-4 mr-2" />
+              New Document
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onImportClick}>
+              <Upload className="h-4 w-4 mr-2" />
+              Import Document
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onExportClick}>
+              <Download className="h-4 w-4 mr-2" />
+              Export Project
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       
-      <div className="flex gap-2">
-        <div className="relative flex-1">
+      {/* Search */}
+      <div className="space-y-3">
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search documents..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-9"
+            className="pl-10 h-8"
           />
         </div>
         
+        {/* Status Filter */}
         <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-          <SelectTrigger className="w-32">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue />
+          <SelectTrigger className="h-8">
+            <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="not-started">Not Started</SelectItem>
-            <SelectItem value="in-progress">In Progress</SelectItem>
             <SelectItem value="draft">Draft</SelectItem>
+            <SelectItem value="first-draft">First Draft</SelectItem>
             <SelectItem value="revised">Revised</SelectItem>
             <SelectItem value="final">Final</SelectItem>
           </SelectContent>

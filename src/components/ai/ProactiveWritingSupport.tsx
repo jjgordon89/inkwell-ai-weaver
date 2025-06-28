@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,7 @@ const ProactiveWritingSupport: React.FC<ProactiveWritingSupportProps> = ({
       const suggestions = await generateContextualSuggestions(
         content,
         undefined,
-        state.characters.map(c => c.name), // Convert Character[] to string[]
+        state.characters,
         state.storyArcs
       );
       

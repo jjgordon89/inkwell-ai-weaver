@@ -152,7 +152,7 @@ export class DatabaseAIStorage {  // Load AI settings from database with fallbac
   // Get all provider configurations
   static async getProviderConfigs() {
     try {
-      return await database.listAIProviders(); // Changed from getAIProviders to listAIProviders
+      return await database.getAIProviders();
     } catch (error) {
       console.error('Failed to get provider configurations:', error);
       return [];

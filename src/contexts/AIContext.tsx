@@ -185,18 +185,6 @@ interface AIProviderProps {
 export const AIContextProvider = ({ children }: AIProviderProps) => {
   const [state, dispatch] = useReducer(aiReducer, initialState);
 
-  // Initialize cache as Map if it's not already
-  React.useEffect(() => {
-    if (!(state.resultsCache instanceof Map)) {
-      dispatch({
-        type: 'LOAD_INITIAL_STATE',
-        payload: {
-          resultsCache: new Map()
-        }
-      });
-    }
-  }, [state.resultsCache]);
-
   return (
     <AIContext.Provider value={{ state, dispatch }}>
       {children}

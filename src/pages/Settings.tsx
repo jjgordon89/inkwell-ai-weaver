@@ -1,102 +1,86 @@
-
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings as SettingsIcon, User, Palette, Bell } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Settings, Database, Bot, Palette, Shield, User, Bell, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import DatabaseSettings from '@/components/settings/DatabaseSettings';
+import AISettingsPanel from '@/components/settings/AISettingsPanel';
+import AppearanceSettings from '@/components/settings/AppearanceSettings';
+import PrivacySettings from '@/components/settings/PrivacySettings';
+import ProfileSettings from '@/components/settings/ProfileSettings';
+import NotificationSettings from '@/components/settings/NotificationSettings';
 
-const Settings = () => {
+const SettingsPage = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-            <SettingsIcon className="h-8 w-8" />
-            Settings
-          </h1>
-          <p className="text-muted-foreground">
-            Manage your application preferences and configuration
-          </p>
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex items-center gap-4 mb-6">
+        <Link to="/studio">
+          <Button variant="ghost" size="sm" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+        </Link>
+        <div className="flex items-center gap-2">
+          <Settings className="h-6 w-6" />
+          <h1 className="text-2xl font-bold">Settings</h1>
         </div>
-
-        <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Profile
-            </TabsTrigger>
-            <TabsTrigger value="appearance" className="flex items-center gap-2">
-              <Palette className="h-4 w-4" />
-              Appearance
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              Notifications
-            </TabsTrigger>
-            <TabsTrigger value="ai" className="flex items-center gap-2">
-              <SettingsIcon className="h-4 w-4" />
-              AI Settings
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="profile" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Settings</CardTitle>
-                <CardDescription>
-                  Manage your personal information and preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Profile settings will be available soon.</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="appearance" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Appearance Settings</CardTitle>
-                <CardDescription>
-                  Customize the look and feel of the application
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Appearance settings will be available soon.</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="notifications" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Notification Settings</CardTitle>
-                <CardDescription>
-                  Configure how you receive notifications
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Notification settings will be available soon.</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="ai" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>AI Configuration</CardTitle>
-                <CardDescription>
-                  Configure AI providers and models for writing assistance
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">AI settings will be available soon.</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
       </div>
+
+      <Tabs defaultValue="database" className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="database" className="flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            Database
+          </TabsTrigger>
+          <TabsTrigger value="ai" className="flex items-center gap-2">
+            <Bot className="h-4 w-4" />
+            AI
+          </TabsTrigger>
+          <TabsTrigger value="appearance" className="flex items-center gap-2">
+            <Palette className="h-4 w-4" />
+            Appearance
+          </TabsTrigger>
+          <TabsTrigger value="profile" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            Profile
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            Notifications
+          </TabsTrigger>
+          <TabsTrigger value="privacy" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Privacy
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="database" className="mt-6">
+          <DatabaseSettings />
+        </TabsContent>
+
+        <TabsContent value="ai" className="mt-6">
+          <AISettingsPanel />
+        </TabsContent>
+
+        <TabsContent value="appearance" className="mt-6">
+          <AppearanceSettings />
+        </TabsContent>
+
+        <TabsContent value="profile" className="mt-6">
+          <ProfileSettings />
+        </TabsContent>
+
+        <TabsContent value="notifications" className="mt-6">
+          <NotificationSettings />
+        </TabsContent>
+
+        <TabsContent value="privacy" className="mt-6">
+          <PrivacySettings />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
 
-export default Settings;
+export default SettingsPage;

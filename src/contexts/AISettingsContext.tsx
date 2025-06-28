@@ -25,7 +25,6 @@ export const AISettingsProvider = ({ children }: AISettingsProviderProps) => {
 
   const closeSettings = () => {
     setIsSettingsOpen(false);
-    setDefaultTab('overview');
   };
 
   return (

@@ -214,8 +214,17 @@ const DocumentBinder = () => {
       <div className="flex-1 overflow-auto p-2">
         <DragDropContext onDragEnd={handleDragEnd}>
           <BinderTree
-            nodes={filteredTree}
-            useVirtualization={false}
+            filteredTree={filteredTree}
+            expandedNodes={expandedNodes}
+            selectedId={state.activeDocumentId || undefined}
+            onSelect={handleDocumentSelect}
+            onToggle={handleNodeToggle}
+            onDelete={handleDeleteDocument}
+            onAddChild={handleAddChild}
+            onEdit={handleEditDocument}
+            searchQuery={searchQuery}
+            statusFilter={statusFilter}
+            onClearFilters={handleClearFilters}
           />
         </DragDropContext>
       </div>

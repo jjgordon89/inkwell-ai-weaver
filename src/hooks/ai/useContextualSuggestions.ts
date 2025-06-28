@@ -42,25 +42,10 @@ Provide 4-6 context-aware writing suggestions that:
 
 Format as a bulleted list of actionable suggestions.`;
 
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Contextual suggestions timed out')), 20000);
-      });
-
-      const resultPromise = processText(prompt, 'context-suggestion');
-      const result = await Promise.race([resultPromise, timeoutPromise]);
-      
+      const result = await processText(prompt, 'context-suggestion');
       return createSuggestionsList(result);
     } catch (error) {
-      console.error('Contextual suggestions error:', error);
-      // Return fallback suggestions on error
-      return [
-        'Consider developing character motivations further',
-        'Add more dialogue to bring scenes to life',
-        'Enhance descriptive details for better immersion',
-        'Review pacing - consider varying sentence lengths',
-        'Strengthen the conflict or tension in this section'
-      ];
+      throw handleAIError(error, 'generate contextual suggestions');
     } finally {
       setIsAnalyzing(false);
     }

@@ -1,153 +1,294 @@
-
-import type { AIAction } from './types';
+import { AIAction, AIProvider } from './types';
 
 export const getPromptForAction = (action: AIAction, text: string): string => {
   switch (action) {
     case 'improve':
-      return `Improve this text by making it clearer, more engaging, and better written. Return ONLY the improved text without explanations: "${text}"`;
+      return `Please improve the following text by enhancing clarity, flow, and readability while maintaining the original meaning:\n\n${text}`;
     case 'shorten':
-      return `Make this text more concise while keeping the same meaning. Return ONLY the shortened text: "${text}"`;
+      return `Please make the following text more concise while preserving the key information and meaning:\n\n${text}`;
     case 'expand':
-      return `Expand this text with more detail and depth. Return ONLY the expanded text: "${text}"`;
+      return `Please expand the following text by adding relevant details, context, and depth while maintaining the original tone and meaning:\n\n${text}`;
     case 'fix-grammar':
-      return `Fix any grammar, spelling, or punctuation errors in this text. Return ONLY the corrected text: "${text}"`;
-    case 'continue':
-    case 'continue-story':
-      return `Continue this text naturally in the same style and voice. Return ONLY the continuation text without any introduction or explanation: "${text}"`;
+      return `Please correct any grammar, punctuation, and spelling errors in the following text while maintaining its original meaning and tone:\n\n${text}`;
     case 'analyze-tone':
-      return `Analyze the tone and style of this text: "${text}"`;
+      return `Analyze the tone, mood, and style of the following text. Provide specific observations about the emotional resonance, voice, and narrative approach:\n\n${text}`;
+    case 'generate-plot':
+      return `Based on the following story context, generate creative plot elements, conflicts, and story developments:\n\n${text}`;
+    case 'continue-story':
+      return `Continue the following story naturally, maintaining the established tone, style, and narrative voice:\n\n${text}`;
+    case 'writing-prompt':
+      return `Create an engaging and creative writing prompt based on the following theme or context:\n\n${text}`;
+    case 'context-suggestion':
+      return `Provide contextual writing suggestions and improvements based on the following text:\n\n${text}`;
+    case 'analyze-writing-quality':
+      return `Analyze the following text for writing quality. Provide the analysis in the following key-value format.
+ReadabilityScore: [a score from 0 to 100]
+ReadabilityLevel: [a level like 'Excellent', 'Good', 'Fair', 'Needs Improvement']
+ReadabilitySuggestions: [a bulleted list of 2-3 suggestions for readability, separated by newlines]
+SentenceVariety: [a score from 0 to 100]
+VocabularyRichness: [a score from 0 to 100]
+Pacing: [a string like 'Slow', 'Moderate', 'Fast']
+Engagement: [a score from 0 to 100]
+
+Text to analyze:
+${text}`;
+    case 'predict-next-words':
+      return `Based on the following text, predict the next 5 most likely words. Return them as a comma-separated list, without any other text:\n\n${text}`;
     default:
-      return `Process this text: "${text}"`;
+      return text;
   }
 };
 
-export const cleanAIResponse = (response: string, action: AIAction): string => {
-  if (!response) return '';
-  
-  // For continuation and extension actions, remove common AI prefixes/suffixes
-  if (action === 'continue' || action === 'continue-story' || action === 'improve' || action === 'expand') {
-    let cleaned = response.trim();
-    
-    // Remove common AI response prefixes
-    const prefixesToRemove = [
-      /^Here's the continuation:/i,
-      /^Here's the improved text:/i,
-      /^Here's the expanded text:/i,
-      /^Continuing the text:/i,
-      /^The continuation would be:/i,
-      /^I'll continue this text:/i,
-      /^Here's how it could continue:/i,
-      /^The text continues:/i,
-      /^Continuation:/i,
-      /^Here is the/i,
-      /^The improved version:/i,
-      /^Improved text:/i,
-      /^Enhanced version:/i
-    ];
-    
-    // Remove common AI response suffixes and meta-commentary
-    const suffixesToRemove = [
-      /This continuation maintains the same tone and style\.?$/i,
-      /This follows the established narrative voice\.?$/i,
-      /This preserves the original style\.?$/i,
-      /Hope this helps!?$/i,
-      /Let me know if you'd like me to adjust anything\.?$/i,
-      /The narrative flows beautifully here\.?$/i,
-      /This moment held deeper significance[^.]*\.$/i,
-      /revealing layers of meaning[^.]*\.$/i
-    ];
-    
-    // Remove meta-commentary patterns that shouldn't be in the actual text
-    const metaCommentaryPatterns = [
-      /\. The narrative flows beautifully here\./gi,
-      /\. This moment held deeper significance[^.]*\./gi,
-      /\. revealing layers of meaning[^.]*\./gi,
-      /\([^)]*commentary[^)]*\)/gi,
-      /\([^)]*flows beautifully[^)]*\)/gi,
-      /\([^)]*narrative[^)]*\)/gi
-    ];
-    
-    // Apply prefix removal
-    for (const prefix of prefixesToRemove) {
-      cleaned = cleaned.replace(prefix, '').trim();
-    }
-    
-    // Apply suffix removal
-    for (const suffix of suffixesToRemove) {
-      cleaned = cleaned.replace(suffix, '').trim();
-    }
-    
-    // Remove meta-commentary patterns
-    for (const pattern of metaCommentaryPatterns) {
-      cleaned = cleaned.replace(pattern, '.').trim();
-    }
-    
-    // Remove quotes if the entire response is wrapped in them
-    if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || 
-        (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
-      cleaned = cleaned.slice(1, -1).trim();
-    }
-    
-    // Clean up any double periods or spaces
-    cleaned = cleaned.replace(/\.+/g, '.').replace(/\s+/g, ' ').trim();
-    
-    return cleaned;
-  }
-  
-  return response.trim();
-};
-
-export const performMockTextProcessing = async (text: string, action: AIAction, model: string): Promise<string> => {
-  // Simulate processing delay
-  await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-  
-  let result = '';
+export const performMockTextProcessing = async (text: string, action: AIAction, selectedModel: string): Promise<string> => {
+  const processingTime = Math.random() * 2000 + 1000;
+  await new Promise(resolve => setTimeout(resolve, processingTime));
   
   switch (action) {
     case 'improve':
-      result = text.replace(/\b(good|nice|okay)\b/gi, 'excellent')
-        .replace(/\b(bad|poor)\b/gi, 'challenging');
-      break;
-    case 'continue':
-    case 'continue-story':
-      // Generate clean continuation without meta-commentary
-      const continuations = [
-        ' The shadows lengthened as evening approached, casting everything in a golden hue.',
-        ' She paused, listening to the distant sound of footsteps echoing down the corridor.',
-        ' The weight of the decision pressed heavily on his shoulders as he considered his options.',
-        ' Time seemed to slow as the moment stretched between them, heavy with unspoken words.',
-        ' The old house creaked softly, as if sharing its secrets with those who would listen.',
-        ' Outside, the wind picked up, rattling the windows with increasing intensity.',
-        ' He felt the familiar tingle of anticipation as the story began to unfold.',
-        ' The silence was broken only by the steady rhythm of rain against the glass.'
-      ];
-      result = continuations[Math.floor(Math.random() * continuations.length)];
-      break;
-    case 'shorten':
-      result = text.split(' ').slice(0, Math.max(1, Math.floor(text.split(' ').length * 0.7))).join(' ');
-      break;
+      return `Enhanced version using ${selectedModel}: ${text.replace(/\b(good|nice|ok)\b/gi, 'excellent').replace(/\b(bad|poor)\b/gi, 'suboptimal')}`;
+    case 'shorten': {
+      const words = text.split(' ');
+      const targetLength = Math.max(Math.floor(words.length * 0.7), 3);
+      return words.slice(0, targetLength).join(' ') + (targetLength < words.length ? '...' : '');
+    }
     case 'expand':
-      result = text + ' The details became clearer as the scene unfolded before them.';
-      break;
+      return `${text} This expanded version provides additional context and detail, offering readers a more comprehensive understanding of the topic while maintaining the original meaning and intent.`;
     case 'fix-grammar':
-      result = text.replace(/\bi\b/g, 'I').replace(/([.!?])\s*([a-z])/g, '$1 $2'.toUpperCase());
-      break;
+      return text
+        .replace(/\bi\b/g, 'I')
+        .replace(/\s+/g, ' ')
+        .replace(/([.!?])\s*([a-z])/g, (match, punct, letter) => `${punct} ${letter.toUpperCase()}`)
+        .trim();
+    case 'analyze-tone':
+      return `Tone: Thoughtful and engaging\nConfidence: 85\nStyle Notes: The writing demonstrates clear narrative voice with balanced pacing\nSuggestions: Consider varying sentence length for rhythm\nConsider adding more sensory details\nMaintain consistent point of view throughout`;
+    case 'generate-plot':
+      return `Type: conflict\nDescription: A hidden secret from the protagonist's past threatens their current relationships\nPlacement: middle\n\nType: character-development\nDescription: The main character must choose between personal safety and protecting others\nPlacement: middle\n\nType: twist\nDescription: An ally reveals unexpected motivations that change everything\nPlacement: end`;
+    case 'continue-story':
+      return `The continuation flows naturally from your text, developing the scene further while maintaining the established tone and moving the narrative forward with appropriate pacing and character development.`;
+    case 'writing-prompt':
+      return `Title: The Memory Thief\nPrompt: In a world where memories can be extracted and traded like currency, your character discovers they have been stealing memories without knowing it. Write about their first conscious theft and the moral dilemma that follows.\nGenre: science fiction\nDifficulty: intermediate`;
+    case 'context-suggestion':
+      return `- Consider developing the emotional stakes in this scene\n- Add more specific sensory details to enhance immersion\n- The pacing could benefit from shorter sentences during tense moments\n- Character motivations could be clearer\n- Consider the setting's impact on the mood`;
+    case 'analyze-writing-quality':
+      return `ReadabilityScore: 85
+ReadabilityLevel: Good
+ReadabilitySuggestions:
+- Consider varying sentence length for better flow.
+- Use more active voice constructions.
+SentenceVariety: 78
+VocabularyRichness: 65
+Pacing: Moderate
+Engagement: 82`;
+    case 'predict-next-words':
+      return `suddenly, then, however, because, with`;
     default:
-      result = text;
+      return text;
   }
-  
-  return cleanAIResponse(result, action);
+};
+
+const makeGeminiAPIRequest = async (
+  provider: AIProvider, 
+  apiKey: string, 
+  selectedModel: string, 
+  prompt: string, 
+  action: AIAction
+): Promise<string | null> => {
+  const requestBody = {
+    contents: [{
+      parts: [{
+        text: prompt
+      }]
+    }],
+    generationConfig: {
+      temperature: action === 'fix-grammar' ? 0.1 : 0.7,
+      maxOutputTokens: 1000
+    }
+  };
+
+  try {
+    const response = await fetch(`${provider.apiEndpoint}/${selectedModel}:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
+    }
+  } catch (error) {
+    console.warn(`Gemini API error, falling back to mock processing:`, error);
+  }
+
+  return null;
+};
+
+const makeOpenAICompatibleAPIRequest = async (
+  provider: AIProvider, 
+  apiKey: string, 
+  selectedModel: string, 
+  prompt: string, 
+  action: AIAction
+): Promise<string | null> => {
+  const requestBody = {
+    model: selectedModel,
+    messages: [
+      {
+        role: 'system',
+        content: 'You are a helpful writing assistant. Follow the user\'s instructions precisely.'
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ],
+    max_tokens: 1000,
+    temperature: action === 'fix-grammar' ? 0.1 : 0.7
+  };
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  // OpenRouter requires specific headers
+  if (provider.name === 'OpenRouter') {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+    headers['HTTP-Referer'] = window.location.origin;
+    headers['X-Title'] = 'Inkwell AI Weaver';
+  } else {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+
+  if (!provider.apiEndpoint) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(provider.apiEndpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(requestBody),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content || null;
+    }
+  } catch (error) {
+    console.warn(`API error, falling back to mock processing:`, error);
+  }
+
+  return null;
+};
+
+const makeOllamaAPIRequest = async (
+  provider: AIProvider, 
+  apiKey: string, 
+  selectedModel: string, 
+  prompt: string, 
+  action: AIAction
+): Promise<string | null> => {
+  const requestBody = {
+    model: selectedModel,
+    prompt: prompt,
+    stream: false,
+    options: {
+      temperature: action === 'fix-grammar' ? 0.1 : 0.7,
+      num_predict: 1000
+    }
+  };
+
+  try {
+    const response = await fetch(`${provider.apiEndpoint}/api/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.response || null;
+    }
+  } catch (error) {
+    console.warn(`Ollama API error, falling back to mock processing:`, error);
+  }
+
+  return null;
+};
+
+const makeLMStudioAPIRequest = async (
+  provider: AIProvider, 
+  apiKey: string, 
+  selectedModel: string, 
+  prompt: string, 
+  action: AIAction
+): Promise<string | null> => {
+  // LM Studio uses OpenAI-compatible API format
+  const requestBody = {
+    model: selectedModel,
+    messages: [
+      {
+        role: 'system',
+        content: 'You are a helpful writing assistant. Follow the user\'s instructions precisely.'
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ],
+    max_tokens: 1000,
+    temperature: action === 'fix-grammar' ? 0.1 : 0.7,
+    stream: false
+  };
+
+  try {
+    const response = await fetch(`${provider.apiEndpoint}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // LM Studio doesn't typically require auth for local access
+        ...(apiKey && { 'Authorization': `Bearer ${apiKey}` })
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content || null;
+    }
+  } catch (error) {
+    console.warn(`LM Studio API error, falling back to mock processing:`, error);
+  }
+
+  return null;
 };
 
 export const makeAPIRequest = async (
-  provider: any,
-  apiKey: string,
-  model: string,
-  prompt: string,
+  provider: AIProvider, 
+  apiKey: string, 
+  selectedModel: string, 
+  prompt: string, 
   action: AIAction
-): Promise<string> => {
-  // This would make actual API calls to real providers
-  // For now, return mock response that simulates real API behavior
-  const mockResponse = await performMockTextProcessing(prompt.split('"')[1] || prompt, action, model);
-  return cleanAIResponse(mockResponse, action);
+): Promise<string | null> => {
+  if (!provider.apiEndpoint) return null;
+
+  // Handle different provider types
+  switch (provider.name) {
+    case 'Google Gemini':
+      return makeGeminiAPIRequest(provider, apiKey, selectedModel, prompt, action);
+    
+    case 'Ollama':
+      return makeOllamaAPIRequest(provider, apiKey, selectedModel, prompt, action);
+    
+    case 'LM Studio':
+      return makeLMStudioAPIRequest(provider, apiKey, selectedModel, prompt, action);
+    
+    default:
+      // Handle OpenAI-compatible APIs (OpenAI, Groq, OpenRouter)
+      return makeOpenAICompatibleAPIRequest(provider, apiKey, selectedModel, prompt, action);
+  }
 };

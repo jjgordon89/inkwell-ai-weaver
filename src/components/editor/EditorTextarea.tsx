@@ -1,6 +1,6 @@
 
 import React, { useRef, forwardRef, useImperativeHandle } from 'react';
-import SmartCompletionManager from './SmartCompletionManager';
+import SmartTextCompletion from '@/components/ai/SmartTextCompletion';
 
 interface EditorTextareaProps {
   content: string;
@@ -53,14 +53,13 @@ const EditorTextarea = forwardRef<EditorTextareaRef, EditorTextareaProps>(({
       />
       
       {textBeforeCursor && (
-        <SmartCompletionManager
+        <SmartTextCompletion
           textBefore={textBeforeCursor}
           textAfter={textAfterCursor}
           cursorPosition={textareaRef.current?.selectionStart || 0}
-          onAcceptCompletion={onTextCompletion}
+          onAccept={onTextCompletion}
           onDismiss={() => {}}
           isEnabled={true}
-          isVisible={true}
         />
       )}
     </div>

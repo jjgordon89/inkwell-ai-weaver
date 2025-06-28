@@ -2,25 +2,21 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Zap, Lightbulb, Loader2, AlertCircle } from 'lucide-react';
+import { Zap, Lightbulb, Loader2 } from 'lucide-react';
 
 interface SmartSuggestionsTabProps {
   suggestions: string[];
   onRefresh: () => void;
   isGenerating: boolean;
   isAnalyzing: boolean;
-  error?: string;
 }
 
 const SmartSuggestionsTab: React.FC<SmartSuggestionsTabProps> = ({
   suggestions,
   onRefresh,
   isGenerating,
-  isAnalyzing,
-  error
+  isAnalyzing
 }) => {
-  const isLoading = isGenerating || isAnalyzing;
-
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -29,21 +25,12 @@ const SmartSuggestionsTab: React.FC<SmartSuggestionsTabProps> = ({
           size="sm"
           variant="outline"
           onClick={onRefresh}
-          disabled={isLoading}
+          disabled={isGenerating || isAnalyzing}
         >
-          {isLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Zap className="h-3 w-3 mr-1" />}
-          {isLoading ? 'Generating...' : 'Refresh'}
+          {isGenerating ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Zap className="h-3 w-3 mr-1" />}
+          Refresh
         </Button>
       </div>
-      
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="text-sm">
-            {error}
-          </AlertDescription>
-        </Alert>
-      )}
       
       {suggestions.length > 0 ? (
         <div className="space-y-2">
@@ -59,19 +46,12 @@ const SmartSuggestionsTab: React.FC<SmartSuggestionsTabProps> = ({
             </div>
           ))}
         </div>
-      ) : !isLoading ? (
+      ) : (
         <Alert>
           <AlertDescription>
             Click "Refresh" to get AI-powered suggestions for your text.
           </AlertDescription>
         </Alert>
-      ) : (
-        <div className="flex items-center justify-center py-8">
-          <div className="text-center">
-            <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">Generating suggestions...</p>
-          </div>
-        </div>
       )}
     </div>
   );

@@ -1,28 +1,18 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Save, 
-  Undo2, 
-  Redo2, 
-  Lightbulb, 
-  Brain,
-  FileText
-} from 'lucide-react';
-import { EditorTextareaRef } from './EditorTextarea';
+import { Brain, Sidebar, Undo, Redo } from 'lucide-react';
 
 interface EditorHeaderProps {
   title: string;
   suggestionsCount: number;
   showProactivePanel: boolean;
   onToggleProactivePanel: () => void;
-  onToggleSuggestions: () => void;
-  onUndo: () => void;
-  onRedo: () => void;
-  canUndo: boolean;
-  canRedo: boolean;
-  textareaRef?: React.RefObject<EditorTextareaRef>;
+  onToggleSuggestions?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
 }
 
 const EditorHeader: React.FC<EditorHeaderProps> = ({
@@ -33,66 +23,59 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
   onToggleSuggestions,
   onUndo,
   onRedo,
-  canUndo,
-  canRedo,
-  textareaRef
+  canUndo = false,
+  canRedo = false
 }) => {
   return (
-    <div className="flex items-center justify-between p-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-muted-foreground" />
-          <h1 className="font-medium text-sm truncate max-w-[200px]">{title}</h1>
-        </div>
-      </div>
-
+    <div className="p-4 border-b flex justify-between items-center">
       <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onUndo}
-          disabled={!canUndo}
-          title="Undo"
-        >
-          <Undo2 className="h-4 w-4" />
-        </Button>
-        
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onRedo}
-          disabled={!canRedo}
-          title="Redo"
-        >
-          <Redo2 className="h-4 w-4" />
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onToggleSuggestions}
-          className="relative"
-          title="AI Suggestions"
-        >
-          <Lightbulb className="h-4 w-4" />
-          {suggestionsCount > 0 && (
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs flex items-center justify-center"
+        <h2 className="text-xl font-bold">{title}</h2>
+        {(onUndo || onRedo) && (
+          <div className="flex items-center gap-1 ml-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onUndo}
+              disabled={!canUndo}
+              className="h-7 px-2"
+              title="Undo (Ctrl+Z)"
             >
-              {suggestionsCount}
-            </Badge>
-          )}
-        </Button>
-
+              <Undo className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onRedo}
+              disabled={!canRedo}
+              className="h-7 px-2"
+              title="Redo (Ctrl+Y)"
+            >
+              <Redo className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
+      </div>
+      <div className="text-xs text-muted-foreground flex items-center gap-4">
+        <span>Auto-save enabled</span>
+        {suggestionsCount > 0 && onToggleSuggestions && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleSuggestions}
+            className="flex items-center gap-1 h-7 px-2"
+          >
+            <Brain className="h-3 w-3" />
+            {suggestionsCount} AI suggestions
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="sm"
           onClick={onToggleProactivePanel}
-          className={showProactivePanel ? 'bg-primary/10' : ''}
-          title="AI Assistant"
+          className="flex items-center gap-1"
         >
-          <Brain className="h-4 w-4" />
+          <Sidebar className="h-3 w-3" />
+          Writing Assistant
         </Button>
       </div>
     </div>

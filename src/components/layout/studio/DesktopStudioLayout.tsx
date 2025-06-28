@@ -1,13 +1,14 @@
 
 import React from 'react';
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { Button } from "@/components/ui/button";
+import { Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import DocumentBinder from '../DocumentBinder';
-import { BinderProvider } from '../binder/BinderContext';
-import { useProject } from '@/contexts/ProjectContext';
+import InspectorPanel from '../InspectorPanel';
+import ViewManager from '../ViewManager';
+import OnboardingTour from '@/components/onboarding/OnboardingTour';
+import FloatingAISettings from '@/components/ai/FloatingAISettings';
 import type { DocumentView } from '@/types/document';
 
 interface DesktopStudioLayoutProps {
@@ -17,60 +18,70 @@ interface DesktopStudioLayoutProps {
   completeOnboarding: () => void;
 }
 
-const DesktopStudioLayout = ({ renderActiveView }: DesktopStudioLayoutProps) => {
-  const { state, dispatch } = useProject();
-
-  const handleNodeSelect = (nodeId: string) => {
-    dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: nodeId });
-  };
-
-  const handleNodeDelete = (nodeId: string) => {
-    dispatch({ type: 'DELETE_DOCUMENT', payload: nodeId });
-  };
-
-  const handleNodeAdd = (parentId: string) => {
-    const newDoc = {
-      id: crypto.randomUUID(),
-      title: 'New Document',
-      type: 'document' as const,
-      parentId,
-      status: 'not-started' as const,
-      wordCount: 0,
-      labels: [],
-      createdAt: new Date(),
-      lastModified: new Date(),
-      position: 0
-    };
-    
-    dispatch({ type: 'ADD_DOCUMENT', payload: newDoc });
-  };
-
-  const handleNodeEdit = (node: any) => {
-    // Handle node editing - could open a dialog or inline edit
-    console.log('Edit node:', node);
-  };
-
+const DesktopStudioLayout = ({ 
+  renderActiveView, 
+  onViewChange, 
+  showOnboarding, 
+  completeOnboarding 
+}: DesktopStudioLayoutProps) => {
   return (
-    <div className="h-screen w-full">
-      <ResizablePanelGroup direction="horizontal" className="h-full">
-        <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
-          <BinderProvider
-            initialSelectedNodeId={state.activeDocumentId || undefined}
-            onNodeSelect={handleNodeSelect}
-            onNodeDelete={handleNodeDelete}
-            onNodeAdd={handleNodeAdd}
-            onNodeEdit={handleNodeEdit}
+    <div className="h-screen flex flex-col">
+      {/* Header */}
+      <div className="h-12 flex items-center justify-between px-6 border-b bg-background">
+        <h1 className="text-lg font-semibold">Manuscript</h1>
+        <Link to="/settings">
+          <Button variant="ghost" size="sm">
+            <Settings className="h-4 w-4" />
+          </Button>
+        </Link>
+      </div>
+
+      <ViewManager onViewChange={onViewChange} />
+      
+      <div className="flex-1 overflow-hidden">
+        <ResizablePanelGroup direction="horizontal">
+          {/* Document Binder */}
+          <ResizablePanel 
+            defaultSize={20} 
+            minSize={15} 
+            maxSize={35}
+            data-tour="binder"
           >
             <DocumentBinder />
-          </BinderProvider>
-        </ResizablePanel>
-        
-        <ResizableHandle withHandle />
-        
-        <ResizablePanel defaultSize={75} minSize={50}>
-          {renderActiveView()}
-        </ResizablePanel>
-      </ResizablePanelGroup>
+          </ResizablePanel>
+          
+          <ResizableHandle />
+          
+          {/* Main Content Area */}
+          <ResizablePanel defaultSize={60} data-tour="editor">
+            <div className="h-full" data-tour="views">
+              {renderActiveView()}
+            </div>
+          </ResizablePanel>
+          
+          <ResizableHandle />
+          
+          {/* Inspector Panel */}
+          <ResizablePanel 
+            defaultSize={20} 
+            minSize={15} 
+            maxSize={30}
+            data-tour="inspector"
+          >
+            <InspectorPanel />
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
+      
+      {/* Floating AI Settings */}
+      <FloatingAISettings 
+        position="bottom-right"
+        showOnlyWhenNotConfigured={false}
+      />
+      
+      {showOnboarding && (
+        <OnboardingTour onComplete={completeOnboarding} />
+      )}
     </div>
   );
 };

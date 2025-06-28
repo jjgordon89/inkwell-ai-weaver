@@ -1,137 +1,218 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useCallback, useEffect, useState } from 'react';
+import { useAutoSave } from '@/hooks/useAutoSave';
 import { useEditorState } from '@/hooks/useEditorState';
-import { useUndoRedo } from '@/hooks/useUndoRedo';
-import { useCollaborativeAI } from '@/hooks/useCollaborativeAI';
-import { useAI } from '@/hooks/useAI';
-import EditorMainLayout from './EditorMainLayout';
-import { EditorTextareaRef } from './EditorTextarea';
-import { useToast } from "@/hooks/use-toast";
+import { useTextSelection } from '@/hooks/useTextSelection';
+import { useContextualAITriggers } from '@/hooks/useContextualAITriggers';
+import { useEditorContentHandler } from '@/components/editor/EditorContentHandler';
+import { useEditorActionHandlers } from '@/components/editor/EditorActionHandlers';
+import { useContextualSuggestionsManager } from '@/hooks/useContextualSuggestionsManager';
+import { useEditorActionsManager } from '@/components/editor/EditorActionsManager';
+import EditorActionsManager from '@/components/editor/EditorActionsManager';
+import EditorMainLayout from '@/components/editor/EditorMainLayout';
+import EditorAIPanels from '@/components/editor/EditorAIPanels';
+import type { EditorTextareaRef } from '@/components/editor/EditorTextarea';
 
 const EditorContainer = () => {
+  const textareaRef = useRef<EditorTextareaRef>(null);
+  const [showSuggestionsPanel, setShowSuggestionsPanel] = useState(false);
+
   const {
     currentDocument,
     showProactivePanel,
     setShowProactivePanel,
+    proactiveEnabled,
+    setProactiveEnabled,
     textBeforeCursor,
     textAfterCursor,
     cursorPosition,
+    setCursorPosition,
     showFloatingActions,
-    handleContentChange
+    setShowFloatingActions
   } = useEditorState();
 
-  const { canUndo, canRedo, undo, redo } = useUndoRedo();
-  const { suggestions } = useCollaborativeAI();
-  const { processText, isCurrentProviderConfigured } = useAI();
-  const { toast } = useToast();
-  const textareaRef = useRef<EditorTextareaRef>(null);
+  const {
+    selectedText,
+    selectionPosition,
+    showInlineSuggestions,
+    setShowInlineSuggestions,
+    setSelectedText,
+    handleTextSelection
+  } = useTextSelection();
 
-  const handleTextSelection = () => {
-    // Handle text selection logic
-  };
+  const {
+    contextualSuggestions,
+    handleContextualSuggestion,
+    dismissContextualSuggestion,
+    setContextualSuggestions
+  } = useContextualSuggestionsManager();
 
-  const handleTextCompletion = (completion: string) => {
-    if (currentDocument && textareaRef.current) {
-      const currentContent = currentDocument.content || '';
-      const cursorPos = textareaRef.current.selectionStart;
-      const newContent = currentContent.slice(0, cursorPos) + completion + currentContent.slice(cursorPos);
-      
-      // Simulate change event to update content
-      const syntheticEvent = {
-        target: { value: newContent }
-      } as React.ChangeEvent<HTMLTextAreaElement>;
-      
-      handleContentChange(syntheticEvent);
-      
-      // Move cursor to end of inserted text
-      setTimeout(() => {
-        if (textareaRef.current) {
-          const newCursorPos = cursorPos + completion.length;
-          textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
-          textareaRef.current.focus();
-        }
-      }, 0);
+  // Enable auto-save
+  useAutoSave();
+
+  // Initialize contextual AI triggers
+  const {
+    writingBlocks,
+    dialogueContext,
+    isTyping,
+    handleTypingActivity
+  } = useContextualAITriggers(textareaRef, handleContextualSuggestion);
+
+  // Content handlers
+  const {
+    handleContentChangeWithHistory,
+    handleApplyAISuggestion,
+    handleTextCompletion
+  } = useEditorContentHandler({
+    onAddToHistory: (content: string, cursorPosition: number) => {
+      addToHistory(content, cursorPosition);
+    },
+    textareaRef
+  });
+
+  // Enhanced content change handler with typing activity tracking
+  const enhancedContentChangeHandler = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    handleTypingActivity();
+    handleContentChangeWithHistory(e);
+  }, [handleTypingActivity, handleContentChangeWithHistory]);
+
+  // Action handlers
+  const {
+    handleQuickAIAction,
+    handleApplySuggestionFromPanel,
+    suggestions
+  } = useEditorActionHandlers({
+    textareaRef,
+    onContentChangeWithHistory: enhancedContentChangeHandler,
+    onTextCompletion: handleTextCompletion,
+    onShowFloatingActions: setShowFloatingActions,
+    textAfterCursor
+  });
+
+  // Editor actions manager
+  const {
+    addToHistory,
+    handleUndo,
+    handleRedo,
+    canUndo,
+    canRedo
+  } = useEditorActionsManager({
+    currentDocument,
+    onContentChangeWithHistory: enhancedContentChangeHandler,
+    textareaRef
+  });
+
+  // Create wrapper function for text selection handling
+  const handleTextSelectionWrapper = useCallback(() => {
+    if (textareaRef.current) {
+      handleTextSelection(textareaRef.current, setCursorPosition, setShowFloatingActions);
     }
-  };
+  }, [handleTextSelection, setCursorPosition, setShowFloatingActions]);
 
-  const handleToggleSuggestions = () => {
-    // Toggle suggestions logic
-  };
-
-  const handleQuickAIAction = async (action: 'continue' | 'improve') => {
-    if (!currentDocument || !isCurrentProviderConfigured()) {
-      toast({
-        title: "AI Not Available",
-        description: "Please configure an AI provider first",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      const content = currentDocument.content || '';
-      const contextText = action === 'continue' ? content.slice(-200) : content;
-      const result = await processText(contextText, action);
-      
-      if (result && result.trim()) {
-        const newContent = action === 'continue' 
-          ? content + ' ' + result.trim()
-          : result.trim();
-        
-        const syntheticEvent = {
-          target: { value: newContent }
-        } as React.ChangeEvent<HTMLTextAreaElement>;
-        
-        handleContentChange(syntheticEvent);
-        
-        toast({
-          title: `AI ${action === 'continue' ? 'Continuation' : 'Improvement'} Applied`,
-          description: "Your text has been updated",
-          duration: 3000
-        });
+  // Handle contextual suggestion actions
+  const handleApplyContextualSuggestion = useCallback(async (suggestion: any) => {
+    if (suggestion.type === 'writing_block' && suggestion.message.includes('continue')) {
+      await handleQuickAIAction('continue');
+    } else if (suggestion.type === 'character_dialogue') {
+      // Focus on the current character's voice
+      const character = dialogueContext.currentCharacter;
+      if (character && textareaRef.current) {
+        const prompt = `Continue this dialogue in ${character}'s distinctive voice and personality`;
+        handleApplyAISuggestion(prompt);
       }
-    } catch (error) {
-      console.error('AI action failed:', error);
-      toast({
-        title: "AI Action Failed",
-        description: error instanceof Error ? error.message : "Could not process text",
-        variant: "destructive"
-      });
     }
-  };
+    
+    // Dismiss the suggestion after applying
+    setContextualSuggestions(prev => prev.filter(s => s.id !== suggestion.id));
+  }, [handleQuickAIAction, handleApplyAISuggestion, dialogueContext.currentCharacter, setContextualSuggestions]);
+
+  // Improved floating actions auto-hide
+  useEffect(() => {
+    if (showFloatingActions) {
+      const timer = setTimeout(() => {
+        setShowFloatingActions(false);
+      }, 4000); // Hide after 4 seconds of inactivity
+      
+      return () => clearTimeout(timer);
+    }
+  }, [showFloatingActions, setShowFloatingActions]);
+
+  // Update cursor position on scroll or resize
+  useEffect(() => {
+    const handleUpdate = () => {
+      if (showFloatingActions && textareaRef.current) {
+        // This would need to be implemented in the hook for proper cursor tracking
+      }
+    };
+
+    window.addEventListener('scroll', handleUpdate, true);
+    window.addEventListener('resize', handleUpdate);
+    
+    return () => {
+      window.removeEventListener('scroll', handleUpdate, true);
+      window.removeEventListener('resize', handleUpdate);
+    };
+  }, [showFloatingActions]);
 
   if (!currentDocument) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-medium mb-2">No Document Selected</h2>
-          <p className="text-muted-foreground">Select a document from the sidebar to start editing.</p>
-        </div>
+      <div className="h-full flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">No document selected</p>
       </div>
     );
   }
 
   return (
-    <EditorMainLayout
-      currentDocument={currentDocument}
-      textareaRef={textareaRef}
-      textBeforeCursor={textBeforeCursor}
-      textAfterCursor={textAfterCursor}
-      cursorPosition={cursorPosition}
-      showFloatingActions={showFloatingActions}
-      suggestions={suggestions}
-      showProactivePanel={showProactivePanel}
-      onToggleProactivePanel={() => setShowProactivePanel(!showProactivePanel)}
-      onToggleSuggestions={handleToggleSuggestions}
-      onUndo={undo}
-      onRedo={redo}
-      canUndo={canUndo}
-      canRedo={canRedo}
-      onContentChange={handleContentChange}
-      onTextSelection={handleTextSelection}
-      onTextCompletion={handleTextCompletion}
-      onQuickAIAction={handleQuickAIAction}
-    />
+    <div className="h-full flex bg-background relative">
+      <EditorActionsManager onUndo={handleUndo} onRedo={handleRedo} />
+      
+      {/* Main Editor Area */}
+      <EditorMainLayout
+        currentDocument={currentDocument}
+        textareaRef={textareaRef}
+        textBeforeCursor={textBeforeCursor}
+        textAfterCursor={textAfterCursor}
+        cursorPosition={cursorPosition}
+        showFloatingActions={showFloatingActions}
+        suggestions={suggestions}
+        showProactivePanel={showProactivePanel}
+        onToggleProactivePanel={() => setShowProactivePanel(!showProactivePanel)}
+        onToggleSuggestions={() => setShowSuggestionsPanel(!showSuggestionsPanel)}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onContentChange={enhancedContentChangeHandler}
+        onTextSelection={handleTextSelectionWrapper}
+        onTextCompletion={handleTextCompletion}
+        onQuickAIAction={handleQuickAIAction}
+      />
+
+      {/* AI Panels and Overlays */}
+      <EditorAIPanels
+        contextualSuggestions={contextualSuggestions}
+        cursorPosition={cursorPosition}
+        onDismissContextualSuggestion={dismissContextualSuggestion}
+        onApplyContextualSuggestion={handleApplyContextualSuggestion}
+        suggestions={suggestions}
+        showSuggestionsPanel={showSuggestionsPanel}
+        onCloseSuggestionsPanel={() => setShowSuggestionsPanel(false)}
+        onApplySuggestionFromPanel={handleApplySuggestionFromPanel}
+        showProactivePanel={showProactivePanel}
+        proactiveEnabled={proactiveEnabled}
+        onToggleProactive={() => setProactiveEnabled(!proactiveEnabled)}
+        showInlineSuggestions={showInlineSuggestions}
+        selectedText={selectedText}
+        selectionPosition={selectionPosition}
+        currentDocument={currentDocument}
+        onApplyAISuggestion={handleApplyAISuggestion}
+        onDismissInlineSuggestions={() => {
+          setShowInlineSuggestions(false);
+          setSelectedText('');
+        }}
+        setSelectedText={setSelectedText}
+      />
+    </div>
   );
 };
 

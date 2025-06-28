@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, X, Wand2, Zap, Plus, Brain } from 'lucide-react';
-import { useAI } from '@/hooks/useAI';
+import { useCollaborativeAI } from '@/hooks/useCollaborativeAI';
 import InlineAITooltip from './InlineAITooltip';
 import AIRevisionMode from './AIRevisionMode';
 
@@ -26,7 +26,7 @@ const InlineAISuggestions: React.FC<InlineAISuggestionsProps> = ({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeMode, setActiveMode] = useState<'suggestions' | 'revision' | 'tooltip'>('suggestions');
-  const { processText } = useAI();
+  const { improveSelectedText, generateTextCompletion } = useCollaborativeAI();
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -35,9 +35,9 @@ const InlineAISuggestions: React.FC<InlineAISuggestionsProps> = ({
       
       setIsLoading(true);
       try {
-        const improvement = await processText(selectedText, 'improve');
+        const improvement = await improveSelectedText(selectedText);
         if (improvement) {
-          setSuggestions([improvement]);
+          setSuggestions([improvement.text]);
         }
       } catch (error) {
         console.error('Failed to generate suggestions:', error);
@@ -49,7 +49,7 @@ const InlineAISuggestions: React.FC<InlineAISuggestionsProps> = ({
     if (activeMode === 'suggestions') {
       generateSuggestions();
     }
-  }, [selectedText, processText, activeMode]);
+  }, [selectedText, improveSelectedText, activeMode]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -67,9 +67,9 @@ const InlineAISuggestions: React.FC<InlineAISuggestionsProps> = ({
     
     setIsLoading(true);
     try {
-      const result = await processText(selectedText, action);
+      const result = await improveSelectedText(selectedText);
       if (result) {
-        onApply(result);
+        onApply(result.text);
       }
     } catch (error) {
       console.error('Quick action failed:', error);
@@ -95,12 +95,10 @@ const InlineAISuggestions: React.FC<InlineAISuggestionsProps> = ({
   return (
     <Card
       ref={cardRef}
-      className="fixed z-50 w-96 max-w-[90vw] p-4 shadow-2xl border-2 border-primary/20 bg-background/95 backdrop-blur-sm"
+      className="absolute z-50 w-96 p-4 shadow-2xl border-2 border-primary/20 bg-background/95 backdrop-blur-sm"
       style={{
-        left: Math.min(position.x, window.innerWidth - 400),
-        top: Math.max(position.y - 120, 10),
-        maxHeight: 'calc(100vh - 20px)',
-        overflow: 'auto'
+        left: Math.min(position.x, window.innerWidth - 384),
+        top: Math.max(position.y - 120, 10)
       }}
     >
       <div className="space-y-4">
@@ -142,10 +140,10 @@ const InlineAISuggestions: React.FC<InlineAISuggestionsProps> = ({
         {/* Selected text preview */}
         <div className="p-3 bg-muted/50 rounded-lg border">
           <p className="text-xs font-medium mb-1">Selected Text:</p>
-          <p className="text-xs text-muted-foreground break-words">
+          <p className="text-xs text-muted-foreground">
             "{selectedText.substring(0, 80)}{selectedText.length > 80 ? '...' : ''}"
           </p>
-          <div className="flex gap-2 mt-2 flex-wrap">
+          <div className="flex gap-2 mt-2">
             <Badge variant="outline" className="text-xs">
               {selectedText.split(' ').length} words
             </Badge>
@@ -229,7 +227,7 @@ const InlineAISuggestions: React.FC<InlineAISuggestionsProps> = ({
         )}
 
         {activeMode === 'revision' && (
-          <div className="min-h-[200px] max-h-[300px] overflow-auto">
+          <div className="min-h-[200px]">
             <AIRevisionMode
               documentContent={documentContent}
               isActive={true}

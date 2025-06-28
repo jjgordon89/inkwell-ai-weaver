@@ -1,80 +1,62 @@
-import { useState, useCallback } from 'react';
-import { AIProvider, AIProcessAction } from '../types/ai';
 
-const AI_PROVIDERS: AIProvider[] = [
-  { name: 'OpenAI', models: ['gpt-4', 'gpt-3.5-turbo'], requiresApiKey: true },
-  { name: 'Anthropic', models: ['claude-3-sonnet', 'claude-3-haiku'], requiresApiKey: true },
-  { name: 'Local', models: ['llama-2', 'mistral'], requiresApiKey: false }
-];
+import { useAIOperations } from './ai/useAIOperations';
+import type { AIProvider, AIAction } from './ai/types';
+
+export type { AIProvider, AIAction } from './ai/types';
+export { AI_PROVIDERS } from './ai/constants';
 
 export const useAI = () => {
-  const [selectedProvider, setSelectedProvider] = useState('OpenAI');
-  const [selectedModel, setSelectedModel] = useState('gpt-4');
-  const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  const isCurrentProviderConfigured = useCallback(() => {
-    const provider = AI_PROVIDERS.find(p => p.name === selectedProvider);
-    if (!provider) return false;
-    
-    if (provider.requiresApiKey) {
-      return !!apiKeys[selectedProvider];
-    }
-    
-    return true;
-  }, [selectedProvider, apiKeys]);
-
-  const processText = useCallback(async (text: string, action: AIProcessAction) => {
-    if (!isCurrentProviderConfigured()) {
-      throw new Error('AI provider not configured');
-    }
-
-    setIsProcessing(true);
-    
-    try {
-      // Mock implementation - in real app, this would call the actual AI API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      switch (action) {
-        case 'improve':
-          return `Improved version: ${text}`;
-        case 'continue':
-          return `${text} [AI continuation would go here...]`;
-        case 'summarize':
-          return `Summary: ${text.substring(0, 100)}...`;
-        case 'expand':
-          return `Expanded: ${text}`;
-        case 'shorten':
-          return `Shortened: ${text.substring(0, 50)}...`;
-        case 'fix-grammar':
-          return `Grammar fixed: ${text}`;
-        default:
-          return text;
-      }
-    } catch (error) {
-      console.error('AI processing failed:', error);
-      throw error;
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [isCurrentProviderConfigured]);
-
-  const setApiKey = useCallback((provider: string, key: string) => {
-    setApiKeys(prev => ({ ...prev, [provider]: key }));
-  }, []);
+  const {
+    selectedProvider,
+    selectedModel,
+    availableProviders,
+    apiKeys,
+    isProcessing,
+    isTestingConnection,
+    error,
+    settings,
+    setProvider,
+    setModel,
+    setApiKey,
+    processText,
+    testConnection,
+    updateSettings,
+    clearError,
+    getCurrentProviderInfo,
+    isProviderConfigured,
+    isCurrentProviderConfigured,
+    clearCache
+  } = useAIOperations();
 
   return {
+    isProcessing,
+    isTestingConnection,
     selectedProvider,
-    setSelectedProvider,
     selectedModel,
-    setSelectedModel,
-    availableProviders: AI_PROVIDERS,
+    setSelectedProvider: setProvider,
+    setSelectedModel: setModel,
     apiKeys,
     setApiKey,
-    isProcessing,
+    testConnection,
     processText,
-    isCurrentProviderConfigured
+    generateSuggestions: async (context: string): Promise<string[]> => {
+      // This can be implemented using processText with a specific action
+      const result = await processText(
+        `Generate 3-5 writing suggestions based on this context: ${context}`,
+        'improve'
+      );
+      return result.split('\n').filter(line => line.trim().length > 0).slice(0, 5);
+    },
+    availableProviders,
+    getCurrentProviderInfo,
+    isProviderConfigured,
+    isCurrentProviderConfigured,
+    
+    // Additional state management features
+    error,
+    clearError,
+    settings,
+    updateSettings,
+    clearCache
   };
 };
-
-export type { AIProvider };

@@ -1,134 +1,119 @@
 
-import type { ValidationResult } from '@/utils/validation';
+import { validateAIResponse } from '@/utils/validation';
 
-export const validateAIInput = (input: string, operation: string): void => {
-  if (!input || typeof input !== 'string') {
-    throw new Error(`Invalid input for ${operation}: Input must be a non-empty string`);
-  }
-  
-  if (input.trim().length === 0) {
-    throw new Error(`Invalid input for ${operation}: Input cannot be empty`);
-  }
-  
-  if (input.length > 50000) {
-    throw new Error(`Invalid input for ${operation}: Input is too long (max 50,000 characters)`);
-  }
-};
+export { validateAIResponse }; // Export the imported function
 
-export const validateAIResponse = (response: string): ValidationResult => {
-  const errors: string[] = [];
-  
-  if (!response || typeof response !== 'string') {
-    errors.push('Response must be a string');
-    return { isValid: false, errors };
-  }
-  
-  if (response.trim().length === 0) {
-    errors.push('Response cannot be empty');
-    return { isValid: false, errors };
-  }
-  
-  // Check for common error patterns
-  if (response.toLowerCase().includes('error') && response.length < 100) {
-    errors.push('Response appears to contain an error message');
-  }
-  
-  if (response.includes('<!DOCTYPE html>')) {
-    errors.push('Response appears to be HTML instead of text');
-  }
-  
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
-};
+export interface ParsedAIResponse {
+  [key: string]: string | string[] | number | undefined;
+}
 
-export const sanitizeApiKey = (apiKey: string): string => {
-  return apiKey.trim().replace(/\s+/g, '');
-};
+export const parseAIResponse = (response: string): ParsedAIResponse => {
+  // Validate the response first
+  const validation = validateAIResponse(response);
+  if (!validation.isValid) {
+    console.warn('AI response validation failed:', validation.errors);
+    throw new Error(`Invalid AI response: ${validation.errors.join(', ')}`);
+  }
 
-export const maskApiKey = (apiKey: string): string => {
-  if (!apiKey || apiKey.length < 8) return '***';
-  
-  const start = apiKey.slice(0, 4);
-  const end = apiKey.slice(-4);
-  const middle = '*'.repeat(Math.max(4, apiKey.length - 8));
-  
-  return `${start}${middle}${end}`;
-};
+  const lines = response.split('\n').filter(line => line.trim().length > 0);
+  const parsed: ParsedAIResponse = {};
 
-export const getModelDisplayName = (modelName: string): string => {
-  // Clean up model names for display
-  return modelName
-    .replace(/^(accounts\/fireworks\/models\/|meta-llama\/|mistralai\/|microsoft\/)/i, '')
-    .replace(/-instruct$|-chat$/i, '')
-    .replace(/-v\d+/i, '')
-    .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-};
+  lines.forEach(line => {
+    const colonIndex = line.indexOf(':');
+    if (colonIndex === -1) return;
 
-export const categorizeModel = (modelName: string): string => {
-  const name = modelName.toLowerCase();
-  
-  if (name.includes('gpt-4') || name.includes('claude') || name.includes('gemini')) {
-    return 'flagship';
-  }
-  
-  if (name.includes('turbo') || name.includes('fast') || name.includes('instant')) {
-    return 'fast';
-  }
-  
-  if (name.includes('vision') || name.includes('multimodal')) {
-    return 'multimodal';
-  }
-  
-  if (name.includes('code') || name.includes('coding')) {
-    return 'coding';
-  }
-  
-  if (name.includes('mini') || name.includes('small') || name.includes('7b') || name.includes('8b')) {
-    return 'lightweight';
-  }
-  
-  if (name.includes('70b') || name.includes('405b') || name.includes('large')) {
-    return 'powerful';
-  }
-  
-  return 'general';
-};
-
-// AI response parsing utilities
-export const parseAIResponse = (response: string): Record<string, unknown> => {
-  const parsed: Record<string, unknown> = {};
-  
-  // Parse key-value pairs from response
-  const lines = response.split('\n');
-  for (const line of lines) {
-    if (line.includes(':')) {
-      const [key, ...valueParts] = line.split(':');
-      const value = valueParts.join(':').trim();
-      const normalizedKey = key.trim().toLowerCase().replace(/\s+/g, '');
-      parsed[normalizedKey] = value;
+    const key = line.substring(0, colonIndex).toLowerCase().trim();
+    const value = line.substring(colonIndex + 1).trim();
+    
+    // Validate and sanitize the value
+    if (!value || value.length === 0) return;
+    
+    // Handle special cases
+    switch (key) {
+      case 'age': {
+        const age = parseInt(value);
+        parsed[key] = isNaN(age) ? undefined : Math.max(0, Math.min(200, age));
+        break;
+      }
+      case 'tags': {
+        const tags = value.split(',')
+          .map(tag => tag.trim())
+          .filter(tag => tag.length > 0 && tag.length <= 50)
+          .slice(0, 10); // Limit to 10 tags
+        parsed[key] = tags;
+        break;
+      }
+      default: {
+        // Sanitize string values
+        const sanitizedValue = value.replace(/[<>]/g, '').trim();
+        if (sanitizedValue.length <= 5000) { // Limit field length
+          parsed[key] = sanitizedValue;
+        }
+        break;
+      }
     }
-  }
-  
+  });
+
   return parsed;
 };
 
-// Error handling utility
 export const handleAIError = (error: unknown, operation: string): Error => {
+  console.error(`❌ ${operation} failed:`, error);
+  
   if (error instanceof Error) {
-    return new Error(`Failed to ${operation}: ${error.message}`);
+    // Sanitize error message
+    const sanitizedMessage = error.message.replace(/[<>]/g, '').substring(0, 500);
+    return new Error(`Failed to ${operation.toLowerCase()}: ${sanitizedMessage}`);
   }
-  return new Error(`Failed to ${operation}: Unknown error occurred`);
+  
+  return new Error(`Failed to ${operation.toLowerCase()}: Unknown error occurred`);
 };
 
-// Create suggestions list from AI response
 export const createSuggestionsList = (response: string): string[] => {
+  // Validate the response first
+  const validation = validateAIResponse(response);
+  if (!validation.isValid) {
+    console.warn('AI response validation failed for suggestions:', validation.errors);
+    return [];
+  }
+
   return response
     .split('\n')
-    .filter(line => line.trim().startsWith('-') || line.trim().startsWith('•'))
-    .map(line => line.replace(/^[-•]\s*/, '').trim())
-    .filter(Boolean);
+    .filter(line => line.trim().length > 0)
+    .map(line => line.replace(/^[-•*]\s*/, '').trim())
+    .filter(suggestion => suggestion.length >= 10 && suggestion.length <= 500) // Validate length
+    .map(suggestion => suggestion.replace(/[<>]/g, '')) // Sanitize
+    .slice(0, 5); // Limit to 5 suggestions
+};
+
+export const validateAIInput = (input: string, operation: string): void => {
+  if (!input || typeof input !== 'string') {
+    throw new Error(`No input provided for ${operation}`);
+  }
+
+  const trimmed = input.trim();
+  
+  if (trimmed.length === 0) {
+    throw new Error(`No input provided for ${operation}`);
+  }
+  
+  if (trimmed.length < 3) {
+    throw new Error(`Input too short for ${operation}. Please provide more details.`);
+  }
+
+  if (trimmed.length > 10000) {
+    throw new Error(`Input too long for ${operation}. Please keep it under 10,000 characters.`);
+  }
+
+  // Check for potentially harmful content
+  const suspiciousPatterns = [
+    /<script/i,
+    /javascript:/i,
+    /on\w+\s*=/i,
+    /<iframe/i
+  ];
+
+  if (suspiciousPatterns.some(pattern => pattern.test(trimmed))) {
+    throw new Error(`Input contains potentially unsafe content for ${operation}`);
+  }
 };

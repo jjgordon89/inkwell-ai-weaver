@@ -28,7 +28,7 @@ const ProviderSelector = ({
             {selectedProvider && (
               <div className="flex items-center gap-2">
                 {getProviderIcon(selectedProvider)}
-                <span>{selectedProvider}</span>
+                {selectedProvider}
               </div>
             )}
           </SelectValue>
@@ -38,10 +38,7 @@ const ProviderSelector = ({
             <SelectItem key={provider.name} value={provider.name}>
               <div className="flex items-center gap-2">
                 {getProviderIcon(provider.name)}
-                <span>{provider.name}</span>
-                {provider.name === 'Custom OpenAI Compatible' && (
-                  <Badge variant="outline" className="text-xs ml-2">Custom</Badge>
-                )}
+                {provider.name}
               </div>
             </SelectItem>
           ))}
