@@ -2,7 +2,7 @@
 export interface DocumentNode {
   id: string;
   title: string;
-  type: 'document' | 'folder' | 'chapter' | 'scene';
+  type: 'document' | 'folder' | 'chapter' | 'scene' | 'research-note';
   status: 'not-started' | 'in-progress' | 'draft' | 'first-draft' | 'revised' | 'final' | 'completed';
   content?: string;
   synopsis?: string;
