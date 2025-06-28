@@ -5,6 +5,15 @@ import '@testing-library/jest-dom';
 import ActionsMenu from './ActionsMenu';
 import type { DocumentNode } from '@/types/document';
 
+// Mock the BinderContext
+vi.mock('./BinderContext', () => ({
+  useBinderContext: () => ({
+    onDelete: vi.fn(),
+    onAddChild: vi.fn(),
+    onEdit: vi.fn()
+  })
+}));
+
 describe('ActionsMenu', () => {
   const mockNode: DocumentNode = {
     id: 'test-id',
@@ -19,8 +28,6 @@ describe('ActionsMenu', () => {
   };
 
   const mockOnRename = vi.fn();
-  const mockOnDuplicate = vi.fn();
-  const mockOnAddChild = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -31,8 +38,6 @@ describe('ActionsMenu', () => {
       <ActionsMenu 
         node={mockNode}
         onRename={mockOnRename}
-        onDuplicate={mockOnDuplicate}
-        onAddChild={mockOnAddChild}
       />
     );
     expect(screen.getByRole('button')).toBeInTheDocument();
