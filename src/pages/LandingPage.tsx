@@ -1,51 +1,79 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { PenTool, Book, Users, Lightbulb } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BookOpen, Zap, Brain, Users } from 'lucide-react';
 
 const LandingPage = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted">
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-6xl font-bold text-slate-900 mb-6">
-            Your Creative Writing Studio
+          <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            Inkwell AI Weaver
           </h1>
-          <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
-            Organize your stories, develop characters, build worlds, and write with AI assistance - all in one place.
+          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            An intelligent creative writing assistant powered by AI. Craft compelling stories with advanced AI tools and intuitive writing features.
           </p>
-          <Link to="/studio">
-            <Button size="lg" className="text-lg px-8 py-3">
-              Start Writing
-            </Button>
-          </Link>
+          <div className="flex gap-4 justify-center flex-wrap">
+            <Link to="/projects">
+              <Button size="lg" className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                Start Writing
+              </Button>
+            </Link>
+            <Link to="/studio">
+              <Button variant="outline" size="lg" className="flex items-center gap-2">
+                <Zap className="h-5 w-5" />
+                Writing Studio
+              </Button>
+            </Link>
+          </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-          <div className="text-center p-6">
-            <PenTool className="h-12 w-12 text-primary mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Writing Tools</h3>
-            <p className="text-slate-600">Rich editor with AI assistance for better writing</p>
-          </div>
-          
-          <div className="text-center p-6">
-            <Book className="h-12 w-12 text-primary mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Story Structure</h3>
-            <p className="text-slate-600">Organize chapters, scenes, and story arcs</p>
-          </div>
-          
-          <div className="text-center p-6">
-            <Users className="h-12 w-12 text-primary mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Character Development</h3>
-            <p className="text-slate-600">Create and track character relationships</p>
-          </div>
-          
-          <div className="text-center p-6">
-            <Lightbulb className="h-12 w-12 text-primary mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">World Building</h3>
-            <p className="text-slate-600">Build rich, detailed fictional worlds</p>
-          </div>
+        <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Brain className="h-5 w-5 text-primary" />
+                AI-Powered Writing
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CardDescription>
+                Get intelligent suggestions, continue writing with AI, and enhance your creativity with advanced language models.
+              </CardDescription>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-primary" />
+                Story Management
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CardDescription>
+                Organize characters, plot arcs, world-building elements, and manage complex narratives with ease.
+              </CardDescription>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" />
+                Collaborative Tools
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CardDescription>
+                Work with multiple perspectives, track character development, and maintain story consistency.
+              </CardDescription>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
