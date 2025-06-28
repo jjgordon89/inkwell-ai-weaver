@@ -1,74 +1,68 @@
-import React from 'react';
-import { MoreHorizontal, Edit3, Plus, Trash2 } from 'lucide-react';
+
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger, 
-  DropdownMenuSeparator 
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Edit, Trash2, Plus } from 'lucide-react';
 import { useBinderContext } from './BinderContext';
 import type { DocumentNode } from '@/types/document';
 
 interface ActionsMenuProps {
   node: DocumentNode;
-  onRename?: () => void;
+  onRename: () => void;
 }
 
 const ActionsMenu: React.FC<ActionsMenuProps> = ({ node, onRename }) => {
   const { onDelete, onAddChild, onEdit } = useBinderContext();
-  
-  // Check if this is the permanent Manuscript folder
-  const isPermanentManuscript = node.id === 'manuscript-root' || 
-    (node.title === 'Manuscript' && node.type === 'folder' && node.labels?.includes('permanent'));
-  
-  // Check if this node can have children
-  const canHaveChildren = node.type === 'folder' || node.type === 'chapter';
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleEdit = () => {
-    if (onRename) {
-      onRename();
-    } else {
-      onEdit(node);
+    onEdit(node);
+    setIsOpen(false);
+  };
+
+  const handleDelete = () => {
+    onDelete(node.id);
+    setIsOpen(false);
+  };
+
+  const handleAddChild = () => {
+    if (node.type === 'folder' || node.type === 'chapter') {
+      onAddChild(node.id);
     }
+    setIsOpen(false);
+  };
+
+  const handleRename = () => {
+    onRename();
+    setIsOpen(false);
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
           <MoreHorizontal className="h-3 w-3" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={handleEdit}>
-          <Edit3 className="h-4 w-4 mr-2" />
+      <DropdownMenuContent align="end" className="w-40">
+        <DropdownMenuItem onClick={handleRename}>
+          <Edit className="h-3 w-3 mr-2" />
           Rename
         </DropdownMenuItem>
-        {canHaveChildren && (
-          <DropdownMenuItem onClick={() => onAddChild(node.id)}>
-            <Plus className="h-4 w-4 mr-2" />
+        {(node.type === 'folder' || node.type === 'chapter') && (
+          <DropdownMenuItem onClick={handleAddChild}>
+            <Plus className="h-3 w-3 mr-2" />
             Add Child
           </DropdownMenuItem>
         )}
-        {!isPermanentManuscript && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              onClick={() => onDelete(node.id)}
-              className="text-destructive"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
-            </DropdownMenuItem>
-          </>
-        )}
+        <DropdownMenuItem onClick={handleEdit}>
+          <Edit className="h-3 w-3 mr-2" />
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleDelete} className="text-red-600">
+          <Trash2 className="h-3 w-3 mr-2" />
+          Delete
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

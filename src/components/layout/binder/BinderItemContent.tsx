@@ -1,13 +1,14 @@
-import React from 'react';
-import { DraggableProvidedDragHandleProps } from 'react-beautiful-dnd';
-import StatusIndicator from './StatusIndicator';
+
+import React, { useState } from 'react';
 import TypeIcon from './TypeIcon';
-import DragHandle from './DragHandle';
-import ExpandCollapseButton from './ExpandCollapseButton';
 import ItemTitle from './ItemTitle';
+import StatusIndicator from './StatusIndicator';
 import WordCount from './WordCount';
 import ItemActions from './ItemActions';
+import ExpandCollapseButton from './ExpandCollapseButton';
+import DragHandle from './DragHandle';
 import type { DocumentNode } from '@/types/document';
+import type { DraggableProvidedDragHandleProps } from 'react-beautiful-dnd';
 
 interface BinderItemContentProps {
   node: DocumentNode;
@@ -15,14 +16,11 @@ interface BinderItemContentProps {
   isSelected: boolean;
   isExpanded: boolean;
   hasChildren: boolean;
-  dragHandleProps?: DraggableProvidedDragHandleProps;
+  dragHandleProps?: DraggableProvidedDragHandleProps | null;
   isPermanentManuscript: boolean;
   isDragging?: boolean;
-  isEditing?: boolean;
   onToggle: () => void;
-  onStartEditing?: () => void;
-  onTitleChange?: (newTitle: string) => void;
-  onEditComplete?: () => void;
+  onStartEditing: () => void;
 }
 
 const BinderItemContent: React.FC<BinderItemContentProps> = ({
@@ -34,56 +32,58 @@ const BinderItemContent: React.FC<BinderItemContentProps> = ({
   dragHandleProps,
   isPermanentManuscript,
   isDragging = false,
-  isEditing = false,
   onToggle,
-  onStartEditing,
-  onTitleChange,
-  onEditComplete
+  onStartEditing
 }) => {
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleStartEditing = () => {
+    setIsEditing(true);
+    onStartEditing();
+  };
+
+  const handleTitleChange = (newTitle: string) => {
+    // This would typically update the document through context
+    console.log('Title changed to:', newTitle);
+  };
+
+  const handleEditComplete = () => {
+    setIsEditing(false);
+  };
+
   return (
     <div
-      className={`group flex items-center gap-2 px-2 py-1.5 hover:bg-muted/50 cursor-pointer rounded-sm transition-colors ${
-        isSelected ? 'bg-muted border-l-2 border-l-primary' : ''
-      } ${isDragging ? 'bg-accent' : ''} ${
-        isPermanentManuscript ? 'border-l-2 border-l-blue-500' : ''
-      }`}
+      className={`
+        group flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 transition-colors
+        ${isSelected ? 'bg-primary/10 border border-primary/20' : ''}
+        ${isDragging ? 'opacity-50' : ''}
+      `}
       style={{ paddingLeft: `${level * 16 + 8}px` }}
     >
-      {/* Drag handle */}
-      <DragHandle 
-        dragHandleProps={dragHandleProps} 
-        isPermanent={isPermanentManuscript} 
-      />
-
-      {/* Expand/Collapse button */}
-      <ExpandCollapseButton 
-        isExpanded={isExpanded} 
-        hasChildren={hasChildren} 
-        onToggle={onToggle} 
+      <DragHandle dragHandleProps={dragHandleProps} isPermanentManuscript={isPermanentManuscript} />
+      
+      <ExpandCollapseButton
+        isExpanded={isExpanded}
+        hasChildren={hasChildren}
+        onToggle={onToggle}
       />
       
-      {/* Type icon */}
       <TypeIcon type={node.type} />
       
-      {/* Item title */}
-      <ItemTitle 
-        title={node.title} 
-        isEditing={isEditing}
-        onTitleChange={onTitleChange}
-        onEditComplete={onEditComplete}
-      />
+      <div className="flex-1 min-w-0">
+        <ItemTitle
+          node={node}
+          isEditing={isEditing}
+          onTitleChange={handleTitleChange}
+          onEditComplete={handleEditComplete}
+        />
+      </div>
       
-      {/* Status indicator */}
       <StatusIndicator status={node.status} />
       
-      {/* Word count */}
-      <WordCount wordCount={node.wordCount} />
-
-      {/* Actions menu */}
-      <ItemActions 
-        node={node} 
-        onStartEditing={onStartEditing}
-      />
+      <WordCount count={node.wordCount} />
+      
+      <ItemActions node={node} onStartEditing={handleStartEditing} />
     </div>
   );
 };

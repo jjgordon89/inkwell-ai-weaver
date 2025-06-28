@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import ActionsMenu from './ActionsMenu';
 import type { DocumentNode } from '@/types/document';
@@ -18,13 +19,13 @@ const ItemActions: React.FC<ItemActionsProps> = ({ node, onStartEditing }) => {
   };
 
   return (
-    <div 
-      className="flex items-center"
+    <div
+      className="opacity-0 group-hover:opacity-100 transition-opacity"
       onMouseEnter={() => setIsMenuOpen(true)}
       onMouseLeave={() => setIsMenuOpen(false)}
     >
-      <ActionsMenu 
-        node={node} 
+      <ActionsMenu
+        node={node}
         onRename={handleRename}
       />
     </div>

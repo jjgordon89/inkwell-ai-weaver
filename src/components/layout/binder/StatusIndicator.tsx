@@ -1,22 +1,36 @@
+
 import React from 'react';
+import { Badge } from "@/components/ui/badge";
+import type { DocumentNode } from '@/types/document';
 
 interface StatusIndicatorProps {
-  status?: string;
+  status: DocumentNode['status'];
+  size?: 'sm' | 'default';
 }
 
-const StatusIndicator: React.FC<StatusIndicatorProps> = ({ status }) => {
-  const getStatusColor = () => {
+const StatusIndicator: React.FC<StatusIndicatorProps> = ({ status, size = 'sm' }) => {
+  const getStatusColor = (status: DocumentNode['status']) => {
     switch (status) {
-      case 'final': return 'bg-green-500';
-      case 'revised': return 'bg-blue-500';
-      case 'first-draft': return 'bg-yellow-500';
-      case 'draft': return 'bg-orange-500';
-      default: return 'bg-gray-400';
+      case 'not-started':
+        return 'bg-gray-100 text-gray-800';
+      case 'in-progress':
+        return 'bg-blue-100 text-blue-800';
+      case 'draft':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
-    <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
+    <Badge 
+      variant="secondary" 
+      className={`${getStatusColor(status)} text-xs ${size === 'sm' ? 'px-1 py-0' : ''}`}
+    >
+      {status.replace('-', ' ')}
+    </Badge>
   );
 };
 
