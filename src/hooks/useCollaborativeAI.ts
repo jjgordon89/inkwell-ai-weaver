@@ -1,13 +1,5 @@
-
 import { useState, useCallback } from 'react';
-
-interface AISuggestion {
-  id: string;
-  text: string;
-  type: 'improvement' | 'continuation' | 'correction';
-  confidence: number;
-  original?: string;
-}
+import { AISuggestion } from '../types/ai';
 
 export const useCollaborativeAI = () => {
   const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);

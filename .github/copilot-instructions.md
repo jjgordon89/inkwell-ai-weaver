@@ -24,6 +24,10 @@ globs: *
     *   Sanitize all user input before saving to the database.
 *   When sanitizing string inputs, use a `sanitizeString` utility for all user-facing string fields (project/template/provider names, descriptions, etc.) to prevent XSS/injection.
 *   Ensure there is only one implementation of each method within a class. Remove any duplicate method implementations.
+*   When working with AI-related components and hooks, ensure that all context/hook return types are up-to-date and match the properties/components that consume them.
+*   Use a single source of truth for union types and interfaces (e.g., define them in `types/` and import everywhere).
+*   When defining AI suggestion types, align the union types for actions and suggestion types across your codebase.
+*   Export all types from relevant files (e.g., `useAI.ts`), especially types used in hooks and context.
 
 ## WORKFLOW & RELEASE RULES
 *   Clicking the "Create New Project" button on the Projects page navigates to `/projects/new`.
@@ -31,8 +35,8 @@ globs: *
 *   Submitting the form or clicking "Cancel" on the new project page returns the user to the Projects page.
 *   A workflow (state machine, wizard, or explicit process manager) should be implemented to improve user experience, reliability, and extensibility.
     *   The project creation process should use a workflow (state machine) to manage steps: idle → editing → validating → saving → success/error. This workflow should support navigation (cancel, submit, back) and integrate with the database for persistence, and be extensible for future steps (e.g., AI project setup, template selection). This workflow must be implemented in the `/projects/new` page/component.
-*   New projects must be persisted to the database.
-*   The Projects page must fetch and display the list of projects dynamically from the database. The page must not use hardcoded mock data.
+*   New projects must be persisted to the database (now localStorage/IndexedDB).
+*   The Projects page must fetch and display the list of projects dynamically from the database (now localStorage/IndexedDB). The page must not use hardcoded mock data.
 *   The project creation workflow should incorporate a template selection step before editing project details.
 *   The project creation workflow must support AI-powered template selection. This includes:
     *   An "AI-Powered Template" option in the template selection step.
@@ -47,6 +51,7 @@ globs: *
     *   The template selection UI should show a richer preview or allow inline editing before use.
 *   Fallback Logic: Add support for alternative AI providers or graceful fallback if the main API fails.
 *   Inline editing and richer previews are present, but template re-use (applying a template to a new/existing project) should be accessible from the project creation and editing flows.
+*   The app must open to the Projects page (`/projects`) by default. The root route (`/`) will redirect to `/projects`, and any unknown route will also redirect to `/projects` for a consistent user experience.
 
 ## TECH STACK
 *   sql.js - SQLite compiled to WebAssembly
@@ -70,6 +75,19 @@ globs: *
     *   Expand logging and profiling for easier debugging and performance monitoring.
     *   Improve error handling for worker communication (e.g., adding timeouts).
 *   When debugging Typescript `addProject` method recognition errors, ensure that the `addProject` method is present and correctly typed on the `SQLiteDatabase` class, and that the default export is used consistently, including adding JSDoc comments to the `addProject` method. Also ensure `SQLiteDatabase` is exported from `database.ts`.
+*   When debugging `SQL.js` initialization failures in web workers:
+    *   Ensure the correct UMD build of `SQL.js` is being loaded.
+    *   If loading from a CDN, verify that the CDN is serving the UMD build and that it correctly attaches `initSqlJs` to the global scope.
+    *   If CORS errors occur when fetching `SQL.js` from a CDN, host the UMD build within the project's `public` directory and load it from there (e.g., `/sql-wasm.js`).
+*   When debugging `Uncaught Error: A custom element with name 'mce-autosize-textarea' has already been defined.`:
+    *   Check for duplicate imports of the library that registers `mce-autosize-textarea`. Ensure any import of a bundle that registers custom elements is only done once, at the app root.
+    *   If using a third-party editor (like TinyMCE, Quill, etc.): Ensure you are not importing the editor's web components bundle in multiple places. If you use a modal/overlay library that bundles its own web components, only import it once, ideally in your main entry file.
+    *   If using Vite or hot reload: Sometimes, hot reload can cause this error in development. Try a full browser refresh or restart your dev server.
+    *   If you use dynamic imports: Make sure you are not dynamically importing the same bundle in multiple places.
+*   When seeing a "Loading settings..." message and related errors, it can mean that the `useDatabase` hook and/or components are still expecting a SQL.js-style async initialization. Update the hook and components to use `localStorage` and clarify the messaging.
+*   When debugging AI-related TypeScript errors:
+    *   If you encounter "Property does not exist on type" errors in AI components, update the relevant context/hook return types to include the missing property. If the property is intentionally not implemented, remove its usage in the components.
+    *   If you encounter "Type ... is not assignable to type ..." errors, align the union types for actions and suggestion types across your codebase.
 
 ## AI PROVIDER MANAGEMENT
 *   API keys must be stored securely (never hardcoded).
@@ -95,6 +113,7 @@ globs: *
 *   Implement more robust handling of slow or failed AI/database operations with timeouts and retry mechanisms.
 *   Add user-friendly error messages and loading indicators for all async/template/AI/database actions.
 *   Ensure errors from the database and AI calls are surfaced in the UI, not just the console.
+*   Ensure all async errors are surfaced in the UI, not just the console.
 
 ## SETTINGS & CUSTOMIZATION
 *   Implement a User Preferences UI for changing app settings (theme, autosave, etc.).

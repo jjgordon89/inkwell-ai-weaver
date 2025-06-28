@@ -1,6 +1,5 @@
-
 import { useState } from 'react';
-import { AISuggestion, AIContext } from './types';
+import { AISuggestion, AIProcessAction, AIContext } from '../../types/ai';
 import { useTextOperations } from './textOperations';
 import { useSuggestionOperations } from './suggestionOperations';
 import { useVersionOperations } from './versionOperations';
@@ -41,7 +40,7 @@ export const useCollaborativeAI = () => {
     text: string,
     selectedText?: string,
     characters: string[] = [],
-    storyArcs: any[] = []
+    storyArcs: unknown[] = []
   ) => {
     setIsProcessing(true);
     try {
@@ -76,7 +75,7 @@ export const useCollaborativeAI = () => {
   };
 
   const updateContext = (newContext: Partial<AIContext>) => {
-    setContext(prev => ({ ...prev, ...newContext }));
+    setContext((prev: AIContext) => ({ ...prev, ...newContext }));
   };
 
   const dismissSuggestion = (suggestionId: string) => {

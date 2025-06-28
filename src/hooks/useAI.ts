@@ -1,11 +1,5 @@
-
 import { useState, useCallback } from 'react';
-
-interface AIProvider {
-  name: string;
-  models: string[];
-  requiresApiKey: boolean;
-}
+import { AIProvider, AIProcessAction } from '../types/ai';
 
 const AI_PROVIDERS: AIProvider[] = [
   { name: 'OpenAI', models: ['gpt-4', 'gpt-3.5-turbo'], requiresApiKey: true },
@@ -30,7 +24,7 @@ export const useAI = () => {
     return true;
   }, [selectedProvider, apiKeys]);
 
-  const processText = useCallback(async (text: string, action: 'improve' | 'continue' | 'summarize') => {
+  const processText = useCallback(async (text: string, action: AIProcessAction) => {
     if (!isCurrentProviderConfigured()) {
       throw new Error('AI provider not configured');
     }
@@ -48,6 +42,12 @@ export const useAI = () => {
           return `${text} [AI continuation would go here...]`;
         case 'summarize':
           return `Summary: ${text.substring(0, 100)}...`;
+        case 'expand':
+          return `Expanded: ${text}`;
+        case 'shorten':
+          return `Shortened: ${text.substring(0, 50)}...`;
+        case 'fix-grammar':
+          return `Grammar fixed: ${text}`;
         default:
           return text;
       }
@@ -76,3 +76,5 @@ export const useAI = () => {
     isCurrentProviderConfigured
   };
 };
+
+export type { AIProvider };

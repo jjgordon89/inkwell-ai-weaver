@@ -1,19 +1,10 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { X, Brain, Check, Lightbulb, Users, BookOpen } from 'lucide-react';
-
-interface AISuggestion {
-  id: string;
-  type: 'completion' | 'improvement' | 'character' | 'plot';
-  text: string;
-  confidence: number;
-  position?: { start: number; end: number };
-  original?: string;
-}
+import { AISuggestion } from '../../types/ai';
 
 interface SuggestionsPanelProps {
   suggestions: AISuggestion[];
