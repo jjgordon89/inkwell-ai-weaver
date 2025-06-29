@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,7 @@ interface SuggestionsPanelProps {
   suggestions: AISuggestion[];
   isVisible: boolean;
   onClose: () => void;
-  onApplySuggestion: (suggestion: AISuggestion) => void;
+  onApplySuggestion: (suggestion: string) => void;
   onDismissSuggestion: (suggestionId: string) => void;
 }
 
@@ -112,7 +111,7 @@ const SuggestionsPanel: React.FC<SuggestionsPanelProps> = ({
                   
                   <Button
                     size="sm"
-                    onClick={() => onApplySuggestion(suggestion)}
+                    onClick={() => onApplySuggestion(suggestion.text)}
                     className="h-7 text-xs"
                   >
                     <Check className="h-3 w-3 mr-1" />

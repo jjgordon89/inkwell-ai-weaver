@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useWriting } from '@/contexts/WritingContext';
 import type { EditorTextareaRef } from '@/components/editor/EditorTextarea';
@@ -28,8 +27,8 @@ export const useTextSelection = () => {
   const handleTextSelection = useCallback((textareaRef: EditorTextareaRef, onCursorPositionChange: (pos: CursorPosition) => void, onShowFloatingActions: (show: boolean) => void) => {
     const selection = textareaRef.value.substring(textareaRef.selectionStart, textareaRef.selectionEnd);
     const hasSelection = selection.trim().length > 0;
-    
-    setSelectedText(hasSelection ? selection.trim() : '');
+    // Always update selectedText, even if the text is the same, by appending selectionStart/End
+    setSelectedText(hasSelection ? selection.trim() + `__${textareaRef.selectionStart}_${textareaRef.selectionEnd}` : '');
     
     if (hasSelection) {
       const position = getCursorCoordinates(textareaRef, textareaRef.selectionStart);
@@ -60,8 +59,8 @@ export const useTextSelection = () => {
       }
     }
     
-    // Update selected text in context
-    dispatch({ type: 'SET_SELECTED_TEXT', payload: hasSelection ? selection.trim() : '' });
+    // Update selected text in context with a unique key for every selection
+    dispatch({ type: 'SET_SELECTED_TEXT', payload: hasSelection ? selection.trim() + `__${textareaRef.selectionStart}_${textareaRef.selectionEnd}_${Date.now()}` : '' });
   }, [getCursorCoordinates, dispatch]);
 
   return {

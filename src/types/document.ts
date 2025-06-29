@@ -1,4 +1,3 @@
-
 export interface Project {
   id: string;
   name: string;
@@ -7,7 +6,7 @@ export interface Project {
   lastModified: Date;
   structure: 'novel' | 'screenplay' | 'research' | 'poetry';
   wordCountTarget?: number;
-  status: 'draft' | 'revision' | 'editing' | 'complete';
+  status: 'draft' | 'revision' | 'editing' | 'complete' | 'archived';
 }
 
 export interface DocumentNode {
@@ -41,5 +40,8 @@ export interface DocumentView {
   name: string;
   type: 'editor' | 'corkboard' | 'outline' | 'timeline' | 'research';
   activeDocumentId?: string;
-  viewSettings?: Record<string, any>;
+  /**
+   * Use unknown to avoid explicit any. Cast to the expected type when reading/writing settings.
+   */
+  viewSettings?: Record<string, unknown>;
 }

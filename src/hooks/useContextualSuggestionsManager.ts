@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-interface ContextualSuggestion {
+export interface ContextualSuggestion {
   id: string;
   type: 'writing_block' | 'character_dialogue' | 'structure' | 'general';
   message: string;

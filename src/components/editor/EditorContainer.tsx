@@ -1,4 +1,3 @@
-
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useEditorState } from '@/hooks/useEditorState';
@@ -12,6 +11,7 @@ import EditorActionsManager from '@/components/editor/EditorActionsManager';
 import EditorMainLayout from '@/components/editor/EditorMainLayout';
 import EditorAIPanels from '@/components/editor/EditorAIPanels';
 import type { EditorTextareaRef } from '@/components/editor/EditorTextarea';
+import type { ContextualSuggestion } from '@/hooks/useContextualSuggestionsManager';
 
 const EditorContainer = () => {
   const textareaRef = useRef<EditorTextareaRef>(null);
@@ -106,11 +106,17 @@ const EditorContainer = () => {
   const handleTextSelectionWrapper = useCallback(() => {
     if (textareaRef.current) {
       handleTextSelection(textareaRef.current, setCursorPosition, setShowFloatingActions);
+      // Always show inline suggestions if there is a selection
+      if (textareaRef.current.selectionStart !== textareaRef.current.selectionEnd) {
+        setShowInlineSuggestions(true);
+      } else {
+        setShowInlineSuggestions(false);
+      }
     }
-  }, [handleTextSelection, setCursorPosition, setShowFloatingActions]);
+  }, [handleTextSelection, setCursorPosition, setShowFloatingActions, setShowInlineSuggestions]);
 
   // Handle contextual suggestion actions
-  const handleApplyContextualSuggestion = useCallback(async (suggestion: any) => {
+  const handleApplyContextualSuggestion = useCallback(async (suggestion: ContextualSuggestion) => {
     if (suggestion.type === 'writing_block' && suggestion.message.includes('continue')) {
       await handleQuickAIAction('continue');
     } else if (suggestion.type === 'character_dialogue') {

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -16,6 +15,12 @@ interface InlineAISuggestionsProps {
   documentContent?: string;
 }
 
+// Utility to strip unique key from selectedText
+function getCleanSelectedText(selectedText: string): string {
+  const idx = selectedText.indexOf('__');
+  return idx === -1 ? selectedText : selectedText.slice(0, idx);
+}
+
 const InlineAISuggestions: React.FC<InlineAISuggestionsProps> = ({
   selectedText,
   onApply,
@@ -28,14 +33,15 @@ const InlineAISuggestions: React.FC<InlineAISuggestionsProps> = ({
   const [activeMode, setActiveMode] = useState<'suggestions' | 'revision' | 'tooltip'>('suggestions');
   const { improveSelectedText, generateTextCompletion } = useCollaborativeAI();
   const cardRef = useRef<HTMLDivElement>(null);
+  const cleanSelectedText = getCleanSelectedText(selectedText);
 
   useEffect(() => {
     const generateSuggestions = async () => {
-      if (!selectedText || selectedText.length < 3) return;
+      if (!cleanSelectedText || cleanSelectedText.length < 3) return;
       
       setIsLoading(true);
       try {
-        const improvement = await improveSelectedText(selectedText);
+        const improvement = await improveSelectedText(cleanSelectedText);
         if (improvement) {
           setSuggestions([improvement.text]);
         }
@@ -49,7 +55,13 @@ const InlineAISuggestions: React.FC<InlineAISuggestionsProps> = ({
     if (activeMode === 'suggestions') {
       generateSuggestions();
     }
-  }, [selectedText, improveSelectedText, activeMode]);
+  }, [cleanSelectedText, improveSelectedText, activeMode]);
+
+  // Reset suggestions and mode when selectedText changes
+  useEffect(() => {
+    setSuggestions([]);
+    setActiveMode('suggestions');
+  }, [cleanSelectedText]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -78,13 +90,13 @@ const InlineAISuggestions: React.FC<InlineAISuggestionsProps> = ({
     }
   };
 
-  if (!selectedText) return null;
+  if (!cleanSelectedText) return null;
 
   // Show tooltip for very short selections
-  if (selectedText.length < 20) {
+  if (cleanSelectedText.length < 20) {
     return (
       <InlineAITooltip
-        selectedText={selectedText}
+        selectedText={cleanSelectedText}
         onApply={onApply}
         onDismiss={onDismiss}
         position={position}
@@ -141,14 +153,14 @@ const InlineAISuggestions: React.FC<InlineAISuggestionsProps> = ({
         <div className="p-3 bg-muted/50 rounded-lg border">
           <p className="text-xs font-medium mb-1">Selected Text:</p>
           <p className="text-xs text-muted-foreground">
-            "{selectedText.substring(0, 80)}{selectedText.length > 80 ? '...' : ''}"
+            "{cleanSelectedText.substring(0, 80)}{cleanSelectedText.length > 80 ? '...' : ''}"
           </p>
           <div className="flex gap-2 mt-2">
             <Badge variant="outline" className="text-xs">
-              {selectedText.split(' ').length} words
+              {cleanSelectedText.split(' ').length} words
             </Badge>
             <Badge variant="outline" className="text-xs">
-              {selectedText.length} chars
+              {cleanSelectedText.length} chars
             </Badge>
           </div>
         </div>

@@ -1,4 +1,3 @@
-
 /**
  * Utility functions for string manipulation
  */
@@ -65,4 +64,22 @@ export const characterCount = (text: string, includeSpaces = true): number => {
 
 export const sentenceCount = (text: string): number => {
   return text.split(/[.!?]+/).filter(Boolean).length;
+};
+
+/**
+ * Sanitizes a string to prevent XSS/injection vulnerabilities.
+ * Removes script tags and encodes special characters.
+ */
+export const sanitizeString = (input: string): string => {
+  if (!input) return "";
+  // Remove script/style tags
+  let sanitized = input.replace(/<\/?(script|style)[^>]*>/gi, "");
+  // Encode special characters
+  sanitized = sanitized
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+  return sanitized;
 };

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot } from 'lucide-react';
@@ -13,7 +12,7 @@ interface SuggestionsListProps {
     original?: string;
   }>;
   isAnalyzing: boolean;
-  onApplySuggestion: (suggestion: any) => void;
+  onApplySuggestion: (suggestionText: string) => void;
   onDismissSuggestion: (suggestionId: string) => void;
 }
 
@@ -30,7 +29,7 @@ const SuggestionsList: React.FC<SuggestionsListProps> = ({
           <SuggestionItem
             key={suggestion.id}
             suggestion={suggestion}
-            onApply={onApplySuggestion}
+            onApply={() => onApplySuggestion(suggestion.text)}
             onDismiss={onDismissSuggestion}
           />
         ))}

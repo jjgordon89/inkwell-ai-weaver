@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +16,7 @@ interface SuggestionItemProps {
     confidence: number;
     original?: string;
   };
-  onApply: (suggestion: any) => void;
+  onApply: (suggestionText: string) => void;
   onDismiss: (suggestionId: string) => void;
 }
 
@@ -68,7 +67,7 @@ const SuggestionItem: React.FC<SuggestionItemProps> = ({
         <Button
           size="sm"
           variant="outline"
-          onClick={() => onApply(suggestion)}
+          onClick={() => onApply(suggestion.text)}
           className="h-6 text-xs"
         >
           Apply
