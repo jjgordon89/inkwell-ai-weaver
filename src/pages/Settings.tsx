@@ -2,7 +2,7 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Database, Bot, Palette, Shield, User, Bell, ArrowLeft } from 'lucide-react';
+import { Settings, Database, Bot, Palette, Shield, User, Bell, ArrowLeft, PenTool } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DatabaseSettings from '@/components/settings/DatabaseSettings';
 import AISettingsPanel from '@/components/settings/AISettingsPanel';
@@ -10,6 +10,7 @@ import AppearanceSettings from '@/components/settings/AppearanceSettings';
 import PrivacySettings from '@/components/settings/PrivacySettings';
 import ProfileSettings from '@/components/settings/ProfileSettings';
 import NotificationSettings from '@/components/settings/NotificationSettings';
+import WritingSettingsPanel from '@/components/settings/WritingSettingsPanel';
 
 const SettingsPage = () => {
   return (
@@ -27,8 +28,12 @@ const SettingsPage = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="database" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+      <Tabs defaultValue="writing" className="w-full">
+        <TabsList className="grid w-full grid-cols-7">
+          <TabsTrigger value="writing" className="flex items-center gap-2">
+            <PenTool className="h-4 w-4" />
+            Writing
+          </TabsTrigger>
           <TabsTrigger value="database" className="flex items-center gap-2">
             <Database className="h-4 w-4" />
             Database
@@ -54,6 +59,10 @@ const SettingsPage = () => {
             Privacy
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="writing" className="mt-6">
+          <WritingSettingsPanel />
+        </TabsContent>
 
         <TabsContent value="database" className="mt-6">
           <DatabaseSettings />

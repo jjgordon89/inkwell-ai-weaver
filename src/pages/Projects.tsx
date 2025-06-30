@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Select, 
   SelectTrigger, 
@@ -30,7 +31,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadingSpinner from "@/components/ui/loading-spinner";
-import { Plus, Search, Trash, Archive, FileEdit, MoreVertical, ChevronLeft, ChevronRight, BookOpen } from "lucide-react";
+import ProjectStats from "@/components/dashboard/ProjectStats";
+import ProjectAnalytics from "@/components/dashboard/ProjectAnalytics";
+import QuickActions from "@/components/dashboard/QuickActions";
+import { Plus, Search, Trash, Archive, FileEdit, MoreVertical, ChevronLeft, ChevronRight, BookOpen, BarChart3, Zap, Grid3X3 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -75,7 +79,7 @@ const ProjectsPage = () => {
   
   // Derived state
   const isLoading = projectsQuery.isLoading || updateProjectMutation.isPending || deleteProjectMutation.isPending;
-  const projects = projectsQuery.data || [];
+  const projects = useMemo(() => projectsQuery.data || [], [projectsQuery.data]);
 
   // Show error toast if there's an error in the query
   useEffect(() => {
@@ -90,7 +94,7 @@ const ProjectsPage = () => {
 
   // Filter and sort logic
   const filteredProjects = useMemo(() => {
-    let list = [...projects];
+    const list = [...projects];
     
     // Apply sorting
     switch (sortBy) {
@@ -221,7 +225,43 @@ const ProjectsPage = () => {
           </Button>
         </header>
         
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
+        {/* Main Dashboard Tabs */}
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview" className="flex items-center gap-2">
+              <Grid3X3 className="h-4 w-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="projects" className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4" />
+              All Projects
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="actions" className="flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              Quick Actions
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Overview Tab - Dashboard with stats */}
+          <TabsContent value="overview" className="mt-6">
+            <ProjectStats projects={projects} />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <ProjectAnalytics projects={projects} />
+              </div>
+              <div>
+                <QuickActions projects={projects} />
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Projects Tab - Existing projects list */}
+          <TabsContent value="projects" className="mt-6">
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="relative md:w-1/3">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
@@ -410,6 +450,18 @@ const ProjectsPage = () => {
             )}
           </>
         )}
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="mt-6">
+            <ProjectAnalytics projects={projects} />
+          </TabsContent>
+
+          {/* Quick Actions Tab */}
+          <TabsContent value="actions" className="mt-6">
+            <QuickActions projects={projects} />
+          </TabsContent>
+        </Tabs>
       </div>
       
       {/* Delete Confirmation Dialog */}

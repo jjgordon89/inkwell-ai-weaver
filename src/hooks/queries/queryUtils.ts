@@ -1,5 +1,5 @@
-import { invoke } from '@tauri-apps/api/tauri';
 import { UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
+import { invoke } from '@/lib/tauri-compat';
 
 /**
  * Generic function to invoke Tauri commands with proper error handling

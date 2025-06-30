@@ -1,5 +1,5 @@
-import React, { useReducer, ReactNode, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/tauri';
+import React, { useReducer, ReactNode, useEffect, useContext } from 'react';
+import { invoke } from '@/lib/tauri-compat';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import { 
@@ -307,4 +307,13 @@ export const WritingProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </WritingContext.Provider>
   );
+};
+
+// Export the useWriting hook
+export const useWriting = () => {
+  const context = useContext(WritingContext);
+  if (!context) {
+    throw new Error('useWriting must be used within a WritingProvider');
+  }
+  return context;
 };

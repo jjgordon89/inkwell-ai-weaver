@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@/lib/tauri-compat';
 import { useToast } from '@/hooks/use-toast';
 import type { Project } from '@/types/document';
 import * as sqlWasm from 'sql.js';

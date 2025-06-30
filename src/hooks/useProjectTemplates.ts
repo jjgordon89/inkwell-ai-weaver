@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@/lib/tauri-compat';
 import { ProjectTemplate } from '@/types/document';
 import { sanitizeString } from '@/utils/stringUtils';
 import { categorizeError, ErrorInfo } from '@/utils/errorUtils';

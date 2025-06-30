@@ -1,6 +1,6 @@
-import React, { useReducer, ReactNode, useEffect } from 'react';
+import React, { useReducer, ReactNode, useEffect, useContext } from 'react';
 import { Project } from '@/types/document';
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@/lib/tauri-compat';
 import { useToast } from '@/hooks/use-toast';
 import { 
   ProjectState, 
@@ -424,4 +424,13 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </ProjectContext.Provider>
   );
+};
+
+// Export the useProject hook
+export const useProject = () => {
+  const context = useContext(ProjectContext);
+  if (!context) {
+    throw new Error('useProject must be used within a ProjectProvider');
+  }
+  return context;
 };

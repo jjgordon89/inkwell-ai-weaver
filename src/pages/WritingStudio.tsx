@@ -1,12 +1,12 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@/lib/tauri-compat';
 import { useProject } from '@/contexts/useProject';
 import { useToast } from '@/hooks/use-toast';
 import WritingStudioLayout from '@/components/layout/WritingStudioLayout';
 import LoadingSpinner from '@/components/ui/loading-spinner';
-import type { DocumentNode } from '@/types/document';
+import type { DocumentNode, Project } from '@/types/document';
 
 const WritingStudio = () => {
   const { state, dispatch } = useProject();
@@ -140,11 +140,11 @@ const WritingStudio = () => {
         setIsLoading(true);
         
         // Get project details from backend
-        const project = await invoke('get_project', { id: projectId });
+        const project = await invoke<Project>('get_project', { id: projectId });
         dispatch({ type: 'SET_CURRENT_PROJECT', payload: project });
         
         // Get document tree for the project
-        const documentTree = await invoke('get_document_tree', { projectId });
+        const documentTree = await invoke<DocumentNode[]>('get_document_tree', { projectId });
         
         if (Array.isArray(documentTree) && documentTree.length > 0) {
           dispatch({ type: 'SET_DOCUMENT_TREE', payload: documentTree });

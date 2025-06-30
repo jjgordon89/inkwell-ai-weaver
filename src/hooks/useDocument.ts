@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@/lib/tauri-compat';
 import { DocumentNode, NewDocument, UpdateDocumentPayload, DocumentTreeOperation } from '@/types/document';
 import { useProject } from '@/contexts/useProject';
 import { sanitizeString } from '@/utils/stringUtils';

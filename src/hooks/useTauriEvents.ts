@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { listen, UnlistenFn, Event } from '@tauri-apps/api/event';
+import { listen, UnlistenFn, Event } from '@/lib/tauri-compat';
 import { useQueryClient } from '@tanstack/react-query';
 import { projectKeys } from './queries/useProjectQueries';
 import { documentKeys } from './queries/useDocumentQueries';
