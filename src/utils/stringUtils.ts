@@ -2,6 +2,8 @@
  * Utility functions for string manipulation
  */
 
+import DOMPurify from 'dompurify';
+
 export const capitalizeFirst = (str: string): string => {
   if (!str) return str;
   return str.charAt(0).toUpperCase() + str.slice(1);
@@ -82,4 +84,53 @@ export const sanitizeString = (input: string): string => {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
   return sanitized;
+};
+
+/**
+ * Sanitizes rich text HTML content to prevent XSS/injection vulnerabilities.
+ * Uses DOMPurify to clean HTML while preserving formatting.
+ * 
+ * @param html - The HTML content to sanitize
+ * @param allowedTags - Optional array of HTML tags to allow
+ * @returns Sanitized HTML content
+ */
+export const sanitizeRichText = (html: string, allowedTags?: string[]): string => {
+  if (!html) return "";
+  
+  const config = {
+    ALLOWED_TAGS: allowedTags || [
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'p', 'a', 'ul', 'ol',
+      'nl', 'li', 'b', 'i', 'strong', 'em', 'strike', 'code', 'hr', 'br', 'div',
+      'table', 'thead', 'caption', 'tbody', 'tr', 'th', 'td', 'pre', 'span', 'img',
+      'sup', 'sub'
+    ],
+    ALLOWED_ATTR: [
+      'href', 'name', 'target', 'src', 'alt', 'class', 'id', 'style',
+      'rel', 'aria-label', 'title'
+    ],
+    KEEP_CONTENT: true,
+    RETURN_DOM: false,
+    RETURN_DOM_FRAGMENT: false,
+    RETURN_DOM_IMPORT: false,
+    WHOLE_DOCUMENT: false,
+    SANITIZE_DOM: true
+  };
+  
+  return DOMPurify.sanitize(html, config);
+};
+
+/**
+ * Masks an API key for display, showing only the first and last 2 characters
+ * @param apiKey The API key to mask
+ * @returns Masked API key string
+ */
+export const maskApiKey = (apiKey: string): string => {
+  if (!apiKey) return '';
+  if (apiKey.length <= 4) return apiKey; // Too short to mask effectively
+  
+  const firstTwo = apiKey.substring(0, 2);
+  const lastTwo = apiKey.substring(apiKey.length - 2);
+  const middleAsterisks = '*'.repeat(apiKey.length - 4);
+  
+  return `${firstTwo}${middleAsterisks}${lastTwo}`;
 };

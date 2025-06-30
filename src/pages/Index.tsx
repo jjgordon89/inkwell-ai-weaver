@@ -1,12 +1,9 @@
 
-import MainLayout from "@/components/layout/MainLayout";
+import { Navigate } from "react-router-dom";
 
 const Index = () => {
-  return (
-    <div className="w-full h-screen bg-background text-foreground overflow-hidden">
-      <MainLayout />
-    </div>
-  );
+  // Redirect to Projects page
+  return <Navigate to="/projects" replace />;
 };
 
 export default Index;

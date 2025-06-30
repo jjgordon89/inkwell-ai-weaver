@@ -1,33 +1,14 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { Project, DocumentNode, DocumentView } from '@/types/document';
-
-interface ProjectState {
-  currentProject: Project | null;
-  projects: Project[];
-  documentTree: DocumentNode[];
-  flatDocuments: DocumentNode[];
-  activeDocumentId: string | null;
-  activeView: DocumentView;
-  selectedDocuments: string[];
-  searchQuery: string;
-  filterStatus: string;
-}
-
-type ProjectAction =
-  | { type: 'SET_CURRENT_PROJECT'; payload: Project }
-  | { type: 'ADD_PROJECT'; payload: Project }
-  | { type: 'UPDATE_PROJECT'; payload: { id: string; updates: Partial<Project> } }
-  | { type: 'DELETE_PROJECT'; payload: string }
-  | { type: 'SET_DOCUMENT_TREE'; payload: DocumentNode[] }
-  | { type: 'ADD_DOCUMENT'; payload: DocumentNode }
-  | { type: 'UPDATE_DOCUMENT'; payload: { id: string; updates: Partial<DocumentNode> } }
-  | { type: 'DELETE_DOCUMENT'; payload: string }
-  | { type: 'MOVE_DOCUMENT'; payload: { documentId: string; newParentId?: string; newPosition: number } }
-  | { type: 'SET_ACTIVE_DOCUMENT'; payload: string | null }
-  | { type: 'SET_ACTIVE_VIEW'; payload: DocumentView }
-  | { type: 'SET_SELECTED_DOCUMENTS'; payload: string[] }
-  | { type: 'SET_SEARCH_QUERY'; payload: string }
-  | { type: 'SET_FILTER_STATUS'; payload: string };
+import React, { useReducer, ReactNode, useEffect } from 'react';
+import { Project } from '@/types/document';
+import { invoke } from '@tauri-apps/api/tauri';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  ProjectState, 
+  DocumentNode, 
+  ProjectAction, 
+  ProjectContext,
+  ProjectContextType
+} from './ProjectContext.types';
 
 const initialState: ProjectState = {
   currentProject: null,
@@ -42,13 +23,19 @@ const initialState: ProjectState = {
   },
   selectedDocuments: [],
   searchQuery: '',
-  filterStatus: 'all'
+  filterStatus: 'all',
+  filterStructure: 'all',
+  isLoading: false,
+  error: null
 };
 
 function projectReducer(state: ProjectState, action: ProjectAction): ProjectState {
   switch (action.type) {
     case 'SET_CURRENT_PROJECT':
       return { ...state, currentProject: action.payload };
+    
+    case 'SET_PROJECTS':
+      return { ...state, projects: action.payload };
     
     case 'ADD_PROJECT':
       return { 
@@ -61,41 +48,48 @@ function projectReducer(state: ProjectState, action: ProjectAction): ProjectStat
         ...state,
         projects: state.projects.map(project =>
           project.id === action.payload.id 
-            ? { ...project, ...action.payload.updates, lastModified: new Date() }
+            ? { ...project, ...action.payload.updates }
             : project
         ),
         currentProject: state.currentProject?.id === action.payload.id
-          ? { ...state.currentProject, ...action.payload.updates, lastModified: new Date() }
+          ? { ...state.currentProject, ...action.payload.updates }
           : state.currentProject
       };
     
-    case 'SET_DOCUMENT_TREE':
+    case 'DELETE_PROJECT':
+      return {
+        ...state,
+        projects: state.projects.filter(project => project.id !== action.payload),
+        currentProject: state.currentProject?.id === action.payload ? null : state.currentProject
+      };
+    
+    case 'SET_DOCUMENT_TREE': {
       return { 
         ...state, 
         documentTree: action.payload,
         flatDocuments: flattenDocumentTree(action.payload)
       };
+    }
     
-    case 'ADD_DOCUMENT':
+    case 'ADD_DOCUMENT': {
       const newTree = insertDocumentInTree(state.documentTree, action.payload);
       return {
         ...state,
         documentTree: newTree,
         flatDocuments: flattenDocumentTree(newTree)
       };
+    }
     
-    case 'UPDATE_DOCUMENT':
-      const updatedTree = updateDocumentInTree(state.documentTree, action.payload.id, {
-        ...action.payload.updates,
-        lastModified: new Date()
-      });
+    case 'UPDATE_DOCUMENT': {
+      const updatedTree = updateDocumentInTree(state.documentTree, action.payload.id, action.payload.updates);
       return {
         ...state,
         documentTree: updatedTree,
         flatDocuments: flattenDocumentTree(updatedTree)
       };
+    }
     
-    case 'DELETE_DOCUMENT':
+    case 'DELETE_DOCUMENT': {
       // Prevent deletion of permanent Manuscript folder
       const documentToDelete = state.flatDocuments.find(doc => doc.id === action.payload);
       const isPermanentManuscript = documentToDelete && (
@@ -117,8 +111,9 @@ function projectReducer(state: ProjectState, action: ProjectAction): ProjectStat
         flatDocuments: flattenDocumentTree(treeAfterDelete),
         activeDocumentId: state.activeDocumentId === action.payload ? null : state.activeDocumentId
       };
+    }
     
-    case 'MOVE_DOCUMENT':
+    case 'MOVE_DOCUMENT': {
       const { documentId, newParentId, newPosition } = action.payload;
       const movedTree = moveDocumentInTree(state.documentTree, documentId, newParentId, newPosition);
       return {
@@ -126,6 +121,7 @@ function projectReducer(state: ProjectState, action: ProjectAction): ProjectStat
         documentTree: movedTree,
         flatDocuments: flattenDocumentTree(movedTree)
       };
+    }
     
     case 'SET_ACTIVE_DOCUMENT':
       return { ...state, activeDocumentId: action.payload };
@@ -142,12 +138,21 @@ function projectReducer(state: ProjectState, action: ProjectAction): ProjectStat
     case 'SET_FILTER_STATUS':
       return { ...state, filterStatus: action.payload };
     
+    case 'SET_FILTER_STRUCTURE':
+      return { ...state, filterStructure: action.payload };
+    
+    case 'SET_LOADING':
+      return { ...state, isLoading: action.payload };
+    
+    case 'SET_ERROR':
+      return { ...state, error: action.payload };
+    
     default:
       return state;
   }
 }
 
-// Helper functions
+// Helper functions for document tree operations - these remain unchanged
 function flattenDocumentTree(tree: DocumentNode[]): DocumentNode[] {
   const result: DocumentNode[] = [];
   
@@ -239,11 +244,10 @@ function moveDocumentInTree(
   
   if (!documentToMove) return tree;
   
-  // Update the document's parentId - ensure documentToMove is not null
+  // Update the document's parentId
   const updatedDocument: DocumentNode = {
     ...(documentToMove as DocumentNode),
-    parentId: newParentId,
-    lastModified: new Date()
+    parentId: newParentId
   };
   
   // Insert the document in its new location
@@ -272,25 +276,152 @@ function moveDocumentInTree(
   }
 }
 
-const ProjectContext = createContext<{
-  state: ProjectState;
-  dispatch: React.Dispatch<ProjectAction>;
-} | null>(null);
-
 export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(projectReducer, initialState);
+  const { toast } = useToast();
 
+  // Fetch projects from the database when component mounts
+  useEffect(() => {
+    void fetchProjects();
+    // We intentionally only want to run this once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Function to fetch all projects
+  const fetchProjects = async () => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'SET_ERROR', payload: null });
+    
+    try {
+      const projects = await invoke<Project[]>('get_all_projects');
+      dispatch({ type: 'SET_PROJECTS', payload: projects });
+    } catch (error) {
+      console.error('Failed to fetch projects:', error);
+      dispatch({ type: 'SET_ERROR', payload: String(error) });
+      toast({
+        title: 'Error',
+        description: `Failed to load projects: ${error}`,
+        variant: 'destructive',
+      });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  // Function to create a new project
+  const createProject = async (
+    name: string,
+    description?: string,
+    structure: 'novel' | 'screenplay' | 'research' | 'poetry' = 'novel'
+  ): Promise<Project> => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'SET_ERROR', payload: null });
+    
+    try {
+      const project = await invoke<Project>('create_project', {
+        project: { name, description, structure }
+      });
+      
+      dispatch({ type: 'ADD_PROJECT', payload: project });
+      toast({
+        title: 'Success',
+        description: 'Project created successfully',
+      });
+      
+      return project;
+    } catch (error) {
+      console.error('Failed to create project:', error);
+      dispatch({ type: 'SET_ERROR', payload: String(error) });
+      toast({
+        title: 'Error',
+        description: `Failed to create project: ${error}`,
+        variant: 'destructive',
+      });
+      throw error;
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  // Function to update a project
+  const updateProject = async (
+    id: string, 
+    updates: { name?: string; description?: string; status?: string }
+  ): Promise<Project> => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'SET_ERROR', payload: null });
+    
+    try {
+      const project = await invoke<Project>('update_project', {
+        project: { id, ...updates }
+      });
+      
+      dispatch({ 
+        type: 'UPDATE_PROJECT', 
+        payload: { id, updates: project }
+      });
+      
+      toast({
+        title: 'Success',
+        description: 'Project updated successfully',
+      });
+      
+      return project;
+    } catch (error) {
+      console.error('Failed to update project:', error);
+      dispatch({ type: 'SET_ERROR', payload: String(error) });
+      toast({
+        title: 'Error',
+        description: `Failed to update project: ${error}`,
+        variant: 'destructive',
+      });
+      throw error;
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  // Function to delete a project
+  const deleteProject = async (id: string): Promise<void> => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'SET_ERROR', payload: null });
+    
+    try {
+      await invoke('delete_project', { id });
+      dispatch({ type: 'DELETE_PROJECT', payload: id });
+      toast({
+        title: 'Success',
+        description: 'Project deleted successfully',
+      });
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+      dispatch({ type: 'SET_ERROR', payload: String(error) });
+      toast({
+        title: 'Error',
+        description: `Failed to delete project: ${error}`,
+        variant: 'destructive',
+      });
+      throw error;
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  // Provide context
   return (
-    <ProjectContext.Provider value={{ state, dispatch }}>
+    <ProjectContext.Provider 
+      value={{ 
+        state, 
+        dispatch,
+        fetchProjects,
+        createProject,
+        updateProject,
+        deleteProject,
+        // Add computed property for easy access to current project ID
+        activeProjectId: state.currentProject?.id || null
+      }}
+    >
       {children}
     </ProjectContext.Provider>
   );
-};
-
-export const useProject = () => {
-  const context = useContext(ProjectContext);
-  if (!context) {
-    throw new Error('useProject must be used within a ProjectProvider');
-  }
-  return context;
 };

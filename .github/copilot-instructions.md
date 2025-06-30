@@ -40,6 +40,9 @@ globs: *
 
 ## PROJECT DOCUMENTATION & CONTEXT SYSTEM
 
+*   ManuscriptAppPlan-Refinement_.md
+*   DevelopmentBlueprint.md
+
 ## DEBUGGING
 
 *   When debugging Typescript or JSX errors, always check the file extension. React components with JSX must use the `.tsx` extension.

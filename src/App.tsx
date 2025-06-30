@@ -1,33 +1,41 @@
-
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import LandingPage from '@/pages/LandingPage';
-import WritingStudioLayout from '@/components/layout/WritingStudioLayout';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Settings from '@/pages/Settings';
-import { ProjectProvider } from '@/contexts/ProjectContext';
-import { WritingProvider } from '@/contexts/WritingContext';
-import { AISettingsProvider } from '@/contexts/AISettingsContext';
-import { AIContextProvider } from '@/contexts/AIContext';
+import Projects from '@/pages/Projects';
+import NewProjectPage from '@/pages/NewProjectPage';
+import WritingStudio from '@/pages/WritingStudio';
+import AppProvider from '@/components/AppProvider';
+import NotFound from '@/pages/NotFound';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 function App() {
   return (
-    <BrowserRouter>
-      <AIContextProvider>
-        <AISettingsProvider>
-          <ProjectProvider>
-            <WritingProvider>
-              <div className="app">
-                <Routes>
-                  <Route path="/" element={<LandingPage />} />
-                  <Route path="/studio" element={<WritingStudioLayout />} />
-                  <Route path="/settings" element={<Settings />} />
-                </Routes>
-              </div>
-            </WritingProvider>
-          </ProjectProvider>
-        </AISettingsProvider>
-      </AIContextProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AppProvider>
+          <div className="app">
+            <Routes>
+              {/* Redirect root to projects page */}
+              <Route path="/" element={<Navigate to="/projects" replace />} />
+              
+              {/* Projects routes */}
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/projects/new" element={<NewProjectPage />} />
+              
+              {/* Writing Studio routes */}
+              <Route path="/studio" element={<Navigate to="/projects" replace />} />
+              <Route path="/studio/:projectId" element={<WritingStudio />} />
+              
+              {/* Other routes */}
+              <Route path="/settings" element={<Settings />} />
+              
+              {/* Handle unknown routes by redirecting to Projects */}
+              <Route path="*" element={<Navigate to="/projects" replace />} />
+            </Routes>
+          </div>
+        </AppProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

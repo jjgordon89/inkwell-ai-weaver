@@ -15,9 +15,9 @@ const LandingPage = () => {
           <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
             Organize your stories, develop characters, build worlds, and write with AI assistance - all in one place.
           </p>
-          <Link to="/studio">
+          <Link to="/projects">
             <Button size="lg" className="text-lg px-8 py-3">
-              Start Writing
+              Get Started
             </Button>
           </Link>
         </div>
