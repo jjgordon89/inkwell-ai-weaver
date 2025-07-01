@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Settings from '@/pages/Settings';
 import Projects from '@/pages/Projects';
 import NewProjectPage from '@/pages/NewProjectPage';
+import ProjectView from '@/pages/ProjectView';
 import WritingStudio from '@/pages/WritingStudio';
 import AppProvider from '@/components/AppProvider';
 import NotFound from '@/pages/NotFound';
@@ -21,6 +22,7 @@ function App() {
               {/* Projects routes */}
               <Route path="/projects" element={<Projects />} />
               <Route path="/projects/new" element={<NewProjectPage />} />
+              <Route path="/projects/:projectId" element={<ProjectView />} />
               
               {/* Writing Studio routes */}
               <Route path="/studio" element={<Navigate to="/projects" replace />} />

@@ -30,6 +30,8 @@ export interface ImportOptions {
   createOutline: boolean;
 }
 
+import { UnifiedProjectTemplate } from './unified-templates';
+
 export interface ExportPreset {
   id: string;
   name: string;
@@ -38,6 +40,7 @@ export interface ExportPreset {
   settings: Record<string, unknown>;
 }
 
+// Legacy interfaces kept for backward compatibility
 export interface ProjectTemplate {
   id: string;
   name: string;
@@ -63,7 +66,7 @@ export interface ProjectTemplate {
   };
 }
 
-export const PROJECT_TEMPLATES: ProjectTemplate[] = [
+export const PROJECT_TEMPLATES: UnifiedProjectTemplate[] = [
   {
     id: 'novel-blank',
     name: 'Blank Novel',

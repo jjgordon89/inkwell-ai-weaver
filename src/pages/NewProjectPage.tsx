@@ -6,9 +6,10 @@ import { z } from "zod";
 import { useAppToast } from "@/hooks/useAppToast";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { projectSchema } from "@/utils/validationUtils";
-import { useCreateProject } from "@/hooks/queries/useProjectQueries";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import ProjectTemplateSelector from "@/components/templates/ProjectTemplateSelector";
+import DocumentStructureCustomizer, { DocumentStructureSettings } from "@/components/templates/DocumentStructureCustomizer";
+import { useProjectCreation } from "@/hooks/useProjectCreation";
 import {
   Form,
   FormControl,
@@ -27,9 +28,9 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, BookOpen, Wand2 } from "lucide-react";
-import { ProjectTemplate } from "@/types/templates";
-import { useState } from "react";
+import { ArrowLeft, BookOpen, Wand2, Layers } from "lucide-react";
+import { UnifiedProjectTemplate } from "@/types/unified-templates";
+import { useState, useEffect } from "react";
 
 // Create a project creation schema that excludes status since it's set on the backend
 const createProjectSchema = z.object({
@@ -44,16 +45,31 @@ const createProjectSchema = z.object({
     .int("Word count target must be a whole number")
     .nonnegative("Word count target must be a positive number")
     .optional(),
+  // Document structure settings
+  chapterCount: z.number().int().min(1).optional(),
+  scenesPerChapter: z.number().int().min(1).optional(),
+  actCount: z.number().int().min(1).optional(),
+  poemCount: z.number().int().min(1).optional(),
+  researchSections: z.number().int().min(1).optional(),
 });
 
 type CreateProjectFormValues = z.infer<typeof createProjectSchema>;
 
 const NewProjectPage = () => {
   const navigate = useNavigate();
-  const createProjectMutation = useCreateProject();
+  const createProjectMutation = useProjectCreation();
   const { showToast } = useAppToast();
-  const [selectedTemplate, setSelectedTemplate] = useState<ProjectTemplate | null>(null);
-  const [currentStep, setCurrentStep] = useState<'template' | 'details'>('template');
+  const [selectedTemplate, setSelectedTemplate] = useState<UnifiedProjectTemplate | null>(null);
+  const [currentStep, setCurrentStep] = useState<'template' | 'structure' | 'details'>('template');
+  
+  // Document structure settings
+  const [structureSettings, setStructureSettings] = useState<DocumentStructureSettings>({
+    chapterCount: 10,
+    scenesPerChapter: 3,
+    actCount: 3,
+    poemCount: 10,
+    researchSections: 5
+  });
 
   // Initialize form with our custom validation hook
   const form = useFormValidation({
@@ -62,9 +78,23 @@ const NewProjectPage = () => {
       description: "",
       structure: "novel" as const,
       wordCountTarget: undefined as number | undefined,
+      chapterCount: 10,
+      scenesPerChapter: 3,
+      actCount: 3,
+      poemCount: 10,
+      researchSections: 5,
     },
     schema: createProjectSchema,
   });
+
+  // Update form with structure settings when they change
+  useEffect(() => {
+    form.setValue('chapterCount', structureSettings.chapterCount);
+    form.setValue('scenesPerChapter', structureSettings.scenesPerChapter);
+    form.setValue('actCount', structureSettings.actCount);
+    form.setValue('poemCount', structureSettings.poemCount);
+    form.setValue('researchSections', structureSettings.researchSections);
+  }, [structureSettings, form]);
 
   // Form submission handler
   const handleSubmit = async (values: CreateProjectFormValues) => {
@@ -75,13 +105,17 @@ const NewProjectPage = () => {
         description: "Please wait while your project is being created...",
       });
       
-      // Use the createProject mutation to create the project
+      // Use the createProject mutation to create the project with the new structure
       await createProjectMutation.mutateAsync({
-        name: values.name,
-        description: values.description ?? "", // Use empty string as fallback
-        structure: values.structure,
-        wordCountTarget: values.wordCountTarget,
-        template: selectedTemplate?.id,
+        project: {
+          name: values.name,
+          description: values.description ?? "", // Use empty string as fallback
+          structure: values.structure,
+          wordCountTarget: values.wordCountTarget,
+          template: selectedTemplate?.id, // Pass template ID
+        },
+        templateId: selectedTemplate?.id, // Pass template ID separately for document generation
+        structureSettings: structureSettings
       });
       
       // Show success toast
@@ -103,19 +137,30 @@ const NewProjectPage = () => {
     }
   };
 
-  const handleTemplateSelect = (template: ProjectTemplate) => {
+  const handleTemplateSelect = (template: UnifiedProjectTemplate) => {
     setSelectedTemplate(template);
     // Auto-fill form with template defaults
     form.setValue('structure', template.structure);
     if (template.defaultSettings.wordCountTarget) {
       form.setValue('wordCountTarget', template.defaultSettings.wordCountTarget);
     }
-    setCurrentStep('details');
+    
+    // Initialize structure settings from template
+    setStructureSettings({
+      chapterCount: template.defaultSettings.chapterCount || 10,
+      scenesPerChapter: template.defaultSettings.scenesPerChapter || 3,
+      actCount: template.defaultSettings.actCount || 3,
+      poemCount: template.defaultSettings.poemCount || 10,
+      researchSections: template.defaultSettings.researchSections || 5,
+    });
+    
+    // Move to structure step
+    setCurrentStep('structure');
   };
 
   const handleSkipTemplate = () => {
     setSelectedTemplate(null);
-    setCurrentStep('details');
+    setCurrentStep('structure');
   };
 
   return (
@@ -150,6 +195,16 @@ const NewProjectPage = () => {
                 : 'bg-muted text-muted-foreground'
             }`}>
               <Wand2 className="h-4 w-4" />
+            </div>
+            <div className={`w-16 h-1 rounded ${
+              currentStep === 'structure' || currentStep === 'details' ? 'bg-primary' : 'bg-muted'
+            }`} />
+            <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+              currentStep === 'structure' 
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-muted text-muted-foreground'
+            }`}>
+              <Layers className="h-4 w-4" />
             </div>
             <div className={`w-16 h-1 rounded ${
               currentStep === 'details' ? 'bg-primary' : 'bg-muted'
@@ -187,10 +242,45 @@ const NewProjectPage = () => {
                   Skip Template
                 </Button>
                 {selectedTemplate && (
-                  <Button onClick={() => setCurrentStep('details')}>
+                  <Button onClick={() => setCurrentStep('structure')}>
                     Continue with {selectedTemplate.name}
                   </Button>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Document Structure Customization Step */}
+        {currentStep === 'structure' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Layers className="h-5 w-5" />
+                Customize Document Structure
+              </CardTitle>
+              <CardDescription>
+                Customize how your document will be organized
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DocumentStructureCustomizer
+                structure={form.values.structure || 'novel'}
+                template={selectedTemplate}
+                settings={structureSettings}
+                onChange={setStructureSettings}
+              />
+              
+              <div className="flex justify-between mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentStep('template')}
+                >
+                  Back to Templates
+                </Button>
+                <Button onClick={() => setCurrentStep('details')}>
+                  Continue to Project Details
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -300,10 +390,10 @@ const NewProjectPage = () => {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setCurrentStep('template')}
+                    onClick={() => setCurrentStep('structure')}
                     disabled={form.isSubmitting}
                   >
-                    Back to Templates
+                    Back to Structure
                   </Button>
                   <div className="flex space-x-4">
                     <Button

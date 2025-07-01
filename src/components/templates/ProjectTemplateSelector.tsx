@@ -4,11 +4,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BookOpen, Film, GraduationCap, Sparkles, Check } from 'lucide-react';
-import { ProjectTemplate, PROJECT_TEMPLATES } from '@/types/templates';
+import { UnifiedProjectTemplate } from '@/types/unified-templates';
+import { PROJECT_TEMPLATES } from '@/types/templates';
 
 interface ProjectTemplateSelectorProps {
-  selectedTemplate: ProjectTemplate | null;
-  onTemplateSelect: (template: ProjectTemplate) => void;
+  selectedTemplate: UnifiedProjectTemplate | null;
+  onTemplateSelect: (template: UnifiedProjectTemplate) => void;
   className?: string;
 }
 
@@ -43,9 +44,9 @@ const ProjectTemplateSelector: React.FC<ProjectTemplateSelectorProps> = ({
     }
     acc[template.structure].push(template);
     return acc;
-  }, {} as Record<string, ProjectTemplate[]>);
+  }, {} as Record<string, UnifiedProjectTemplate[]>);
 
-  const renderTemplateCard = (template: ProjectTemplate) => {
+  const renderTemplateCard = (template: UnifiedProjectTemplate) => {
     const isSelected = selectedTemplate?.id === template.id;
     
     return (
@@ -85,7 +86,7 @@ const ProjectTemplateSelector: React.FC<ProjectTemplateSelectorProps> = ({
             <div>
               <p className="text-sm font-medium mb-2">Features included:</p>
               <div className="flex flex-wrap gap-1">
-                {template.features.map((feature, index) => (
+                {template.features.map((feature: string, index: number) => (
                   <Badge key={index} variant="secondary" className="text-xs">
                     {feature}
                   </Badge>

@@ -62,16 +62,23 @@ function mockInvoke<T>(command: string, args?: Record<string, unknown>): Promise
     }
       
     case 'create_project': {
+      // Using unknown and type assertions to prevent TypeScript errors
+      // while keeping the code safe
+      const projectData = (args?.project as Record<string, unknown>) || {};
+      const documentStructure = (args?.documentStructure as unknown[]) || [];
+      
       return Promise.resolve({ 
         id: `project-${Date.now()}`, 
         createdAt: new Date().toISOString(),
         lastModified: new Date().toISOString(),
-        name: args?.name || 'Untitled Project',
-        description: args?.description || '',
-        structure: args?.structure || 'novel',
+        name: (projectData.name as string) || 'Untitled Project',
+        description: (projectData.description as string) || '',
+        structure: (projectData.structure as string) || 'novel',
         status: 'active',
-        wordCountTarget: args?.wordCountTarget || 50000,
-        owner: 'demo-user'
+        wordCountTarget: (projectData.wordCountTarget as number) || 50000,
+        owner: 'demo-user',
+        // Return document structure so it can be associated with the project
+        documentStructure: documentStructure.length ? documentStructure : undefined
       } as T);
     }
       

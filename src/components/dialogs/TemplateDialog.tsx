@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpen, Film, Search, FileText, Loader2 } from 'lucide-react';
 import { useDocumentTemplates } from '@/hooks/useDocumentTemplates';
 import type { DocumentTemplate } from '@/types/templates';
+import type { UnifiedProjectTemplate } from '@/types/unified-templates';
 
 interface TemplateDialogProps {
   open: boolean;

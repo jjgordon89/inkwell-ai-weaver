@@ -1,0 +1,1028 @@
+import React, { useMemo, useState } from 'react';
+import { 
+  Folder,
+  File, 
+  FileText,
+  BookOpen, 
+  Users, 
+  Map, 
+  Bookmark,
+  MessageSquare,
+  Film,
+  GraduationCap,
+  Sparkles,
+  ChevronRight,
+  Search,
+  Info,
+  XCircle
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { DocumentStructureSettings } from './DocumentStructureCustomizer';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+
+interface DocumentTreeVisualizerProps {
+  structure: 'novel' | 'screenplay' | 'research' | 'poetry';
+  settings: DocumentStructureSettings;
+}
+
+interface NodeData {
+  type: 'folder' | 'file' | 'section';
+  description?: string;
+  sampleContent?: string;
+  estimatedWords?: number;
+  tags?: string[];
+}
+
+interface TreeNodeProps {
+  label: string;
+  icon: React.ReactNode;
+  depth?: number;
+  children?: React.ReactNode;
+  isLast?: boolean;
+  nodeData?: NodeData;
+  searchTerm?: string;
+}
+
+const TreeNode: React.FC<TreeNodeProps> = ({ 
+  label, 
+  icon, 
+  depth = 0, 
+  children, 
+  isLast = false,
+  nodeData,
+  searchTerm = ''
+}) => {
+  const [expanded, setExpanded] = React.useState(depth < 1);
+  
+  const toggleExpanded = () => {
+    setExpanded(!expanded);
+  };
+  
+  // Check if this node matches the search term
+  const isMatch = searchTerm ? 
+    label.toLowerCase().includes(searchTerm.toLowerCase()) : 
+    false;
+  
+  // Automatically expand parent nodes if a child matches the search
+  React.useEffect(() => {
+    if (searchTerm && children && !expanded) {
+      setExpanded(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, children]);
+  
+  // Content for tooltip
+  const tooltipContent = nodeData ? (
+    <div className="max-w-xs">
+      {nodeData.description && (
+        <p className="text-xs mb-1">{nodeData.description}</p>
+      )}
+      {nodeData.estimatedWords && (
+        <p className="text-xs text-muted-foreground">~{nodeData.estimatedWords} words</p>
+      )}
+      {nodeData.sampleContent && (
+        <div className="mt-2 pt-2 border-t border-border">
+          <p className="text-xs italic text-muted-foreground">{nodeData.sampleContent}</p>
+        </div>
+      )}
+      {nodeData.tags && nodeData.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {nodeData.tags.map((tag, i) => (
+            <Badge key={i} variant="outline" className="text-[0.65rem] px-1">{tag}</Badge>
+          ))}
+        </div>
+      )}
+    </div>
+  ) : null;
+  
+  return (
+    <div className={cn(
+      "select-none", 
+      isMatch && "bg-primary/10 rounded-md"
+    )}>
+      <div 
+        className={cn(
+          "flex items-center py-1 rounded hover:bg-muted/50 transition-colors",
+          depth > 0 && "ml-4 pl-2",
+          isLast && "border-l-0"
+        )}
+      >
+        {children && (
+          <button
+            onClick={toggleExpanded}
+            className="mr-1 p-0.5 rounded-sm hover:bg-muted"
+            aria-label={expanded ? "Collapse" : "Expand"}
+            tabIndex={0}
+          >
+            <ChevronRight 
+              className={cn(
+                "h-3.5 w-3.5 text-muted-foreground/70 transition-transform", 
+                expanded && "transform rotate-90"
+              )} 
+            />
+          </button>
+        )}
+        
+        <TooltipProvider>
+          <Tooltip delayDuration={300}>
+            <TooltipTrigger asChild>
+              <div className="flex items-center">
+                <span className="mr-2">{icon}</span>
+                <span className={cn(
+                  "text-sm",
+                  isMatch && "font-medium text-primary"
+                )}>
+                  {label}
+                </span>
+                {nodeData && <Info className="h-3 w-3 ml-1.5 text-muted-foreground/50" />}
+              </div>
+            </TooltipTrigger>
+            {tooltipContent && (
+              <TooltipContent side="right" align="start">
+                {tooltipContent}
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+      
+      {children && expanded && (
+        <div className="ml-4 pl-3 border-l border-border">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const DocumentTreeVisualizer: React.FC<DocumentTreeVisualizerProps> = ({ 
+  structure, 
+  settings 
+}) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [nodeCount, setNodeCount] = useState(0);
+  
+  // Calculate structure stats
+  const stats = useMemo(() => {
+    let count = 0;
+    let wordEstimate = 0;
+    
+    switch (structure) {
+      case 'novel':
+        count = 7 + settings.chapterCount + (settings.chapterCount * settings.scenesPerChapter);
+        wordEstimate = settings.chapterCount * settings.scenesPerChapter * 1500; // Avg 1500 words per scene
+        break;
+      case 'screenplay':
+        count = 5 + settings.actCount * 7;
+        wordEstimate = settings.actCount * 5000; // Avg 5000 words per act
+        break;
+      case 'poetry':
+        count = 6 + settings.poemCount;
+        wordEstimate = settings.poemCount * 300; // Avg 300 words per poem
+        break;
+      case 'research':
+        count = 8 + settings.researchSections;
+        wordEstimate = 1000 + settings.researchSections * 1500; // Avg 1500 words per section
+        break;
+    }
+    
+    setNodeCount(count);
+    return { count, wordEstimate };
+  }, [structure, settings]);
+  
+  // Generate structure based on template type
+  const treeStructure = useMemo(() => {
+    switch (structure) {
+      case 'novel':
+        return renderNovelStructure(settings, searchTerm);
+      case 'screenplay':
+        return renderScreenplayStructure(settings, searchTerm);
+      case 'poetry':
+        return renderPoetryStructure(settings, searchTerm);
+      case 'research':
+        return renderResearchStructure(settings, searchTerm);
+      default:
+        return null;
+    }
+  }, [structure, settings, searchTerm]);
+  
+  const handleClearSearch = () => {
+    setSearchTerm('');
+  };
+  
+  return (
+    <div className="space-y-3">
+      {/* Search input */}
+      <div className="relative">
+        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search document structure..."
+          className="pl-8 pr-8 text-sm h-9"
+        />
+        {searchTerm && (
+          <button
+            onClick={handleClearSearch}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            aria-label="Clear search"
+          >
+            <XCircle className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+      
+      {/* Structure stats */}
+      <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+        <div>
+          <span>Total nodes: </span>
+          <Badge variant="outline" className="ml-1">{nodeCount}</Badge>
+        </div>
+        <div>
+          <span>Est. words: </span>
+          <Badge variant="outline" className="ml-1">{stats.wordEstimate.toLocaleString()}</Badge>
+        </div>
+      </div>
+      
+      {/* Tree visualization */}
+      <div className="bg-muted/30 rounded-md border border-border p-3 max-h-[300px] overflow-y-auto">
+        <div className="text-sm font-medium mb-2">Document Structure Preview</div>
+        <div className="space-y-1">
+          {treeStructure}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Helper functions to render different structure types
+function renderNovelStructure(settings: DocumentStructureSettings, searchTerm: string = '') {
+  return (
+    <>
+      <TreeNode 
+        label="Front Matter" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Contains title page and basic information about your novel',
+          estimatedWords: 500,
+          tags: ['metadata', 'introduction']
+        }}
+        searchTerm={searchTerm}
+      >
+        <TreeNode 
+          label="Title Page" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'The title page for your novel',
+            sampleContent: 'My Novel Title\nBy Author Name\n© 2025',
+            estimatedWords: 100,
+            tags: ['title', 'metadata']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Synopsis" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'A brief summary of your novel',
+            sampleContent: 'A captivating story about...',
+            estimatedWords: 400,
+            tags: ['summary', 'plot']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+      
+      <TreeNode 
+        label="Manuscript" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'The main content of your novel',
+          estimatedWords: settings.chapterCount * settings.scenesPerChapter * 1500,
+          tags: ['content', 'chapters']
+        }}
+        searchTerm={searchTerm}
+      >
+        {Array.from({ length: Math.min(settings.chapterCount, 5) }).map((_, i) => (
+          <TreeNode 
+            key={`chapter-${i}`}
+            label={`Chapter ${i + 1}`}
+            icon={<Bookmark className="h-4 w-4 text-amber-500" />}
+            nodeData={{
+              type: 'section',
+              description: `Chapter ${i + 1} of your novel`,
+              sampleContent: i === 0 ? 'The beginning of a great adventure...' : undefined,
+              estimatedWords: settings.scenesPerChapter * 1500,
+              tags: ['chapter', 'content']
+            }}
+            searchTerm={searchTerm}
+            isLast={i === Math.min(settings.chapterCount, 5) - 1 && settings.chapterCount <= 5}
+          >
+            {Array.from({ length: Math.min(settings.scenesPerChapter, 3) }).map((_, j) => (
+              <TreeNode 
+                key={`scene-${i}-${j}`}
+                label={`Scene ${j + 1}`}
+                icon={<File className="h-4 w-4 text-muted-foreground" />}
+                nodeData={{
+                  type: 'file',
+                  description: `Scene ${j + 1} in Chapter ${i + 1}`,
+                  sampleContent: j === 0 && i === 0 ? 'The character entered the room, sensing something was wrong...' : undefined,
+                  estimatedWords: 1500,
+                  tags: ['scene', 'content']
+                }}
+                searchTerm={searchTerm}
+                isLast={j === Math.min(settings.scenesPerChapter, 3) - 1}
+                depth={2}
+              />
+            ))}
+            {settings.scenesPerChapter > 3 && (
+              <TreeNode 
+                label={`... ${settings.scenesPerChapter - 3} more scenes`}
+                icon={<File className="h-4 w-4 text-muted-foreground/50" />}
+                searchTerm={searchTerm}
+                isLast={true}
+                depth={2}
+              />
+            )}
+          </TreeNode>
+        ))}
+        {settings.chapterCount > 5 && (
+          <TreeNode 
+            label={`... ${settings.chapterCount - 5} more chapters`}
+            icon={<Bookmark className="h-4 w-4 text-amber-500/50" />}
+            searchTerm={searchTerm}
+            isLast={true}
+          />
+        )}
+      </TreeNode>
+      
+      <TreeNode 
+        label="Characters" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Character profiles and information',
+          estimatedWords: 1500,
+          tags: ['characters', 'profiles']
+        }}
+        searchTerm={searchTerm}
+      >
+        <TreeNode 
+          label="Character Template" 
+          icon={<Users className="h-4 w-4 text-sky-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Template for creating character profiles',
+            sampleContent: 'Name:\nAge:\nBackground:\nMotivation:\nAppearance:',
+            estimatedWords: 300,
+            tags: ['template', 'character']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Main Character" 
+          icon={<Users className="h-4 w-4 text-sky-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Profile for the main character',
+            sampleContent: 'Name: John Doe\nAge: 35\nBackground: Former detective...',
+            estimatedWords: 600,
+            tags: ['character', 'protagonist']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+      
+      <TreeNode 
+        label="Settings" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Locations and settings in your novel',
+          estimatedWords: 1200,
+          tags: ['settings', 'locations']
+        }}
+        searchTerm={searchTerm}
+      >
+        <TreeNode 
+          label="Setting Template" 
+          icon={<Map className="h-4 w-4 text-emerald-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Template for creating setting descriptions',
+            sampleContent: 'Name:\nLocation:\nDescription:\nSignificance:',
+            estimatedWords: 300,
+            tags: ['template', 'setting']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Main Setting" 
+          icon={<Map className="h-4 w-4 text-emerald-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Description of the main setting',
+            sampleContent: 'Name: Old Town\nLocation: Northern district\nDescription: Cobblestone streets lined with...',
+            estimatedWords: 600,
+            tags: ['setting', 'location']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+      
+      <TreeNode 
+        label="Notes" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Research and notes for your novel',
+          estimatedWords: 1000,
+          tags: ['notes', 'research']
+        }}
+        searchTerm={searchTerm}
+        isLast={true}
+      >
+        <TreeNode 
+          label="Research Notes" 
+          icon={<FileText className="h-4 w-4 text-violet-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Research and background information',
+            sampleContent: 'Historical context for the story...',
+            estimatedWords: 1000,
+            tags: ['research', 'background']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+    </>
+  );
+}
+
+function renderScreenplayStructure(settings: DocumentStructureSettings, searchTerm: string = '') {
+  return (
+    <>
+      <TreeNode 
+        label="Front Matter" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Contains title page and basic information about your screenplay',
+          estimatedWords: 500,
+          tags: ['metadata', 'introduction']
+        }}
+        searchTerm={searchTerm}
+      >
+        <TreeNode 
+          label="Title Page" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'The title page for your screenplay',
+            sampleContent: 'TITLE\n\nWritten by\n\nAuthor Name',
+            estimatedWords: 100,
+            tags: ['title', 'metadata']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Synopsis" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'A brief summary of your screenplay',
+            sampleContent: 'A screenplay about...',
+            estimatedWords: 400,
+            tags: ['summary', 'plot']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+      
+      <TreeNode 
+        label="Screenplay" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'The main content of your screenplay',
+          estimatedWords: settings.actCount * 5000,
+          tags: ['content', 'acts']
+        }}
+        searchTerm={searchTerm}
+      >
+        {Array.from({ length: Math.min(settings.actCount, 5) }).map((_, i) => (
+          <TreeNode 
+            key={`act-${i}`}
+            label={`Act ${i + 1}`}
+            icon={<Film className="h-4 w-4 text-amber-500" />}
+            nodeData={{
+              type: 'section',
+              description: `Act ${i + 1} of your screenplay`,
+              sampleContent: i === 0 ? 'FADE IN:\n\nEXT. LOCATION - DAY\n\nAction description...' : undefined,
+              estimatedWords: 5000,
+              tags: ['act', 'content']
+            }}
+            searchTerm={searchTerm}
+            isLast={i === Math.min(settings.actCount, 5) - 1 && settings.actCount <= 5}
+          >
+            <TreeNode 
+              label="Act Introduction"
+              icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+              nodeData={{
+                type: 'file',
+                description: `Introduction to Act ${i + 1}`,
+                sampleContent: `ACT ${i + 1} - ${i === 0 ? 'SETUP' : i === 1 ? 'CONFRONTATION' : 'RESOLUTION'}`,
+                estimatedWords: 500,
+                tags: ['introduction', 'act']
+              }}
+              searchTerm={searchTerm}
+            />
+            <TreeNode 
+              label="Key Scenes"
+              icon={<Folder className="h-4 w-4 text-muted-foreground" />}
+              nodeData={{
+                type: 'folder',
+                description: `Major scenes in Act ${i + 1}`,
+                estimatedWords: 4500,
+                tags: ['scenes', 'content']
+              }}
+              searchTerm={searchTerm}
+              isLast={true}
+            >
+              <TreeNode 
+                label="Scene 1"
+                icon={<MessageSquare className="h-4 w-4 text-muted-foreground" />}
+                nodeData={{
+                  type: 'file',
+                  description: `First scene in Act ${i + 1}`,
+                  sampleContent: 'INT. LOCATION - DAY\n\nCHARACTER\nDialog goes here...',
+                  estimatedWords: 1500,
+                  tags: ['scene', 'dialog']
+                }}
+                searchTerm={searchTerm}
+              />
+              <TreeNode 
+                label="Scene 2"
+                icon={<MessageSquare className="h-4 w-4 text-muted-foreground" />}
+                nodeData={{
+                  type: 'file',
+                  description: `Second scene in Act ${i + 1}`,
+                  sampleContent: 'EXT. LOCATION - NIGHT\n\nAction description...',
+                  estimatedWords: 1500,
+                  tags: ['scene', 'action']
+                }}
+                searchTerm={searchTerm}
+                isLast={true}
+              />
+            </TreeNode>
+          </TreeNode>
+        ))}
+        {settings.actCount > 5 && (
+          <TreeNode 
+            label={`... ${settings.actCount - 5} more acts`}
+            icon={<Film className="h-4 w-4 text-amber-500/50" />}
+            searchTerm={searchTerm}
+            isLast={true}
+          />
+        )}
+      </TreeNode>
+      
+      <TreeNode 
+        label="Characters" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Character profiles for your screenplay',
+          estimatedWords: 1500,
+          tags: ['characters', 'profiles']
+        }}
+        searchTerm={searchTerm}
+      >
+        <TreeNode 
+          label="Character Template" 
+          icon={<Users className="h-4 w-4 text-sky-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Template for creating character profiles',
+            sampleContent: 'NAME:\nAGE:\nARCHETYPE:\nBACKGROUND:\nMOTIVATION:',
+            estimatedWords: 300,
+            tags: ['template', 'character']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Dialogue Templates" 
+          icon={<MessageSquare className="h-4 w-4 text-sky-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Examples of character dialogue styles',
+            sampleContent: 'CHARACTER\n(pausing)\nDialog with direction...',
+            estimatedWords: 800,
+            tags: ['dialog', 'examples']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+      
+      <TreeNode 
+        label="Locations" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Setting descriptions for your screenplay',
+          estimatedWords: 1000,
+          tags: ['locations', 'settings']
+        }}
+        searchTerm={searchTerm}
+      >
+        <TreeNode 
+          label="Location Template" 
+          icon={<Map className="h-4 w-4 text-emerald-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Template for creating location descriptions',
+            sampleContent: 'LOCATION NAME:\nINT/EXT:\nTIME OF DAY:\nDESCRIPTION:',
+            estimatedWords: 300,
+            tags: ['template', 'location']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+      
+      <TreeNode 
+        label="Notes" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Production notes and additional information',
+          estimatedWords: 1000,
+          tags: ['notes', 'production']
+        }}
+        searchTerm={searchTerm}
+        isLast={true}
+      >
+        <TreeNode 
+          label="Production Notes" 
+          icon={<FileText className="h-4 w-4 text-violet-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Notes on production requirements',
+            sampleContent: 'Budget considerations...\nSpecial effects needed...',
+            estimatedWords: 1000,
+            tags: ['production', 'planning']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+    </>
+  );
+}
+
+function renderPoetryStructure(settings: DocumentStructureSettings, searchTerm: string = '') {
+  return (
+    <>
+      <TreeNode 
+        label="Collection" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Contains all poems and collection information',
+          estimatedWords: settings.poemCount * 300,
+          tags: ['collection', 'poetry']
+        }}
+        searchTerm={searchTerm}
+      >
+        <TreeNode 
+          label="Title Page" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'The title page for your poetry collection',
+            sampleContent: 'Collection Title\nBy Poet Name\n© 2025',
+            estimatedWords: 100,
+            tags: ['title', 'metadata']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Introduction" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'Introduction to your poetry collection',
+            sampleContent: 'This collection explores themes of...',
+            estimatedWords: 500,
+            tags: ['introduction', 'context']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Poems"
+          icon={<Folder className="h-4 w-4 text-primary" />}
+          nodeData={{
+            type: 'folder',
+            description: 'Individual poems in your collection',
+            estimatedWords: settings.poemCount * 300,
+            tags: ['poems', 'content']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        >
+          {Array.from({ length: Math.min(settings.poemCount, 5) }).map((_, i) => (
+            <TreeNode 
+              key={`poem-${i}`}
+              label={`Poem ${i + 1}`}
+              icon={<Sparkles className="h-4 w-4 text-amber-500" />}
+              nodeData={{
+                type: 'file',
+                description: `Poem ${i + 1} in your collection`,
+                sampleContent: i === 0 ? 'Words flow like water\nAcross the empty page\nFilling it with life' : undefined,
+                estimatedWords: 300,
+                tags: ['poem', i === 0 ? 'opening' : i === settings.poemCount - 1 ? 'closing' : 'middle']
+              }}
+              searchTerm={searchTerm}
+              isLast={i === Math.min(settings.poemCount, 5) - 1 && settings.poemCount <= 5}
+            />
+          ))}
+          {settings.poemCount > 5 && (
+            <TreeNode 
+              label={`... ${settings.poemCount - 5} more poems`}
+              icon={<Sparkles className="h-4 w-4 text-amber-500/50" />}
+              searchTerm={searchTerm}
+              isLast={true}
+            />
+          )}
+        </TreeNode>
+      </TreeNode>
+      
+      <TreeNode 
+        label="Themes" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Thematic elements and motifs in your poetry',
+          estimatedWords: 800,
+          tags: ['themes', 'analysis']
+        }}
+        searchTerm={searchTerm}
+      >
+        <TreeNode 
+          label="Theme Notes" 
+          icon={<FileText className="h-4 w-4 text-violet-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Notes on themes and motifs',
+            sampleContent: 'Primary themes:\n- Nature and humanity\n- Time and memory\n- Love and loss',
+            estimatedWords: 800,
+            tags: ['themes', 'notes']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+      
+      <TreeNode 
+        label="References" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Stylistic references and influences',
+          estimatedWords: 600,
+          tags: ['references', 'style']
+        }}
+        searchTerm={searchTerm}
+        isLast={true}
+      >
+        <TreeNode 
+          label="Style References" 
+          icon={<FileText className="h-4 w-4 text-emerald-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'References to poetic styles and influences',
+            sampleContent: 'Poetic forms:\n- Haiku\n- Sonnet\n- Free verse\n\nInfluences:\n- Emily Dickinson\n- Pablo Neruda',
+            estimatedWords: 600,
+            tags: ['style', 'influences']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+    </>
+  );
+}
+
+function renderResearchStructure(settings: DocumentStructureSettings, searchTerm: string = '') {
+  return (
+    <>
+      <TreeNode 
+        label="Front Matter" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Contains title page and abstract for your research paper',
+          estimatedWords: 700,
+          tags: ['metadata', 'introduction']
+        }}
+        searchTerm={searchTerm}
+      >
+        <TreeNode 
+          label="Title Page" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'The title page for your research paper',
+            sampleContent: 'Title: Research on...\nAuthor: Researcher Name\nAffiliation: Institution',
+            estimatedWords: 200,
+            tags: ['title', 'metadata']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Abstract" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'A concise summary of your research',
+            sampleContent: 'This research investigates the relationship between...',
+            estimatedWords: 500,
+            tags: ['abstract', 'summary']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+      
+      <TreeNode 
+        label="Main Document" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'The main content of your research paper',
+          estimatedWords: 1000 + settings.researchSections * 1500,
+          tags: ['content', 'research']
+        }}
+        searchTerm={searchTerm}
+      >
+        <TreeNode 
+          label="Introduction" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'Introduction to your research paper',
+            sampleContent: 'This paper examines the growing field of...',
+            estimatedWords: 1000,
+            tags: ['introduction', 'context']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Methodology" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'Research methodology and approach',
+            sampleContent: 'Data was collected through a series of experiments...',
+            estimatedWords: 1200,
+            tags: ['methodology', 'process']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Research Sections"
+          icon={<Folder className="h-4 w-4 text-primary" />}
+          nodeData={{
+            type: 'folder',
+            description: 'Main research content sections',
+            estimatedWords: settings.researchSections * 1500,
+            tags: ['sections', 'findings']
+          }}
+          searchTerm={searchTerm}
+        >
+          {Array.from({ length: Math.min(settings.researchSections, 5) }).map((_, i) => (
+            <TreeNode 
+              key={`section-${i}`}
+              label={`Section ${i + 1}`}
+              icon={<GraduationCap className="h-4 w-4 text-amber-500" />}
+              nodeData={{
+                type: 'file',
+                description: `Research section ${i + 1}`,
+                sampleContent: i === 0 ? 'Analysis of primary findings shows that...' : undefined,
+                estimatedWords: 1500,
+                tags: ['research', 'analysis']
+              }}
+              searchTerm={searchTerm}
+              isLast={i === Math.min(settings.researchSections, 5) - 1 && settings.researchSections <= 5}
+            />
+          ))}
+          {settings.researchSections > 5 && (
+            <TreeNode 
+              label={`... ${settings.researchSections - 5} more sections`}
+              icon={<GraduationCap className="h-4 w-4 text-amber-500/50" />}
+              searchTerm={searchTerm}
+              isLast={true}
+            />
+          )}
+        </TreeNode>
+        <TreeNode 
+          label="Discussion" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'Discussion of research findings',
+            sampleContent: 'The results indicate several key insights...',
+            estimatedWords: 1500,
+            tags: ['discussion', 'analysis']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Conclusion" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'Conclusion of your research paper',
+            sampleContent: 'In conclusion, this research demonstrates...',
+            estimatedWords: 800,
+            tags: ['conclusion', 'summary']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+      
+      <TreeNode 
+        label="References" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Citations and references',
+          estimatedWords: 1000,
+          tags: ['references', 'citations']
+        }}
+        searchTerm={searchTerm}
+      >
+        <TreeNode 
+          label="Bibliography" 
+          icon={<FileText className="h-4 w-4 text-violet-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'List of references and citations',
+            sampleContent: 'Author, A. (2023). Title of work. Journal Name, Volume(Issue), pages.',
+            estimatedWords: 1000,
+            tags: ['bibliography', 'citations']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+      
+      <TreeNode 
+        label="Appendices" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Supplementary materials and data',
+          estimatedWords: 1500,
+          tags: ['appendices', 'data']
+        }}
+        searchTerm={searchTerm}
+        isLast={true}
+      >
+        <TreeNode 
+          label="Data Tables" 
+          icon={<FileText className="h-4 w-4 text-emerald-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Raw data and statistical tables',
+            sampleContent: 'Table 1: Results of experiment...\n\nTable 2: Statistical analysis...',
+            estimatedWords: 1500,
+            tags: ['data', 'tables']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+    </>
+  );
+}
+
+export default DocumentTreeVisualizer;

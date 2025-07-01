@@ -12,6 +12,22 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock
 })
 
+// Mock ResizeObserver
+class ResizeObserverMock {
+  observe = vi.fn()
+  unobserve = vi.fn()
+  disconnect = vi.fn()
+}
+
+// Ensure ResizeObserver is defined globally
+global.ResizeObserver = ResizeObserverMock;
+
+// Also add to window for good measure
+Object.defineProperty(window, 'ResizeObserver', {
+  value: ResizeObserverMock,
+  writable: true
+})
+
 // Mock window.getSelection
 Object.defineProperty(window, 'getSelection', {
   value: vi.fn(() => ({
