@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { 
   Folder,
   File, 
-  FileText,
+  FileText, 
   BookOpen, 
   Users, 
   Map, 
@@ -14,7 +14,10 @@ import {
   ChevronRight,
   Search,
   Info,
-  XCircle
+  XCircle,
+  BookText,
+  Book,
+  CalendarDays
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DocumentStructureSettings } from './DocumentStructureCustomizer';
@@ -28,7 +31,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 
 interface DocumentTreeVisualizerProps {
-  structure: 'novel' | 'screenplay' | 'research' | 'poetry';
+  structure: 'novel' | 'screenplay' | 'research' | 'poetry' | 'academic' | 'memoir' | 'nonfiction';
   settings: DocumentStructureSettings;
 }
 
@@ -191,6 +194,18 @@ const DocumentTreeVisualizer: React.FC<DocumentTreeVisualizerProps> = ({
         count = 8 + settings.researchSections;
         wordEstimate = 1000 + settings.researchSections * 1500; // Avg 1500 words per section
         break;
+      case 'academic':
+        count = 12 + settings.academicSections;
+        wordEstimate = 2300 + settings.academicSections * 2000 + 8500 + 1500; // Front matter, sections, main content, back matter
+        break;
+      case 'memoir':
+        count = 12 + settings.memoirChapters;
+        wordEstimate = 700 + settings.memoirChapters * 3500 + 1200 + 1500 + 2000; // Front matter, chapters, timeline, people, reflections
+        break;
+      case 'nonfiction':
+        count = 13 + settings.nonfictionSections;
+        wordEstimate = 1000 + 4000 + settings.nonfictionSections * 4000 + 3000 + 3000; // Front matter, intro/conclusion, sections, research, back matter
+        break;
     }
     
     setNodeCount(count);
@@ -208,6 +223,12 @@ const DocumentTreeVisualizer: React.FC<DocumentTreeVisualizerProps> = ({
         return renderPoetryStructure(settings, searchTerm);
       case 'research':
         return renderResearchStructure(settings, searchTerm);
+      case 'academic':
+        return renderAcademicStructure(settings, searchTerm);
+      case 'memoir':
+        return renderMemoirStructure(settings, searchTerm);
+      case 'nonfiction':
+        return renderNonfictionStructure(settings, searchTerm);
       default:
         return null;
     }
@@ -884,7 +905,7 @@ function renderResearchStructure(settings: DocumentStructureSettings, searchTerm
       >
         <TreeNode 
           label="Introduction" 
-          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          icon={<GraduationCap className="h-4 w-4 text-amber-500" />}
           nodeData={{
             type: 'file',
             description: 'Introduction to your research paper',
@@ -896,7 +917,7 @@ function renderResearchStructure(settings: DocumentStructureSettings, searchTerm
         />
         <TreeNode 
           label="Methodology" 
-          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          icon={<GraduationCap className="h-4 w-4 text-amber-500" />}
           nodeData={{
             type: 'file',
             description: 'Research methodology and approach',
@@ -1016,6 +1037,596 @@ function renderResearchStructure(settings: DocumentStructureSettings, searchTerm
             sampleContent: 'Table 1: Results of experiment...\n\nTable 2: Statistical analysis...',
             estimatedWords: 1500,
             tags: ['data', 'tables']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+    </>
+  );
+}
+
+function renderAcademicStructure(settings: DocumentStructureSettings, searchTerm: string = '') {
+  return (
+    <>
+      <TreeNode 
+        label="Front Matter" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Contains title page and essential preliminary information',
+          estimatedWords: 800,
+          tags: ['metadata', 'front-matter']
+        }}
+        searchTerm={searchTerm}
+      >
+        <TreeNode 
+          label="Title Page" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'The title page with author information',
+            sampleContent: 'Title: Academic Research on...\nAuthor: Name\nInstitution: University\nDate: July 2025',
+            estimatedWords: 200,
+            tags: ['title', 'metadata']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Abstract" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'Summary of the entire academic paper',
+            sampleContent: 'This paper examines the effects of...',
+            estimatedWords: 300,
+            tags: ['abstract', 'summary']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Table of Contents" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'Organized outline of the paper',
+            sampleContent: 'I. Introduction\nII. Literature Review\nIII. Methodology\n...',
+            estimatedWords: 300,
+            tags: ['contents', 'organization']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+      
+      <TreeNode 
+        label="Main Content" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'The main body of the academic paper',
+          estimatedWords: settings.academicSections * 2000,
+          tags: ['content', 'academic']
+        }}
+        searchTerm={searchTerm}
+      >
+        <TreeNode 
+          label="Introduction" 
+          icon={<GraduationCap className="h-4 w-4 text-amber-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Introduction to the academic paper',
+            sampleContent: 'The field of [subject] has seen significant developments in recent years...',
+            estimatedWords: 1000,
+            tags: ['introduction', 'context']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Literature Review" 
+          icon={<GraduationCap className="h-4 w-4 text-amber-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Review of existing literature',
+            sampleContent: 'Previous research by Smith (2023) demonstrated that...',
+            estimatedWords: 2000,
+            tags: ['literature', 'review']
+          }}
+          searchTerm={searchTerm}
+        />
+        
+        <TreeNode 
+          label="Academic Sections"
+          icon={<Folder className="h-4 w-4 text-primary" />}
+          nodeData={{
+            type: 'folder',
+            description: 'Main academic content sections',
+            estimatedWords: settings.academicSections * 2000,
+            tags: ['sections', 'findings']
+          }}
+          searchTerm={searchTerm}
+        >
+          {Array.from({ length: Math.min(settings.academicSections, 5) }).map((_, i) => (
+            <TreeNode 
+              key={`section-${i}`}
+              label={`Section ${i + 1}`}
+              icon={<GraduationCap className="h-4 w-4 text-amber-500" />}
+              nodeData={{
+                type: 'file',
+                description: `Academic section ${i + 1}`,
+                sampleContent: i === 0 ? 'Analysis of primary findings indicates that...' : undefined,
+                estimatedWords: 2000,
+                tags: ['academic', 'analysis']
+              }}
+              searchTerm={searchTerm}
+              isLast={i === Math.min(settings.academicSections, 5) - 1 && settings.academicSections <= 5}
+            />
+          ))}
+          {settings.academicSections > 5 && (
+            <TreeNode 
+              label={`... ${settings.academicSections - 5} more sections`}
+              icon={<GraduationCap className="h-4 w-4 text-amber-500/50" />}
+              searchTerm={searchTerm}
+              isLast={true}
+            />
+          )}
+        </TreeNode>
+        
+        <TreeNode 
+          label="Methodology" 
+          icon={<GraduationCap className="h-4 w-4 text-amber-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Research methodology and approach',
+            sampleContent: 'This study employed a mixed-methods approach...',
+            estimatedWords: 1500,
+            tags: ['methodology', 'methods']
+          }}
+          searchTerm={searchTerm}
+        />
+        
+        <TreeNode 
+          label="Results" 
+          icon={<GraduationCap className="h-4 w-4 text-amber-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Findings from the research',
+            sampleContent: 'The results show a significant correlation between...',
+            estimatedWords: 2000,
+            tags: ['results', 'findings']
+          }}
+          searchTerm={searchTerm}
+        />
+        
+        <TreeNode 
+          label="Discussion" 
+          icon={<GraduationCap className="h-4 w-4 text-amber-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Analysis and interpretation of results',
+            sampleContent: 'These findings suggest that...',
+            estimatedWords: 2000,
+            tags: ['discussion', 'interpretation']
+          }}
+          searchTerm={searchTerm}
+        />
+        
+        <TreeNode 
+          label="Conclusion" 
+          icon={<GraduationCap className="h-4 w-4 text-amber-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Summary and implications',
+            sampleContent: 'In conclusion, this research demonstrates...',
+            estimatedWords: 1000,
+            tags: ['conclusion', 'summary']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+      
+      <TreeNode 
+        label="Back Matter" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'References and supporting materials',
+          estimatedWords: 1500,
+          tags: ['references', 'appendices']
+        }}
+        searchTerm={searchTerm}
+        isLast={true}
+      >
+        <TreeNode 
+          label="References" 
+          icon={<FileText className="h-4 w-4 text-violet-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Bibliography and citations',
+            sampleContent: 'Smith, J. (2023). Title of article. Journal Name, 12(3), 45-67.',
+            estimatedWords: 1000,
+            tags: ['references', 'citations']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Appendices" 
+          icon={<FileText className="h-4 w-4 text-violet-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Supplementary materials',
+            sampleContent: 'Appendix A: Survey Questions\nAppendix B: Raw Data Tables',
+            estimatedWords: 500,
+            tags: ['appendices', 'supplements']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+    </>
+  );
+}
+
+function renderMemoirStructure(settings: DocumentStructureSettings, searchTerm: string = '') {
+  return (
+    <>
+      <TreeNode 
+        label="Front Matter" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Contains title page and introductory materials',
+          estimatedWords: 700,
+          tags: ['metadata', 'introduction']
+        }}
+        searchTerm={searchTerm}
+      >
+        <TreeNode 
+          label="Title Page" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'The title page for your memoir',
+            sampleContent: 'MEMOIR TITLE\n\nBy Author Name\n\n© 2025',
+            estimatedWords: 100,
+            tags: ['title', 'metadata']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Dedication" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'A dedication to someone important',
+            sampleContent: 'For my family, who supported me through...',
+            estimatedWords: 100,
+            tags: ['dedication', 'personal']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Preface" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'Introduction to the memoir',
+            sampleContent: 'This memoir chronicles my journey through...',
+            estimatedWords: 500,
+            tags: ['preface', 'introduction']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+      
+      <TreeNode 
+        label="Memoir Chapters" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'The main content of your memoir',
+          estimatedWords: settings.memoirChapters * 3500,
+          tags: ['content', 'chapters']
+        }}
+        searchTerm={searchTerm}
+      >
+        {Array.from({ length: Math.min(settings.memoirChapters, 5) }).map((_, i) => (
+          <TreeNode 
+            key={`chapter-${i}`}
+            label={`Chapter ${i + 1}`}
+            icon={<Book className="h-4 w-4 text-amber-500" />}
+            nodeData={{
+              type: 'section',
+              description: `Chapter ${i + 1} of your memoir`,
+              sampleContent: i === 0 ? 'The day everything changed began like any other...' : undefined,
+              estimatedWords: 3500,
+              tags: ['chapter', 'narrative']
+            }}
+            searchTerm={searchTerm}
+            isLast={i === Math.min(settings.memoirChapters, 5) - 1 && settings.memoirChapters <= 5}
+          />
+        ))}
+        {settings.memoirChapters > 5 && (
+          <TreeNode 
+            label={`... ${settings.memoirChapters - 5} more chapters`}
+            icon={<Book className="h-4 w-4 text-amber-500/50" />}
+            searchTerm={searchTerm}
+            isLast={true}
+          />
+        )}
+      </TreeNode>
+      
+      <TreeNode 
+        label="Timeline" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Chronological timeline of events',
+          estimatedWords: 1000,
+          tags: ['timeline', 'chronology']
+        }}
+        searchTerm={searchTerm}
+      >
+        <TreeNode 
+          label="Key Events" 
+          icon={<CalendarDays className="h-4 w-4 text-sky-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Timeline of significant events',
+            sampleContent: '1985: Born in small town\n1995: Family moved to the city\n2005: College graduation',
+            estimatedWords: 1000,
+            tags: ['events', 'dates']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+      
+      <TreeNode 
+        label="People" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Important people in the memoir',
+          estimatedWords: 1500,
+          tags: ['people', 'relationships']
+        }}
+        searchTerm={searchTerm}
+      >
+        <TreeNode 
+          label="Character List" 
+          icon={<Users className="h-4 w-4 text-violet-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'List of people in the memoir',
+            sampleContent: 'Mother: Strong-willed and supportive\nFather: Quiet but influential\nBest Friend: Loyal companion through difficult times',
+            estimatedWords: 1500,
+            tags: ['characters', 'relationships']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+      
+      <TreeNode 
+        label="Places" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Important locations in the memoir',
+          estimatedWords: 1200,
+          tags: ['places', 'settings']
+        }}
+        searchTerm={searchTerm}
+        isLast={true}
+      >
+        <TreeNode 
+          label="Location Notes" 
+          icon={<Map className="h-4 w-4 text-emerald-500" />}
+          nodeData={{
+            type: 'file',
+            description: 'Details of significant places',
+            sampleContent: 'Childhood Home: A small house with a large backyard\nCollege Campus: Where independence was gained\nFirst Apartment: Where adult life truly began',
+            estimatedWords: 1200,
+            tags: ['locations', 'settings']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+    </>
+  );
+}
+
+function renderNonfictionStructure(settings: DocumentStructureSettings, searchTerm: string = '') {
+  return (
+    <>
+      <TreeNode 
+        label="Front Matter" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Contains title page, table of contents, and preface',
+          estimatedWords: 1500,
+          tags: ['metadata', 'introduction']
+        }}
+        searchTerm={searchTerm}
+      >
+        <TreeNode 
+          label="Title Page" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'The title page for your nonfiction book',
+            sampleContent: 'NONFICTION TITLE\n\nBy Author Name\n\n© 2025',
+            estimatedWords: 100,
+            tags: ['title', 'metadata']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Table of Contents" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'The table of contents',
+            sampleContent: 'Chapter 1: Introduction\nChapter 2: Background\nChapter 3: Main Concepts\n...',
+            estimatedWords: 400,
+            tags: ['toc', 'organization']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Preface" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'Introduction to the nonfiction book',
+            sampleContent: 'This book aims to explore the fascinating topic of...',
+            estimatedWords: 1000,
+            tags: ['preface', 'introduction']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+      
+      <TreeNode 
+        label="Main Content" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'The main content of your nonfiction book',
+          estimatedWords: settings.nonfictionSections * 4000,
+          tags: ['content', 'sections']
+        }}
+        searchTerm={searchTerm}
+      >
+        {Array.from({ length: Math.min(settings.nonfictionSections, 5) }).map((_, i) => (
+          <TreeNode 
+            key={`section-${i}`}
+            label={`Section ${i + 1}`}
+            icon={<BookText className="h-4 w-4 text-blue-500" />}
+            nodeData={{
+              type: 'section',
+              description: `Section ${i + 1} of your nonfiction book`,
+              sampleContent: i === 0 ? 'The foundations of this subject begin with...' : undefined,
+              estimatedWords: 4000,
+              tags: ['section', 'content']
+            }}
+            searchTerm={searchTerm}
+            isLast={i === Math.min(settings.nonfictionSections, 5) - 1 && settings.nonfictionSections <= 5}
+          />
+        ))}
+        {settings.nonfictionSections > 5 && (
+          <TreeNode 
+            label={`... ${settings.nonfictionSections - 5} more sections`}
+            icon={<BookText className="h-4 w-4 text-blue-500/50" />}
+            searchTerm={searchTerm}
+            isLast={true}
+          />
+        )}
+      </TreeNode>
+      
+      <TreeNode 
+        label="Research" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Research materials and notes',
+          estimatedWords: 3000,
+          tags: ['research', 'references']
+        }}
+        searchTerm={searchTerm}
+      >
+        <TreeNode 
+          label="Sources" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'Source materials and citations',
+            sampleContent: 'Primary Sources:\n- Interview with Expert A\n- Original research data\n\nSecondary Sources:\n- Smith, J. (2022). The Complete Guide.\n- Johnson, M. (2021). Advanced Concepts.',
+            estimatedWords: 1500,
+            tags: ['sources', 'citations']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Reference Notes" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'Detailed notes on references',
+            sampleContent: 'Notes on Smith (2022):\n- Key concepts on pages 45-52\n- Methodology questions on approach',
+            estimatedWords: 1500,
+            tags: ['notes', 'references']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+      
+      <TreeNode 
+        label="Appendices" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Additional materials and references',
+          estimatedWords: 2000,
+          tags: ['appendix', 'supplements']
+        }}
+        searchTerm={searchTerm}
+      >
+        <TreeNode 
+          label="Glossary" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'Definitions of key terms',
+            sampleContent: 'Term 1: Definition of the first important concept\nTerm 2: Definition of the second important concept',
+            estimatedWords: 1000,
+            tags: ['glossary', 'definitions']
+          }}
+          searchTerm={searchTerm}
+        />
+        <TreeNode 
+          label="Index" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'Alphabetical index of topics',
+            sampleContent: 'A\nAcademic standards, 45\nAccreditation, 72\n\nB\nBest practices, 23\nBibliography, 112',
+            estimatedWords: 1000,
+            tags: ['index', 'reference']
+          }}
+          searchTerm={searchTerm}
+          isLast={true}
+        />
+      </TreeNode>
+      
+      <TreeNode 
+        label="Bibliography" 
+        icon={<Folder className="h-4 w-4 text-primary" />}
+        nodeData={{
+          type: 'folder',
+          description: 'Complete list of references',
+          estimatedWords: 1500,
+          tags: ['bibliography', 'references']
+        }}
+        searchTerm={searchTerm}
+        isLast={true}
+      >
+        <TreeNode 
+          label="References" 
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          nodeData={{
+            type: 'file',
+            description: 'Complete bibliography in proper citation format',
+            sampleContent: 'Adams, J. (2020). The Definitive Guide. New York: Academic Press.\n\nBrown, S. & Johnson, T. (2021). Advanced Theory and Practice. Journal of Important Studies, 45(2), 112-128.',
+            estimatedWords: 1500,
+            tags: ['references', 'citations']
           }}
           searchTerm={searchTerm}
           isLast={true}

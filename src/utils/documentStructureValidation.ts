@@ -32,7 +32,25 @@ export const documentStructureSchema = z.object({
     .int("Research section count must be a whole number")
     .min(1, "Must have at least 1 section")
     .max(30, "Maximum of 30 research sections allowed")
-    .default(5)
+    .default(5),
+    
+  academicSections: z.number()
+    .int("Academic section count must be a whole number")
+    .min(1, "Must have at least 1 section")
+    .max(20, "Maximum of 20 academic sections allowed")
+    .default(6),
+    
+  memoirChapters: z.number()
+    .int("Memoir chapter count must be a whole number")
+    .min(1, "Must have at least 1 chapter")
+    .max(50, "Maximum of 50 chapters allowed")
+    .default(8),
+    
+  nonfictionSections: z.number()
+    .int("Nonfiction section count must be a whole number")
+    .min(1, "Must have at least 1 section")
+    .max(25, "Maximum of 25 sections allowed")
+    .default(7)
 });
 
 /**
@@ -59,7 +77,10 @@ export function validateStructureSettings(settings: Partial<ValidatedDocumentStr
       scenesPerChapter: 3,
       actCount: 3,
       poemCount: 10,
-      researchSections: 5
+      researchSections: 5,
+      academicSections: 6,
+      memoirChapters: 8,
+      nonfictionSections: 7
     };
   }
 }
@@ -85,6 +106,18 @@ export function getStructureValidationWarnings(settings: ValidatedDocumentStruct
     warnings.push(`${settings.researchSections} research sections might be excessive. Consider organizing into subsections.`);
   }
   
+  if (settings.academicSections > 15) {
+    warnings.push(`${settings.academicSections} academic sections might make the paper too lengthy. Consider consolidating related topics.`);
+  }
+  
+  if (settings.memoirChapters > 30) {
+    warnings.push(`${settings.memoirChapters} memoir chapters might be difficult to organize. Consider grouping chapters into parts or sections.`);
+  }
+  
+  if (settings.nonfictionSections > 15) {
+    warnings.push(`${settings.nonfictionSections} nonfiction sections might make the book too fragmented. Consider consolidating related topics.`);
+  }
+  
   return warnings;
 }
 
@@ -107,7 +140,16 @@ export function getStructurePerformanceLevel(settings: ValidatedDocumentStructur
  * Calculate the approximate number of document nodes that will be created
  */
 export function calculateTotalDocumentNodes(settings: ValidatedDocumentStructureSettings): number {
-  const { chapterCount, scenesPerChapter, actCount, poemCount, researchSections } = settings;
+  const { 
+    chapterCount, 
+    scenesPerChapter, 
+    actCount, 
+    poemCount, 
+    researchSections,
+    academicSections,
+    memoirChapters,
+    nonfictionSections
+  } = settings;
   
   // Novel structure
   const novelNodes = 5 + // Front Matter nodes
@@ -130,6 +172,22 @@ export function calculateTotalDocumentNodes(settings: ValidatedDocumentStructure
   const researchNodes = 5 + // Front Matter and intro nodes
     researchSections + // Research section nodes
     10; // References, appendices, and other nodes
+    
+  // Academic structure
+  const academicNodes = 7 + // Front Matter and intro nodes
+    academicSections + // Academic sections
+    12; // References, methodology, and other nodes
+    
+  // Memoir structure
+  const memoirNodes = 6 + // Front Matter nodes
+    memoirChapters + // Memoir chapters
+    8; // Photos, timeline, and reflection nodes
+    
+  // Nonfiction structure
+  const nonfictionNodes = 8 + // Front Matter nodes
+    nonfictionSections + // Sections
+    (nonfictionSections * 2) + // Chapters per section (approximately)
+    10; // References, appendices, and other nodes
   
   // Return the count based on structure
   const structure = getHighestStructureCount(settings);
@@ -142,6 +200,12 @@ export function calculateTotalDocumentNodes(settings: ValidatedDocumentStructure
       return poetryNodes;
     case 'research':
       return researchNodes;
+    case 'academic':
+      return academicNodes;
+    case 'memoir':
+      return memoirNodes;
+    case 'nonfiction':
+      return nonfictionNodes;
     default:
       return 50; // Default reasonable estimate
   }
@@ -151,18 +215,43 @@ export function calculateTotalDocumentNodes(settings: ValidatedDocumentStructure
  * Determine which structure has the highest count
  * This is a heuristic to estimate which structure the user is most likely using
  */
-function getHighestStructureCount(settings: ValidatedDocumentStructureSettings): 'novel' | 'screenplay' | 'poetry' | 'research' {
-  const { chapterCount, scenesPerChapter, actCount, poemCount, researchSections } = settings;
+function getHighestStructureCount(settings: ValidatedDocumentStructureSettings): 'novel' | 'screenplay' | 'poetry' | 'research' | 'academic' | 'memoir' | 'nonfiction' {
+  const { 
+    chapterCount, 
+    scenesPerChapter, 
+    actCount, 
+    poemCount, 
+    researchSections,
+    academicSections,
+    memoirChapters,
+    nonfictionSections
+  } = settings;
   
   const novelWeight = chapterCount * scenesPerChapter * 2;
   const screenplayWeight = actCount * 5;
   const poetryWeight = poemCount * 2;
   const researchWeight = researchSections * 3;
+  const academicWeight = academicSections * 4;
+  const memoirWeight = memoirChapters * 3;
+  const nonfictionWeight = nonfictionSections * 3;
   
-  const max = Math.max(novelWeight, screenplayWeight, poetryWeight, researchWeight);
+  const max = Math.max(
+    novelWeight, 
+    screenplayWeight, 
+    poetryWeight, 
+    researchWeight,
+    academicWeight,
+    memoirWeight,
+    nonfictionWeight
+  );
   
   if (max === novelWeight) return 'novel';
   if (max === screenplayWeight) return 'screenplay';
   if (max === poetryWeight) return 'poetry';
-  return 'research';
+  if (max === researchWeight) return 'research';
+  if (max === academicWeight) return 'academic';
+  if (max === memoirWeight) return 'memoir';
+  if (max === nonfictionWeight) return 'nonfiction';
+  
+  return 'novel'; // Default fallback
 }

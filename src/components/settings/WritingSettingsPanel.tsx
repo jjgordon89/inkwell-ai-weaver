@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Settings, Moon, Sun, Type, Eye, Save } from 'lucide-react';
+import { Settings, Moon, Sun, Type, Eye, Save, GraduationCap, BookOpen, BookText, Sparkles } from 'lucide-react';
 
 interface WritingSettingsProps {
   onSettingsChange?: (settings: WritingSettings) => void;
@@ -24,6 +24,12 @@ export interface WritingSettings {
   showOutline: boolean;
   focusMode: boolean;
   spellCheck: boolean;
+  // Structure-specific preferences
+  academicStyleGuide: 'apa' | 'mla' | 'chicago' | 'custom';
+  memoirIncludeTimeline: boolean;
+  nonfictionCitationStyle: 'inline' | 'footnotes' | 'endnotes';
+  enableStructureAI: boolean;
+  defaultStructureType: 'novel' | 'screenplay' | 'research' | 'poetry' | 'academic' | 'memoir' | 'nonfiction';
 }
 
 const defaultSettings: WritingSettings = {
@@ -36,7 +42,12 @@ const defaultSettings: WritingSettings = {
   showWordCount: true,
   showOutline: true,
   focusMode: false,
-  spellCheck: true
+  spellCheck: true,
+  academicStyleGuide: 'apa',
+  memoirIncludeTimeline: false,
+  nonfictionCitationStyle: 'inline',
+  enableStructureAI: false,
+  defaultStructureType: 'novel'
 };
 
 const WritingSettingsPanel: React.FC<WritingSettingsProps> = ({
@@ -201,6 +212,107 @@ const WritingSettingsPanel: React.FC<WritingSettingsProps> = ({
               checked={settings.spellCheck}
               onCheckedChange={(checked) => updateSetting('spellCheck', checked)}
             />
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Document Structure */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <BookOpen className="h-4 w-4" />
+            Document Structure
+          </h3>
+          
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              Default Structure Type
+            </Label>
+            <Select
+              value={settings.defaultStructureType}
+              onValueChange={(value: string) => updateSetting('defaultStructureType', value as 'novel' | 'screenplay' | 'research' | 'poetry' | 'academic' | 'memoir' | 'nonfiction')}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="novel">Novel</SelectItem>
+                <SelectItem value="screenplay">Screenplay</SelectItem>
+                <SelectItem value="poetry">Poetry</SelectItem>
+                <SelectItem value="research">Research</SelectItem>
+                <SelectItem value="academic">Academic</SelectItem>
+                <SelectItem value="memoir">Memoir</SelectItem>
+                <SelectItem value="nonfiction">Nonfiction</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <Label htmlFor="enable-structure-ai" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              Enable Structure-Aware AI
+            </Label>
+            <Switch
+              id="enable-structure-ai"
+              checked={settings.enableStructureAI}
+              onCheckedChange={(checked) => updateSetting('enableStructureAI', checked)}
+            />
+          </div>
+
+          {/* Academic Settings */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <GraduationCap className="h-4 w-4" />
+              Academic Style Guide
+            </Label>
+            <Select
+              value={settings.academicStyleGuide}
+              onValueChange={(value: string) => updateSetting('academicStyleGuide', value as 'apa' | 'mla' | 'chicago' | 'custom')}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="apa">APA Style</SelectItem>
+                <SelectItem value="mla">MLA Style</SelectItem>
+                <SelectItem value="chicago">Chicago Style</SelectItem>
+                <SelectItem value="custom">Custom Style</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Memoir Settings */}
+          <div className="flex items-center justify-between">
+            <Label htmlFor="memoir-timeline" className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4" />
+              Include Timeline in Memoir Structure
+            </Label>
+            <Switch
+              id="memoir-timeline"
+              checked={settings.memoirIncludeTimeline}
+              onCheckedChange={(checked) => updateSetting('memoirIncludeTimeline', checked)}
+            />
+          </div>
+
+          {/* Nonfiction Settings */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <BookText className="h-4 w-4" />
+              Nonfiction Citation Style
+            </Label>
+            <Select
+              value={settings.nonfictionCitationStyle}
+              onValueChange={(value: string) => updateSetting('nonfictionCitationStyle', value as 'inline' | 'footnotes' | 'endnotes')}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="inline">Inline Citations</SelectItem>
+                <SelectItem value="footnotes">Footnotes</SelectItem>
+                <SelectItem value="endnotes">Endnotes</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

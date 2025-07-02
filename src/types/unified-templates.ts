@@ -16,7 +16,7 @@ export interface ProjectTemplateBase {
   id: string;
   name: string;
   description: string;
-  structure: 'novel' | 'screenplay' | 'research' | 'poetry';
+  structure: 'novel' | 'screenplay' | 'research' | 'poetry' | 'academic' | 'memoir' | 'nonfiction';
 }
 
 /**
@@ -46,6 +46,9 @@ export interface ProjectTemplateUI extends ProjectTemplateBase {
     actCount?: number;
     poemCount?: number;
     researchSections?: number;
+    academicSections?: number;
+    memoirChapters?: number;
+    nonfictionSections?: number;
     genre?: string;
     writingStyle?: string;
   };
@@ -102,6 +105,9 @@ export interface UnifiedProjectTemplate extends ProjectTemplateBase {
     actCount?: number;
     poemCount?: number;
     researchSections?: number;
+    academicSections?: number;
+    memoirChapters?: number;
+    nonfictionSections?: number;
     genre?: string;
     writingStyle?: string;
   };
@@ -274,6 +280,30 @@ export class TemplateAdapters {
           features: ['Verse structure', 'Rhythm analysis', 'Collection organization'],
           defaultSettings: {
             wordCountTarget: 5000,
+          },
+        };
+      case 'academic':
+        return {
+          icon: '🎓',
+          features: ['Citation management', 'Academic formatting', 'Literature review'],
+          defaultSettings: {
+            wordCountTarget: 25000,
+          },
+        };
+      case 'memoir':
+        return {
+          icon: '📔',
+          features: ['Timeline organization', 'Photo integration', 'Personal narrative'],
+          defaultSettings: {
+            wordCountTarget: 60000,
+          },
+        };
+      case 'nonfiction':
+        return {
+          icon: '📚',
+          features: ['Section organization', 'Bibliography', 'Research integration'],
+          defaultSettings: {
+            wordCountTarget: 50000,
           },
         };
       default:

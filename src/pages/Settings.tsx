@@ -2,7 +2,7 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Database, Bot, Palette, Shield, User, Bell, ArrowLeft, PenTool } from 'lucide-react';
+import { Settings, Database, Bot, Palette, Shield, User, Bell, ArrowLeft, PenTool, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DatabaseSettings from '@/components/settings/DatabaseSettings';
 import AISettingsPanel from '@/components/settings/AISettingsPanel';
@@ -11,6 +11,7 @@ import PrivacySettings from '@/components/settings/PrivacySettings';
 import ProfileSettings from '@/components/settings/ProfileSettings';
 import NotificationSettings from '@/components/settings/NotificationSettings';
 import WritingSettingsPanel from '@/components/settings/WritingSettingsPanel';
+import ImportExportSettings from '@/components/settings/ImportExportSettings';
 
 const SettingsPage = () => {
   return (
@@ -29,7 +30,7 @@ const SettingsPage = () => {
       </div>
 
       <Tabs defaultValue="writing" className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="writing" className="flex items-center gap-2">
             <PenTool className="h-4 w-4" />
             Writing
@@ -41,6 +42,10 @@ const SettingsPage = () => {
           <TabsTrigger value="ai" className="flex items-center gap-2">
             <Bot className="h-4 w-4" />
             AI
+          </TabsTrigger>
+          <TabsTrigger value="import-export" className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Import/Export
           </TabsTrigger>
           <TabsTrigger value="appearance" className="flex items-center gap-2">
             <Palette className="h-4 w-4" />
@@ -70,6 +75,10 @@ const SettingsPage = () => {
 
         <TabsContent value="ai" className="mt-6">
           <AISettingsPanel />
+        </TabsContent>
+
+        <TabsContent value="import-export" className="mt-6">
+          <ImportExportSettings />
         </TabsContent>
 
         <TabsContent value="appearance" className="mt-6">

@@ -31,7 +31,8 @@ import {
   Settings,
   Star,
   Trash2,
-  Info
+  Info,
+  FileText
 } from 'lucide-react';
 import { UnifiedProjectTemplate } from '@/types/unified-templates';
 import DocumentTreeVisualizer from './DocumentTreeVisualizer';
@@ -64,6 +65,9 @@ export interface DocumentStructureSettings {
   actCount: number;
   poemCount: number;
   researchSections: number;
+  academicSections: number;
+  memoirChapters: number;
+  nonfictionSections: number;
 }
 
 export interface StructurePreset {
@@ -75,7 +79,7 @@ export interface StructurePreset {
 }
 
 interface DocumentStructureCustomizerProps {
-  structure: 'novel' | 'screenplay' | 'research' | 'poetry';
+  structure: 'novel' | 'screenplay' | 'research' | 'poetry' | 'academic' | 'memoir' | 'nonfiction';
   template: UnifiedProjectTemplate | null;
   settings: DocumentStructureSettings;
   onChange: (settings: DocumentStructureSettings) => void;
@@ -86,6 +90,9 @@ const STRUCTURE_ICONS = {
   screenplay: Film,
   research: GraduationCap,
   poetry: Sparkles,
+  academic: GraduationCap,
+  memoir: BookOpen,
+  nonfiction: FileText,
 };
 
 const DocumentStructureCustomizer: React.FC<DocumentStructureCustomizerProps> = ({
@@ -165,13 +172,18 @@ const DocumentStructureCustomizer: React.FC<DocumentStructureCustomizerProps> = 
   // Reset to template defaults
   const resetToDefaults = useCallback(() => {
     if (template) {
-      onChange({
+      // Create a complete settings object with all properties
+      const defaultSettings: DocumentStructureSettings = {
         chapterCount: template.defaultSettings.chapterCount || 10,
         scenesPerChapter: template.defaultSettings.scenesPerChapter || 3,
         actCount: template.defaultSettings.actCount || 3,
         poemCount: template.defaultSettings.poemCount || 10,
         researchSections: template.defaultSettings.researchSections || 5,
-      });
+        academicSections: 6,
+        memoirChapters: 8,
+        nonfictionSections: 7,
+      };
+      onChange(defaultSettings);
     }
   }, [template, onChange]);
 
@@ -477,7 +489,115 @@ const DocumentStructureCustomizer: React.FC<DocumentStructureCustomizerProps> = 
                     </div>
                   </>
                 )}
+
+                {/* Academic structure settings */}
+                {structure === 'academic' && (
+                  <>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <Label htmlFor="academicSections">Number of Academic Sections</Label>
+                          <span className="text-sm text-muted-foreground">{settings.academicSections}</span>
+                        </div>
+                        <div className="flex gap-4 items-center">
+                          <Slider
+                            id="academicSections"
+                            min={1}
+                            max={20}
+                            step={1}
+                            value={[settings.academicSections]}
+                            onValueChange={(value) => handleInputChange('academicSections', value[0])}
+                            aria-label="Number of academic sections"
+                          />
+                          <Input
+                            type="number"
+                            min={1}
+                            max={20}
+                            value={settings.academicSections}
+                            onChange={(e) => handleInputChange('academicSections', parseInt(e.target.value) || 1)}
+                            className="w-20"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      This will create an academic document with {settings.academicSections} main sections, along with methodology, literature review, and references.
+                    </div>
+                  </>
+                )}
                 
+                {/* Memoir structure settings */}
+                {structure === 'memoir' && (
+                  <>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <Label htmlFor="memoirChapters">Number of Memoir Chapters</Label>
+                          <span className="text-sm text-muted-foreground">{settings.memoirChapters}</span>
+                        </div>
+                        <div className="flex gap-4 items-center">
+                          <Slider
+                            id="memoirChapters"
+                            min={1}
+                            max={50}
+                            step={1}
+                            value={[settings.memoirChapters]}
+                            onValueChange={(value) => handleInputChange('memoirChapters', value[0])}
+                            aria-label="Number of memoir chapters"
+                          />
+                          <Input
+                            type="number"
+                            min={1}
+                            max={50}
+                            value={settings.memoirChapters}
+                            onChange={(e) => handleInputChange('memoirChapters', parseInt(e.target.value) || 1)}
+                            className="w-20"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      This will create a memoir with {settings.memoirChapters} chapters, along with photos, timeline, and reflection sections.
+                    </div>
+                  </>
+                )}
+                
+                {/* Nonfiction structure settings */}
+                {structure === 'nonfiction' && (
+                  <>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <Label htmlFor="nonfictionSections">Number of Nonfiction Sections</Label>
+                          <span className="text-sm text-muted-foreground">{settings.nonfictionSections}</span>
+                        </div>
+                        <div className="flex gap-4 items-center">
+                          <Slider
+                            id="nonfictionSections"
+                            min={1}
+                            max={25}
+                            step={1}
+                            value={[settings.nonfictionSections]}
+                            onValueChange={(value) => handleInputChange('nonfictionSections', value[0])}
+                            aria-label="Number of nonfiction sections"
+                          />
+                          <Input
+                            type="number"
+                            min={1}
+                            max={25}
+                            value={settings.nonfictionSections}
+                            onChange={(e) => handleInputChange('nonfictionSections', parseInt(e.target.value) || 1)}
+                            className="w-20"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      This will create a nonfiction book with {settings.nonfictionSections} main sections, each containing approximately 2 chapters, along with references and supplementary materials.
+                    </div>
+                  </>
+                )}
+
                 {/* Validation Warnings */}
                 {validationWarnings.length > 0 && (
                   <Alert
@@ -580,6 +700,57 @@ const DocumentStructureCustomizer: React.FC<DocumentStructureCustomizerProps> = 
                       </div>
                     </div>
                   )}
+
+                  {/* Academic Preview */}
+                  {structure === 'academic' && (
+                    <div className="space-y-2 text-sm">
+                      <div className="text-muted-foreground mb-2">Your academic paper will include:</div>
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li>Front Matter (Title Page, Abstract, Table of Contents)</li>
+                        <li>Introduction and Literature Review</li>
+                        <li><strong>{settings.academicSections} Academic Sections</strong> for main content</li>
+                        <li>Methodology and Results</li>
+                        <li>Discussion and Conclusion</li>
+                        <li>References and Appendices</li>
+                      </ul>
+                      <div className="text-xs text-muted-foreground mt-2">
+                        Total document nodes: ~{totalNodes}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Memoir Preview */}
+                  {structure === 'memoir' && (
+                    <div className="space-y-2 text-sm">
+                      <div className="text-muted-foreground mb-2">Your memoir will include:</div>
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li>Front Matter (Title Page, Dedication, Preface)</li>
+                        <li><strong>{settings.memoirChapters} Memoir Chapters</strong></li>
+                        <li>Photos & Documents section</li>
+                        <li>Timeline of key events</li>
+                        <li>Reflections and Epilogue</li>
+                      </ul>
+                      <div className="text-xs text-muted-foreground mt-2">
+                        Total document nodes: ~{totalNodes}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Nonfiction Preview */}
+                  {structure === 'nonfiction' && (
+                    <div className="space-y-2 text-sm">
+                      <div className="text-muted-foreground mb-2">Your nonfiction book will include:</div>
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li>Front Matter (Title Page, Table of Contents, Introduction)</li>
+                        <li><strong>{settings.nonfictionSections} Main Sections</strong> with approximately 2 chapters each</li>
+                        <li>References and Bibliography</li>
+                        <li>Glossary and Appendices</li>
+                      </ul>
+                      <div className="text-xs text-muted-foreground mt-2">
+                        Total document nodes: ~{totalNodes}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </AccordionContent>
@@ -643,6 +814,9 @@ const DocumentStructureCustomizer: React.FC<DocumentStructureCustomizerProps> = 
                                   {structure === 'screenplay' && `${preset.settings.actCount} acts`}
                                   {structure === 'poetry' && `${preset.settings.poemCount} poems`}
                                   {structure === 'research' && `${preset.settings.researchSections} sections`}
+                                  {structure === 'academic' && `${preset.settings.academicSections} sections`}
+                                  {structure === 'memoir' && `${preset.settings.memoirChapters} chapters`}
+                                  {structure === 'nonfiction' && `${preset.settings.nonfictionSections} sections`}
                                 </p>
                               </TooltipContent>
                             </Tooltip>

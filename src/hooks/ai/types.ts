@@ -12,6 +12,7 @@ export interface AIProvider {
 }
 
 export type AIAction = 
+  // General writing actions
   | 'improve' 
   | 'shorten' 
   | 'expand' 
@@ -22,7 +23,28 @@ export type AIAction =
   | 'writing-prompt'
   | 'context-suggestion'
   | 'analyze-writing-quality'
-  | 'predict-next-words';
+  | 'predict-next-words'
+  
+  // Academic writing actions
+  | 'academic-thesis-statement'
+  | 'academic-literature-review'
+  | 'academic-abstract'
+  | 'academic-research-question'
+  | 'academic-methodology'
+  
+  // Memoir writing actions
+  | 'memoir-reflection'
+  | 'memoir-timeline'
+  | 'memoir-character-sketch'
+  | 'memoir-setting-description'
+  | 'memoir-emotional-insight'
+  
+  // Nonfiction writing actions
+  | 'nonfiction-outline'
+  | 'nonfiction-research-summary'
+  | 'nonfiction-expert-interview'
+  | 'nonfiction-fact-check'
+  | 'nonfiction-conclusion';
 
 export interface AIHookReturn {
   isProcessing: boolean;

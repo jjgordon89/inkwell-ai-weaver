@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useProject } from '@/contexts/ProjectContext';
 import { useToast } from "@/hooks/use-toast";
@@ -10,6 +9,10 @@ export const useImportExport = () => {
   const { toast } = useToast();
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+
+  // Export progress tracking
+  const [exportProgress, setExportProgress] = useState(0);
+  const [importProgress, setImportProgress] = useState(0);
 
   const exportPresets: ExportPreset[] = [
     {
@@ -54,6 +57,7 @@ export const useImportExport = () => {
 
   const importDocument = useCallback(async (file: File, options: ImportOptions) => {
     setIsImporting(true);
+    setImportProgress(10);
     try {
       const text = await file.text();
       
@@ -102,6 +106,8 @@ export const useImportExport = () => {
       const currentTree = state.documentTree;
       dispatch({ type: 'SET_DOCUMENT_TREE', payload: [...currentTree, ...documents] });
 
+      setImportProgress(100);
+      
       toast({
         title: "Import Successful",
         description: `Imported ${documents.length} document(s) from ${file.name}`,
@@ -114,12 +120,16 @@ export const useImportExport = () => {
         variant: "destructive"
       });
     } finally {
-      setIsImporting(false);
+      setTimeout(() => {
+        setIsImporting(false);
+        setImportProgress(0);
+      }, 500);
     }
   }, [state.documentTree, dispatch, toast]);
 
   const exportProject = useCallback(async (preset: ExportPreset, documentIds?: string[]) => {
     setIsExporting(true);
+    setExportProgress(10);
     try {
       // Get documents to export
       const docsToExport = documentIds 
@@ -157,6 +167,8 @@ export const useImportExport = () => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
+      setExportProgress(100);
+      
       toast({
         title: "Export Successful",
         description: `Project exported as ${preset.name}`,
@@ -169,7 +181,10 @@ export const useImportExport = () => {
         variant: "destructive"
       });
     } finally {
-      setIsExporting(false);
+      setTimeout(() => {
+        setIsExporting(false);
+        setExportProgress(0);
+      }, 500);
     }
   }, [state.flatDocuments, toast]);
 
@@ -200,12 +215,156 @@ export const useImportExport = () => {
     });
   }, [state.flatDocuments, toast]);
 
+  // Export all projects functionality
+  const exportAllProjects = useCallback(async () => {
+    setIsExporting(true);
+    setExportProgress(10);
+    
+    try {
+      // Get all projects
+      const allProjects = state.projects;
+      
+      setExportProgress(30);
+      
+      // Process projects data with metadata
+      const exportData = {
+        metadata: {
+          appVersion: '1.0.0',
+          exportDate: new Date().toISOString(),
+          projectCount: allProjects.length
+        },
+        projects: allProjects
+      };
+      
+      setExportProgress(50);
+      
+      // Convert to JSON
+      const projectsJson = JSON.stringify(exportData, null, 2);
+      
+      setExportProgress(70);
+      
+      // Create and download file
+      const blob = new Blob([projectsJson], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `inkwell-projects-export-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      setExportProgress(100);
+      
+      toast({
+        title: "Export Successful",
+        description: `Exported ${allProjects.length} projects`,
+      });
+    } catch (error) {
+      console.error('Export all projects failed:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export all projects. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setTimeout(() => {
+        setIsExporting(false);
+        setExportProgress(0);
+      }, 500);
+    }
+  }, [state.projects, toast]);
+
+  // Import project from file
+  const importProject = useCallback(async (file: File) => {
+    setIsImporting(true);
+    setImportProgress(10);
+    
+    try {
+      // Read file
+      const fileContent = await file.text();
+      
+      setImportProgress(30);
+      
+      // Parse JSON
+      const projectData = JSON.parse(fileContent);
+      
+      setImportProgress(50);
+      
+      // Validate project structure
+      if (!projectData.name || !projectData.structure) {
+        throw new Error("Invalid project file format");
+      }
+      
+      setImportProgress(70);
+      
+      // Process documents if any
+      const documents = projectData.documents || [];
+      
+      // Create project
+      const projectId = crypto.randomUUID();
+      const newProject = {
+        id: projectId,
+        name: projectData.name,
+        description: projectData.description || '',
+        structure: projectData.structure,
+        createdAt: new Date(),
+        lastModified: new Date(),
+        status: 'active',
+        settings: projectData.settings || {}
+      };
+      
+      // Add project to state
+      dispatch({ type: 'ADD_PROJECT', payload: newProject });
+      
+      // Add documents if any
+      if (documents.length > 0) {
+        dispatch({ 
+          type: 'SET_DOCUMENT_TREE', 
+          payload: documents.map((doc: DocumentNode) => ({
+            ...doc,
+            projectId
+          })) 
+        });
+      }
+      
+      setImportProgress(100);
+      
+      toast({
+        title: "Import Successful",
+        description: `Imported project "${projectData.name}" with ${documents.length} document(s)`,
+      });
+      
+      return {
+        projectId,
+        projectName: projectData.name
+      };
+    } catch (error) {
+      console.error('Import project failed:', error);
+      toast({
+        title: "Import Failed",
+        description: error instanceof Error ? error.message : "Failed to import project. Please check the file format.",
+        variant: "destructive"
+      });
+      throw error;
+    } finally {
+      setTimeout(() => {
+        setIsImporting(false);
+        setImportProgress(0);
+      }, 500);
+    }
+  }, [dispatch, toast]);
+
   return {
     exportPresets,
     isImporting,
     isExporting,
     importDocument,
     exportProject,
-    exportDocument
+    exportDocument,
+    exportAllProjects,
+    importProject,
+    exportProgress,
+    importProgress
   };
 };
