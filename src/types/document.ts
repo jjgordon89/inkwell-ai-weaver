@@ -4,7 +4,7 @@ export interface Project {
   description: string;
   createdAt: string | Date;
   lastModified: string | Date;
-  structure: 'novel' | 'screenplay' | 'research' | 'poetry';
+  structure: 'novel' | 'screenplay' | 'research' | 'poetry' | 'academic' | 'memoir' | 'nonfiction';
   wordCountTarget?: number;
   status: 'active' | 'draft' | 'revision' | 'editing' | 'complete' | 'archived';
   lastAccessedAt?: string | Date;
@@ -309,7 +309,7 @@ export interface ProjectTemplate {
   id: string;
   name: string;
   description: string;
-  structure: 'novel' | 'screenplay' | 'research' | 'poetry';
+  structure: 'novel' | 'screenplay' | 'research' | 'poetry' | 'academic' | 'memoir' | 'nonfiction';
   initialDocumentTree: DocumentNode[];
   metadata?: {
     authorName?: string;

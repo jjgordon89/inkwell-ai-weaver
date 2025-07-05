@@ -30,7 +30,7 @@ const invoke = async <T>(command: string, args?: Record<string, unknown>): Promi
 export const createNewProject = async (
   name: string,
   description?: string,
-  structure: 'novel' | 'screenplay' | 'research' | 'poetry' = 'novel'
+  structure: 'novel' | 'screenplay' | 'research' | 'poetry' | 'academic' | 'memoir' | 'nonfiction' = 'novel'
 ): Promise<Project> => {
   // Sanitize inputs
   const sanitizedName = sanitizeString(name);

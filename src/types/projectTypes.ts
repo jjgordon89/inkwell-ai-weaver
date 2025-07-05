@@ -6,7 +6,7 @@ import type { Project } from './document';
 export interface CreateProjectInput {
   name: string;
   description: string;
-  structure: 'novel' | 'screenplay' | 'research' | 'poetry';
+  structure: 'novel' | 'screenplay' | 'research' | 'poetry' | 'academic' | 'memoir' | 'nonfiction';
   wordCountTarget?: number;
   template?: string; // Template ID if created from a template
   settings?: {

@@ -11,6 +11,9 @@ import LocalModelTester from '../ai/LocalModelTester';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StructureAwareAIAssistant } from '@/components/ai';
 
+// Define the structure types supported by the AI assistant
+type SupportedStructureType = 'novel' | 'screenplay' | 'research' | 'poetry' | 'academic' | 'memoir' | 'nonfiction';
+
 const AIAssistance = () => {
   const { selectedProvider, selectedModel, isProcessing } = useAI();
   const { state: projectState } = useProject();
@@ -24,22 +27,26 @@ const AIAssistance = () => {
   const structureType = projectState.currentProject?.structure || 'novel';
   
   // Extended structure type to include new types
-  const extendedStructureType = (
+  const extendedStructureType: SupportedStructureType = (
     structureType === 'novel' || 
     structureType === 'screenplay' || 
     structureType === 'research' || 
-    structureType === 'poetry' 
-      ? structureType 
+    structureType === 'poetry' || 
+    structureType === 'academic' || 
+    structureType === 'memoir' || 
+    structureType === 'nonfiction'
+      ? structureType as SupportedStructureType
       : 'novel'
-  ) as 'novel' | 'screenplay' | 'research' | 'poetry' | 'academic' | 'memoir' | 'nonfiction';
+  );
 
   // Get the active document content and selected text
-  const activeDocContent = writingState.documents[writingState.activeDocumentId] || '';
+  const currentDocument = writingState.currentDocument;
+  const activeDocContent = currentDocument?.content || '';
   const selectedText = writingState.selectedText || '';
   
   // Function to apply AI results to the document
   const handleApplyAIResult = (result: string) => {
-    if (!writingState.activeDocumentId) {
+    if (!currentDocument) {
       return;
     }
     
@@ -47,12 +54,14 @@ const AIAssistance = () => {
     if (selectedText) {
       // Replace selected text with AI result
       const currentContent = activeDocContent;
-      const newContent = currentContent.replace(selectedText, result);
+      const newContent = currentContent.includes(selectedText) 
+        ? currentContent.replace(selectedText, result)
+        : currentContent + '\n\n' + result;
       
       writingDispatch({
         type: 'UPDATE_DOCUMENT_CONTENT',
         payload: {
-          id: writingState.activeDocumentId,
+          id: currentDocument.id,
           content: newContent
         }
       });
@@ -63,7 +72,7 @@ const AIAssistance = () => {
       writingDispatch({
         type: 'UPDATE_DOCUMENT_CONTENT',
         payload: {
-          id: writingState.activeDocumentId,
+          id: currentDocument.id,
           content: newContent
         }
       });
@@ -101,7 +110,7 @@ const AIAssistance = () => {
         
         <TabsContent value="assistant" className="space-y-6 flex-grow overflow-auto">
           <StructureAwareAIAssistant
-            structureType={extendedStructureType as any}
+            structureType={extendedStructureType}
             documentContent={activeDocContent}
             selectedText={selectedText}
             onApplyAIResult={handleApplyAIResult}

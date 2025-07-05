@@ -73,7 +73,7 @@ export interface DocumentStructureSettings {
 export interface StructurePreset {
   id: string;
   name: string;
-  structure: 'novel' | 'screenplay' | 'research' | 'poetry';
+  structure: 'novel' | 'screenplay' | 'research' | 'poetry' | 'academic' | 'memoir' | 'nonfiction';
   settings: DocumentStructureSettings;
   isDefault?: boolean;
 }

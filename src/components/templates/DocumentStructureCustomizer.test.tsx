@@ -39,6 +39,9 @@ const mockTemplate = {
     actCount: 3,
     poemCount: 15,
     researchSections: 6,
+    academicSections: 5,
+    memoirChapters: 10,
+    nonfictionSections: 8,
     wordCountTarget: 50000,
   },
 };
@@ -50,6 +53,9 @@ describe('DocumentStructureCustomizer', () => {
     actCount: 3,
     poemCount: 10,
     researchSections: 5,
+    academicSections: 4,
+    memoirChapters: 8,
+    nonfictionSections: 6,
   };
   
   const handleChange = vi.fn();
@@ -88,6 +94,51 @@ describe('DocumentStructureCustomizer', () => {
     expect(screen.getByText('Document Structure')).toBeInTheDocument();
     expect(screen.getByText('Structure Settings')).toBeInTheDocument();
     expect(screen.getByText('Number of Acts')).toBeInTheDocument();
+  });
+  
+  it('renders with default settings for academic structure', () => {
+    render(
+      <DocumentStructureCustomizer
+        structure="academic"
+        template={null}
+        settings={defaultSettings}
+        onChange={handleChange}
+      />
+    );
+    
+    expect(screen.getByText('Document Structure')).toBeInTheDocument();
+    expect(screen.getByText('Structure Settings')).toBeInTheDocument();
+    expect(screen.getByText('Number of Academic Sections')).toBeInTheDocument();
+  });
+  
+  it('renders with default settings for memoir structure', () => {
+    render(
+      <DocumentStructureCustomizer
+        structure="memoir"
+        template={null}
+        settings={defaultSettings}
+        onChange={handleChange}
+      />
+    );
+    
+    expect(screen.getByText('Document Structure')).toBeInTheDocument();
+    expect(screen.getByText('Structure Settings')).toBeInTheDocument();
+    expect(screen.getByText('Number of Memoir Chapters')).toBeInTheDocument();
+  });
+  
+  it('renders with default settings for nonfiction structure', () => {
+    render(
+      <DocumentStructureCustomizer
+        structure="nonfiction"
+        template={null}
+        settings={defaultSettings}
+        onChange={handleChange}
+      />
+    );
+    
+    expect(screen.getByText('Document Structure')).toBeInTheDocument();
+    expect(screen.getByText('Structure Settings')).toBeInTheDocument();
+    expect(screen.getByText('Number of Nonfiction Sections')).toBeInTheDocument();
   });
   
   it('handles input changes correctly', async () => {
@@ -139,6 +190,9 @@ describe('DocumentStructureCustomizer', () => {
       actCount: mockTemplate.defaultSettings.actCount,
       poemCount: mockTemplate.defaultSettings.poemCount,
       researchSections: mockTemplate.defaultSettings.researchSections,
+      academicSections: mockTemplate.defaultSettings.academicSections,
+      memoirChapters: mockTemplate.defaultSettings.memoirChapters,
+      nonfictionSections: mockTemplate.defaultSettings.nonfictionSections,
     });
   });
   
@@ -150,6 +204,9 @@ describe('DocumentStructureCustomizer', () => {
       actCount: 3,
       poemCount: 10,
       researchSections: 5,
+      academicSections: 10,
+      memoirChapters: 20,
+      nonfictionSections: 15,
     };
     
     // We'll use a customized render to access component internals
@@ -231,6 +288,9 @@ describe('DocumentStructureCustomizer', () => {
         actCount: 3,
         poemCount: 10,
         researchSections: 5,
+        academicSections: 4,
+        memoirChapters: 8,
+        nonfictionSections: 6,
       }
     }];
     

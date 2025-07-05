@@ -27,7 +27,8 @@ const ImportExportSettings = () => {
     isExporting,
     isImporting,
     exportProgress,
-    importProgress
+    importProgress,
+    exportPresets
   } = useImportExport();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
@@ -72,7 +73,9 @@ const ImportExportSettings = () => {
   // Handle single project export
   const handleExportProject = async () => {
     try {
-      await exportProject();
+      // Use the first export preset as default
+      const defaultPreset = exportPresets[0];
+      await exportProject(defaultPreset);
       toast({
         title: "Project exported successfully",
         description: "Your project has been downloaded as a JSON file.",
