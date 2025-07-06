@@ -193,7 +193,7 @@ function generateNovelStructure(chapterCount: number, scenesPerChapter: number, 
   ];
   
   // Add chapters to manuscript
-  const manuscript = root[1].children = [];
+  const manuscript: DocumentNode[] = root[1].children = [];
   
   for (let i = 0; i < chapterCount; i++) {
     const chapterId = `template-${uuidv4()}`;
@@ -239,7 +239,7 @@ function generateNovelStructure(chapterCount: number, scenesPerChapter: number, 
       });
     }
     
-    manuscript.push(chapter);
+    manuscript.push(chapter as DocumentNode);
   }
   
   return root;
@@ -339,7 +339,7 @@ function generateScreenplayStructure(actCount: number, timestamp: string): Docum
   ];
   
   // Add acts to screenplay
-  const screenplay = root[3].children = [];
+  const screenplay: DocumentNode[] = root[3].children = [];
   
   for (let i = 0; i < actCount; i++) {
     const actId = `template-${uuidv4()}`;
@@ -387,7 +387,7 @@ function generateScreenplayStructure(actCount: number, timestamp: string): Docum
       });
     }
     
-    screenplay.push(act);
+    screenplay.push(act as DocumentNode);
   }
   
   // Add a notes section
@@ -562,13 +562,13 @@ function generateResearchStructure(sectionCount: number, timestamp: string): Doc
   ];
   
   // Add appendices
-  const appendices = root[9].children = [];
+  const appendices: DocumentNode[] = root[9].children = [];
   
   for (let i = 0; i < 3; i++) {
     appendices.push({
       id: `template-${uuidv4()}`,
       title: `Appendix ${String.fromCharCode(65 + i)}`,
-      type: 'document',
+      type: 'document' as const,
       parentId: root[9].id,
       content: `# Appendix ${String.fromCharCode(65 + i)}\n\nSupplementary information.`,
       status: 'not-started',
@@ -577,17 +577,17 @@ function generateResearchStructure(sectionCount: number, timestamp: string): Doc
       createdAt: timestamp,
       lastModified: timestamp,
       position: i
-    });
+    } as DocumentNode);
   }
   
   // Add research notes
-  const notes = root[10].children = [];
+  const notes: DocumentNode[] = root[10].children = [];
   
   for (let i = 0; i < sectionCount; i++) {
     notes.push({
       id: `template-${uuidv4()}`,
       title: `Research Note ${i + 1}`,
-      type: 'research-note',
+      type: 'research-note' as const,
       parentId: root[10].id,
       content: `# Research Note ${i + 1}\n\nAdd notes, observations, and data here.`,
       status: 'not-started',
@@ -596,7 +596,7 @@ function generateResearchStructure(sectionCount: number, timestamp: string): Doc
       createdAt: timestamp,
       lastModified: timestamp,
       position: i
-    });
+    } as DocumentNode);
   }
   
   return root;
@@ -684,13 +684,13 @@ function generatePoetryStructure(poemCount: number, timestamp: string): Document
   ];
   
   // Add poems
-  const poems = root[2].children = [];
+  const poems: DocumentNode[] = root[2].children = [];
   
   for (let i = 0; i < poemCount; i++) {
     poems.push({
       id: `template-${uuidv4()}`,
       title: `Poem ${i + 1}`,
-      type: 'poem',
+      type: 'poem' as const,
       parentId: root[2].id,
       content: '',
       synopsis: `Brief description of Poem ${i + 1}`,
@@ -704,7 +704,7 @@ function generatePoetryStructure(poemCount: number, timestamp: string): Document
         form: '',
         themes: []
       }
-    });
+    } as DocumentNode);
   }
   
   return root;
@@ -909,12 +909,12 @@ function generateAcademicStructure(sectionCount: number, timestamp: string): Doc
   ];
 
   // Add academic sections
-  const sections = [];
+  const sections: DocumentNode[] = [];
   for (let i = 0; i < sectionCount; i++) {
     sections.push({
       id: `template-${uuidv4()}`,
       title: `Section ${i + 1}`,
-      type: 'document',
+      type: 'document' as const,
       parentId: root[4].id,
       content: `# Section ${i + 1}\n\nAdd your content for this section here.`,
       status: 'not-started',
@@ -923,7 +923,7 @@ function generateAcademicStructure(sectionCount: number, timestamp: string): Doc
       createdAt: timestamp,
       lastModified: timestamp,
       position: i
-    });
+    } as DocumentNode);
   }
 
   // Assign children to the appropriate parent
@@ -1091,12 +1091,12 @@ function generateMemoirStructure(chapterCount: number, timestamp: string): Docum
   ];
 
   // Add memoir chapters
-  const chapters = [];
+  const chapters: DocumentNode[] = [];
   for (let i = 0; i < chapterCount; i++) {
     chapters.push({
       id: `template-${uuidv4()}`,
       title: `Chapter ${i + 1}`,
-      type: 'chapter',
+      type: 'chapter' as const,
       parentId: root[1].id,
       content: `# Chapter ${i + 1}\n\nAdd your memoir content for this chapter here.`,
       status: 'not-started',
@@ -1105,7 +1105,7 @@ function generateMemoirStructure(chapterCount: number, timestamp: string): Docum
       createdAt: timestamp,
       lastModified: timestamp,
       position: i
-    });
+    } as DocumentNode);
   }
 
   // Assign children to the appropriate parent
